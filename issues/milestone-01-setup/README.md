@@ -10,6 +10,7 @@
 - `client/`에서 `flutter run`으로 앱이 실행되고 지도(빈 평면도)가 뜬다.
 - `api/`에서 `uvicorn`으로 서버가 뜨고 `/health`, `/buildings`가 응답한다.
 - 앱이 서버의 `/buildings`를 호출해 받은 데이터를 화면에 표시한다(end-to-end 연결 확인).
+- `.github/workflows/ci.yml`에서 frontend/backend 기본 테스트 위치가 고정된다.
 - README만 보고 새 팀원이 두 서비스를 모두 로컬에서 띄울 수 있다.
 
 ## 스택 근거
@@ -24,16 +25,18 @@
 | M1-001 | client | Draft | - | [Flutter 클라이언트 골격 생성](M1-001-frontend-flutter-scaffold.md) |
 | M1-002 | api | Done | #7 | [FastAPI 백엔드 골격 생성](M1-002-backend-fastapi-scaffold.md) |
 | M1-003 | client / api | Draft | - | [프론트–백엔드 연동 스모크 테스트](M1-003-integration-smoke-test.md) |
+| M1-004 | infra / ci | Draft | - | [CI workflow와 테스트 디렉토리 기준 수립](M1-004-ci-test-workflow.md) |
 
 ## 진행 순서
 
 ```
 M1-001 (Flutter 골격)  ─┐
-                        ├─► M1-003 (연동 확인)
+                        ├─► M1-003 (연동 확인) ─► M1-004 (CI 게이트)
 M1-002 (FastAPI 골격)  ─┘
 ```
 
 M1-001과 M1-002는 병렬로 진행 가능하다. M1-003은 둘 다 끝나야 시작한다.
+M1-004는 최소한 M1-001~003의 테스트 명령과 디렉토리가 정해진 뒤 작성한다.
 
 ## 작성/관리 규칙
 

@@ -329,6 +329,18 @@ flutter analyze
 flutter run          # 시뮬레이터/실기기에서 빈 지도 확인
 ```
 
+## CI 테스트 위치
+
+M1-004에서 작성할 `.github/workflows/ci.yml`은 frontend 테스트를 `client/` 기준으로 실행한다.
+
+| 테스트 종류 | 디렉토리 | CI 명령 |
+|---|---|---|
+| unit/widget test | `client/test/` | `cd client && flutter test test/` |
+| app integration test | `client/integration_test/` | `cd client && flutter test integration_test/` |
+
+이 이슈에서는 최소한 `client/test/widget_test.dart`가 새 앱 셸에 맞게 통과하도록 정리한다.
+`client/integration_test/`는 M1-003에서 프론트–백엔드 연동 흐름을 테스트할 때 본격적으로 채운다.
+
 ## 알려진 문제 (Known Issues)
 
 ### `flutter upgrade` 실패 — Dart SDK rename 권한 오류

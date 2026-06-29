@@ -551,6 +551,21 @@ pytest
 - [ ] `tests/test_main.py`가 pytest fixture로 각 테스트의 BeforeEach / AfterEach 초기화를 수행한다.
 - [ ] `pytest` 통과
 
+## CI 테스트 위치
+
+M1-004에서 작성할 `.github/workflows/ci.yml`은 backend 테스트를 `api/` 기준으로 실행한다.
+초기에는 `api/tests/test_main.py`로 시작했더라도, CI 기준은 아래처럼 분리한다.
+
+| 테스트 종류 | 디렉토리 | CI 명령 |
+|---|---|---|
+| unit test | `api/tests/unit/` | `cd api && pytest tests/unit` |
+| integration test | `api/tests/integration/` | `cd api && pytest tests/integration` |
+
+분리 기준:
+
+- `unit`: domain, service, repository처럼 FastAPI 서버 없이 검증 가능한 로직
+- `integration`: FastAPI TestClient, dependency override, 실제 router 응답까지 포함하는 API 검증
+
 빠른 명령 확인:
 
 ```powershell
