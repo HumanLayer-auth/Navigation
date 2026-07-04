@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate an interactive HTML preview for output/navigation_map.json."""
+"""Generate an interactive HTML preview for the split navigation map dataset."""
 
 from __future__ import annotations
 
@@ -10,8 +10,9 @@ import sys
 from pathlib import Path
 
 
-DEFAULT_INPUT = Path("output/navigation_map.json")
-DEFAULT_OUTPUT = Path("output/preview.html")
+DEFAULT_DATASET_DIR = Path("thehyundai_indoor_navigation_dataset")
+DEFAULT_INPUT = DEFAULT_DATASET_DIR / "navigation_map.json"
+DEFAULT_OUTPUT = DEFAULT_DATASET_DIR / "preview.html"
 
 
 def read_json(path: Path) -> dict:

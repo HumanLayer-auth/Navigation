@@ -27,7 +27,7 @@ DEFAULT_URL = (
     "https://www.ehyundai.com/mobile/branch/DP/floorMap.do"
     "?branchCd=B00140000&floorCd=B0100100&lang=&poi-id=&floor-id=FL-soem999bnha10599"
 )
-DEFAULT_OUTPUT_DIR = Path("output/floor_assets")
+DEFAULT_OUTPUT_DIR = Path("thehyundai_indoor_navigation_dataset/floor_assets")
 
 RESOURCE_EXTENSIONS = {"png", "jpg", "jpeg", "webp", "svg", "json", "geojson"}
 RESOURCE_KEYWORDS = ("floor", "map", "poi", "route", "tile", "indoor")

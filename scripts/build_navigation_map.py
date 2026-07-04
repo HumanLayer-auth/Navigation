@@ -36,11 +36,12 @@ except ImportError:  # pragma: no cover - requirements already include shapely
     shape = None  # type: ignore[assignment]
 
 
-DEFAULT_FLOOR_ASSETS_DIR = Path("output/floor_assets")
-DEFAULT_BUILDING_GEOJSON = Path("output/thehyundai_building.geojson")
-DEFAULT_BUILDING_SUMMARY = Path("output/thehyundai_building_summary.json")
-DEFAULT_OUTPUT = Path("output/navigation_map.json")
-DEFAULT_DEBUG_DIR = Path("output/debug")
+DEFAULT_DATASET_DIR = Path("thehyundai_indoor_navigation_dataset")
+DEFAULT_FLOOR_ASSETS_DIR = DEFAULT_DATASET_DIR / "floor_assets"
+DEFAULT_BUILDING_GEOJSON = DEFAULT_DATASET_DIR / "thehyundai_building.geojson"
+DEFAULT_BUILDING_SUMMARY = DEFAULT_DATASET_DIR / "thehyundai_building_summary.json"
+DEFAULT_OUTPUT = DEFAULT_DATASET_DIR / "navigation_map.json"
+DEFAULT_DEBUG_DIR = DEFAULT_DATASET_DIR / "debug"
 DEFAULT_PARTS_DIR_NAME = "navigation_map_parts"
 
 LOW_CONFIDENCE_THRESHOLD = 0.65

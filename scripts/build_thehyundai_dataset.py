@@ -18,7 +18,7 @@ from extract_ehyundai_floor_assets import DEFAULT_URL, extract_ehyundai_floor_as
 from extract_thehyundai_building import extract_thehyundai_building
 
 
-DEFAULT_OUTPUT_DIR = Path("output")
+DEFAULT_OUTPUT_DIR = Path("thehyundai_indoor_navigation_dataset")
 DATASET_SUMMARY_NAME = "thehyundai_dataset_summary.json"
 
 

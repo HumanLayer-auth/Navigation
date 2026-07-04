@@ -26,7 +26,7 @@ except ImportError as exc:  # pragma: no cover - exercised before dependencies e
 DEFAULT_SHP_FILENAME = "AL_D010_11_20260609.shp"
 DEFAULT_TARGET_LAT = 37.5259
 DEFAULT_TARGET_LNG = 126.9284
-DEFAULT_OUTPUT_DIR = Path("output")
+DEFAULT_OUTPUT_DIR = Path("thehyundai_indoor_navigation_dataset")
 BUILDING_GEOJSON_NAME = "thehyundai_building.geojson"
 BUILDING_SUMMARY_NAME = "thehyundai_building_summary.json"
 

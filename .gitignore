@@ -35,3 +35,8 @@ htmlcov/
 Thumbs.db
 .vscode/
 !.vscode/extensions.json
+
+# Generated indoor navigation dataset
+output/
+thehyundai_indoor_navigation_dataset/*
+!thehyundai_indoor_navigation_dataset/README.md
