@@ -29,6 +29,7 @@ jobs:
       - run: flutter test tests/unit_test/
       - run: xvfb-run -a flutter test tests/integration_test/ -d linux
 
+
   backend:
     name: Backend (FastAPI)
     runs-on: ubuntu-latest
@@ -47,5 +48,6 @@ jobs:
       - run: pip install -r requirements.txt
       - run: pytest tests/unit
       - run: pytest tests/integration
+
 
       # TODO: add ruff / black --check once the project adopts them.
