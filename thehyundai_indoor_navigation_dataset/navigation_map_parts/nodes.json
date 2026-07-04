@@ -1,0 +1,7943 @@
+{
+  "nodes": [
+    {
+      "id": "ND-6OEzy_zfT8980",
+      "type": "elevator",
+      "name": "EV1",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 974.8671188689422,
+          "y": 1208.1496320910526
+        },
+        "local_m": {
+          "x": 22.671486605960343,
+          "y": 31.025392238439007
+        },
+        "projected": {
+          "x": 193663.9768022878,
+          "y": 547377.7796180897
+        },
+        "wgs84": {
+          "lat": 37.52587000976006,
+          "lng": 126.92832142214527
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ELEVATOR",
+        "object_ids": [
+          "OB-bVOj9CksJP6375"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-8ZJEwbAW11243",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 4,
+      "position": {
+        "source": {
+          "x": 974.7810243068936,
+          "y": 1330.7030114515228
+        },
+        "local_m": {
+          "x": 22.665720423357303,
+          "y": 42.45826601249693
+        },
+        "projected": {
+          "x": 193663.9710361052,
+          "y": 547366.3467443156
+        },
+        "wgs84": {
+          "lat": 37.52576699935965,
+          "lng": 126.92832145547231
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-np4qQSEjM2412",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1048.0974112126187,
+          "y": 1309.407967476604
+        },
+        "local_m": {
+          "x": 27.57608484864428,
+          "y": 40.471674120467966
+        },
+        "projected": {
+          "x": 193668.8814005305,
+          "y": 547368.3333362076
+        },
+        "wgs84": {
+          "lat": 37.525784932282676,
+          "lng": 126.92837698853575
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-efAr42-Cwy8127"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-s5Wxtj-y16044",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 1359.9014994415027,
+          "y": 1257.6944715912423
+        },
+        "local_m": {
+          "x": 48.459161158267996,
+          "y": 35.64737736130975
+        },
+        "projected": {
+          "x": 193689.76447684012,
+          "y": 547373.1576329668
+        },
+        "wgs84": {
+          "lat": 37.52582854230038,
+          "lng": 126.92861319411216
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-lypn2umrI8123"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-M9EBIIyAu8179",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 1443.688364146108,
+          "y": 1252.4223623014364
+        },
+        "local_m": {
+          "x": 54.0707857502008,
+          "y": 35.15554792055562
+        },
+        "projected": {
+          "x": 193695.37610143205,
+          "y": 547373.6494624076
+        },
+        "wgs84": {
+          "lat": 37.5258330120456,
+          "lng": 126.92867667336698
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-8Pt2zyMNg8851",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 917.706774021786,
+          "y": 1351.3737578213108
+        },
+        "local_m": {
+          "x": 18.843172968034825,
+          "y": 44.3866178481998
+        },
+        "projected": {
+          "x": 193660.1484886499,
+          "y": 547364.4183924799
+        },
+        "wgs84": {
+          "lat": 37.52574959862815,
+          "lng": 126.92827822823146
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-GlfJ_zwwc9683",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 4,
+      "position": {
+        "source": {
+          "x": 864.2420969477159,
+          "y": 1351.3737578213108
+        },
+        "local_m": {
+          "x": 15.262376649586272,
+          "y": 44.3866178481998
+        },
+        "projected": {
+          "x": 193656.56769233145,
+          "y": 547364.4183924799
+        },
+        "wgs84": {
+          "lat": 37.525749574021205,
+          "lng": 126.92823771925877
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-pYcsFRnrP0515",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 803.3137098764334,
+          "y": 1351.3737578213108
+        },
+        "local_m": {
+          "x": 11.181698413905535,
+          "y": 44.3866178481998
+        },
+        "projected": {
+          "x": 193652.48701409576,
+          "y": 547364.4183924799
+        },
+        "wgs84": {
+          "lat": 37.52574954596217,
+          "lng": 126.9281915552024
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-CedZwDOdIS7346"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-QCNbdWLZi7268",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 804.7258590708531,
+          "y": 1641.750362138769
+        },
+        "local_m": {
+          "x": 11.27627709488162,
+          "y": 71.47554090707617
+        },
+        "projected": {
+          "x": 193652.58159277673,
+          "y": 547337.329469421
+        },
+        "wgs84": {
+          "lat": 37.52550547501035,
+          "lng": 126.92819285909809
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-P4A9415eK9323"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-TnFpEXPsv2380",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 4,
+      "position": {
+        "source": {
+          "x": 862.0632196145251,
+          "y": 1641.7974538876374
+        },
+        "local_m": {
+          "x": 15.116446357662285,
+          "y": 71.47993404599588
+        },
+        "projected": {
+          "x": 193656.4217620395,
+          "y": 547337.325076282
+        },
+        "wgs84": {
+          "lat": 37.52550546183326,
+          "lng": 126.92823630221153
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-pcbOsXX3I4524",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 911.5605258213859,
+          "y": 1641.7974538876374
+        },
+        "local_m": {
+          "x": 18.431528044083013,
+          "y": 71.47993404599588
+        },
+        "projected": {
+          "x": 193659.73684372593,
+          "y": 547337.325076282
+        },
+        "wgs84": {
+          "lat": 37.52550548461504,
+          "lng": 126.92827380507514
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-Z5c_mrw3N89335"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-YbQ2RtGEt6052",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 950.3464050621574,
+          "y": 1641.7974538876374
+        },
+        "local_m": {
+          "x": 21.0292119953156,
+          "y": 71.47993404599588
+        },
+        "projected": {
+          "x": 193662.33452767716,
+          "y": 547337.325076282
+        },
+        "wgs84": {
+          "lat": 37.52550550245842,
+          "lng": 126.92830319216009
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-HqQVZXVvT9332",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 973.8534807105941,
+          "y": 1641.7974538876374
+        },
+        "local_m": {
+          "x": 22.603598198430582,
+          "y": 71.47993404599588
+        },
+        "projected": {
+          "x": 193663.90891388027,
+          "y": 547337.325076282
+        },
+        "wgs84": {
+          "lat": 37.52550551326925,
+          "lng": 126.92832100287993
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-NGJH1V2BUw9423"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-vT4MNbhZY1236",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 973.8534807105941,
+          "y": 1754.300541342874
+        },
+        "local_m": {
+          "x": 22.603598198430582,
+          "y": 81.9752268300837
+        },
+        "projected": {
+          "x": 193663.90891388027,
+          "y": 547326.829783498
+        },
+        "wgs84": {
+          "lat": 37.525410950521135,
+          "lng": 126.92832109335566
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-KBSvN8TDk5531",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 1506.5470763550534,
+          "y": 1722.3582873006023
+        },
+        "local_m": {
+          "x": 58.28074749650251,
+          "y": 78.9953680907336
+        },
+        "projected": {
+          "x": 193699.58606317834,
+          "y": 547329.8096422374
+        },
+        "wgs84": {
+          "lat": 37.52543804335756,
+          "lng": 126.92872467584147
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-J1ww7CrVS4131",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1563.5021393709212,
+          "y": 1518.252433023787
+        },
+        "local_m": {
+          "x": 62.095312385423085,
+          "y": 59.95455109596561
+        },
+        "projected": {
+          "x": 193703.40062806726,
+          "y": 547348.8504592321
+        },
+        "wgs84": {
+          "lat": 37.525609627443735,
+          "lng": 126.92876766610064
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-n10BJN9pK5619",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1563.5021393709212,
+          "y": 1494.3901288175725
+        },
+        "local_m": {
+          "x": 62.095312385423085,
+          "y": 57.72846224087674
+        },
+        "projected": {
+          "x": 193703.40062806726,
+          "y": 547351.0765480872
+        },
+        "wgs84": {
+          "lat": 37.525629684537925,
+          "lng": 126.92876764702986
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-nVtdyIBY2Oh9428"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-OBzjbJhAj6899",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 1563.5021393709212,
+          "y": 1362.0908015669197
+        },
+        "local_m": {
+          "x": 62.095312385423085,
+          "y": 45.386399404726376
+        },
+        "projected": {
+          "x": 193703.40062806726,
+          "y": 547363.4186109233
+        },
+        "wgs84": {
+          "lat": 37.52574088670917,
+          "lng": 126.9287675412958
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-rFbYpy0tgAx9428"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-zPIR1Xlr78364",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 1508.8488818820351,
+          "y": 1250.2389960883268
+        },
+        "local_m": {
+          "x": 58.434910903220214,
+          "y": 34.95186402014188
+        },
+        "projected": {
+          "x": 193699.74022658507,
+          "y": 547373.853146308
+        },
+        "wgs84": {
+          "lat": 37.525834877045185,
+          "lng": 126.92872604232228
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-WK2fgePom3964",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 1912.2895853327336,
+          "y": 1303.3190813273382
+        },
+        "local_m": {
+          "x": 85.4553487827411,
+          "y": 39.90364843947545
+        },
+        "projected": {
+          "x": 193726.7606644646,
+          "y": 547368.9013618886
+        },
+        "wgs84": {
+          "lat": 37.52579044546963,
+          "lng": 126.92903176280647
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-NN761rRg4B9859"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-DoBQb2bU_6172",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1960.593014119131,
+          "y": 1318.3930068855148
+        },
+        "local_m": {
+          "x": 88.69047053849674,
+          "y": 41.309878843610406
+        },
+        "projected": {
+          "x": 193729.99578622036,
+          "y": 547367.4951314845
+        },
+        "wgs84": {
+          "lat": 37.52577779729879,
+          "lng": 126.92906837323537
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-FofkBxzrM1212",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 4,
+      "position": {
+        "source": {
+          "x": 2060.7188409444975,
+          "y": 1345.8198403396027
+        },
+        "local_m": {
+          "x": 95.39639698749,
+          "y": 43.868498822422985
+        },
+        "projected": {
+          "x": 193736.70171266934,
+          "y": 547364.9365115056
+        },
+        "wgs84": {
+          "lat": 37.52575478963226,
+          "lng": 126.92914425813628
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-CY7QOEB_J4717",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 2078.03175308119,
+          "y": 1345.8198403396027
+        },
+        "local_m": {
+          "x": 96.55592913905998,
+          "y": 43.868498822422985
+        },
+        "projected": {
+          "x": 193737.8612448209,
+          "y": 547364.9365115056
+        },
+        "wgs84": {
+          "lat": 37.52575479750129,
+          "lng": 126.92915737573816
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-dwvi-_GRh5900",
+      "type": "elevator",
+      "name": "EV2",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 2078.03175308119,
+          "y": 1178.9944161990293
+        },
+        "local_m": {
+          "x": 96.55592913905998,
+          "y": 28.30553330930673
+        },
+        "projected": {
+          "x": 193737.8612448209,
+          "y": 547380.4994770187
+        },
+        "wgs84": {
+          "lat": 37.52589502005184,
+          "lng": 126.92915724313949
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ELEVATOR",
+        "object_ids": [
+          "OB-6oCzB-AELo6376"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-58LsWHSpG1772",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 2138.928582023897,
+          "y": 1345.8198403396027
+        },
+        "local_m": {
+          "x": 100.63449376933237,
+          "y": 43.868498822422985
+        },
+        "projected": {
+          "x": 193741.93980945117,
+          "y": 547364.9365115056
+        },
+        "wgs84": {
+          "lat": 37.52575482516848,
+          "lng": 126.92920351588785
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-EVk8jv5jc4867",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 2202.3363870947564,
+          "y": 1345.8198403396027
+        },
+        "local_m": {
+          "x": 104.88123100565907,
+          "y": 43.868498822422985
+        },
+        "projected": {
+          "x": 193746.1865466875,
+          "y": 547364.9365115056
+        },
+        "wgs84": {
+          "lat": 37.52575485395734,
+          "lng": 126.92925155854739
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-AiwXXZOAl87024"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-RZC7y1YgT7443",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 2234.9275947539772,
+          "y": 1313.2286326803821
+        },
+        "local_m": {
+          "x": 107.06402687737547,
+          "y": 40.82809989375693
+        },
+        "projected": {
+          "x": 193748.36934255922,
+          "y": 547367.9769104343
+        },
+        "wgs84": {
+          "lat": 37.52578226278686,
+          "lng": 126.92927622630715
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-yiJ6BrK7c8492",
+      "type": "dead_end",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 2274.0872513917266,
+          "y": 1274.0689760426328
+        },
+        "local_m": {
+          "x": 109.68674456677435,
+          "y": 37.17493738031875
+        },
+        "projected": {
+          "x": 193750.99206024862,
+          "y": 547371.6300729477
+        },
+        "wgs84": {
+          "lat": 37.525815195599236,
+          "lng": 126.9293058656439
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-uf152_fQdp9351"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-iLRFLACW-3909",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 2202.3363870947564,
+          "y": 1456.4905446565385
+        },
+        "local_m": {
+          "x": 104.88123100565907,
+          "y": 54.19285054201118
+        },
+        "projected": {
+          "x": 193746.1865466875,
+          "y": 547354.612159786
+        },
+        "wgs84": {
+          "lat": 37.52566183139289,
+          "lng": 126.9292516463949
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-HN0y71UqvLk9440"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-Gc0mcAvj_5011",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 2202.3363870947564,
+          "y": 1479.0834899143902
+        },
+        "local_m": {
+          "x": 104.88123100565907,
+          "y": 56.300522257512924
+        },
+        "projected": {
+          "x": 193746.1865466875,
+          "y": 547352.5044880706
+        },
+        "wgs84": {
+          "lat": 37.525642841238806,
+          "lng": 126.92925166432852
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-ZoroocslY7021"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-ttYxOC4dv6148",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 2202.3363870947564,
+          "y": 1652.4710344715795
+        },
+        "local_m": {
+          "x": 104.88123100565907,
+          "y": 72.47566097062449
+        },
+        "projected": {
+          "x": 193746.1865466875,
+          "y": 547336.3293493574
+        },
+        "wgs84": {
+          "lat": 37.52549710299204,
+          "lng": 126.92925180195805
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-5LBgeDifkg7059",
+      "type": "dead_end",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 2283.397991851314,
+          "y": 1729.96546041153
+        },
+        "local_m": {
+          "x": 110.31033133441781,
+          "y": 79.70503313961676
+        },
+        "projected": {
+          "x": 193751.61564701627,
+          "y": 547329.0999771884
+        },
+        "wgs84": {
+          "lat": 37.525432003012504,
+          "lng": 126.92931328174997
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-lDnK_A1iy3883",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 2184.329511269801,
+          "y": 1653.2326370102546
+        },
+        "local_m": {
+          "x": 103.67522064163067,
+          "y": 72.54671005744783
+        },
+        "projected": {
+          "x": 193744.98053632348,
+          "y": 547336.2583002707
+        },
+        "wgs84": {
+          "lat": 37.52549645466514,
+          "lng": 126.92923815920715
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-7WLbH7PmIw9344"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-Re4ooPmAA4876",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 2084.496250952165,
+          "y": 1652.4710344715795
+        },
+        "local_m": {
+          "x": 96.98888883214738,
+          "y": 72.47566097062449
+        },
+        "projected": {
+          "x": 193738.294204514,
+          "y": 547336.3293493574
+        },
+        "wgs84": {
+          "lat": 37.52549704947437,
+          "lng": 126.92916251745977
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-lgCDuHRT3l9345"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-vSJC7awfK7603",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 4,
+      "position": {
+        "source": {
+          "x": 2064.9263123308942,
+          "y": 1652.4710344715795
+        },
+        "local_m": {
+          "x": 95.67819234986568,
+          "y": 72.47566097062449
+        },
+        "projected": {
+          "x": 193736.98350803173,
+          "y": 547336.3293493574
+        },
+        "wgs84": {
+          "lat": 37.52549704058004,
+          "lng": 126.92914768981099
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-uTCudaGza9139",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 2030.6082637331492,
+          "y": 1652.4710344715795
+        },
+        "local_m": {
+          "x": 93.37974132013446,
+          "y": 72.47566097062449
+        },
+        "projected": {
+          "x": 193734.68505700197,
+          "y": 547336.3293493574
+        },
+        "wgs84": {
+          "lat": 37.525497024978385,
+          "lng": 126.92912168789141
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-XdYNzc8jt7260",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1675.1415821411251,
+          "y": 1715.315762508048
+        },
+        "local_m": {
+          "x": 69.57236317002557,
+          "y": 78.3383784799688
+        },
+        "projected": {
+          "x": 193710.8776788519,
+          "y": 547330.4666318481
+        },
+        "wgs84": {
+          "lat": 37.52544403986474,
+          "lng": 126.92885240992177
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-vIl-j5zwtA9339"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-HXaBphHsA1916",
+      "type": "escalator",
+      "name": "ES3-UP(TO2F)",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 2074.8106535950974,
+          "y": 1580.8508237392339
+        },
+        "local_m": {
+          "x": 96.34019602680014,
+          "y": 65.79428805992
+        },
+        "projected": {
+          "x": 193737.64551170866,
+          "y": 547343.0107222681
+        },
+        "wgs84": {
+          "lat": 37.525557244344846,
+          "lng": 126.92915512199963
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ESCALATOR_UP",
+        "object_ids": [
+          "OB-2KnJnYrMy7242"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-Wpb0-uW9D3316",
+      "type": "escalator",
+      "name": "ES3-UP(FRB1)",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 2053.9530203833706,
+          "y": 1580.8508237392339
+        },
+        "local_m": {
+          "x": 94.94325620964516,
+          "y": 65.79428805992
+        },
+        "projected": {
+          "x": 193736.24857189148,
+          "y": 547343.0107222681
+        },
+        "wgs84": {
+          "lat": 37.52555723486422,
+          "lng": 126.92913931868448
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ESCALATOR_UP",
+        "object_ids": [
+          "OB-wkmcgR1Ay37245"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-2Nd0fUp-J5580",
+      "type": "escalator",
+      "name": "ES3-DN(FR2F)",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 2052.0172052812068,
+          "y": 1404.4191423969398
+        },
+        "local_m": {
+          "x": 94.81360500869575,
+          "y": 49.3351650797349
+        },
+        "projected": {
+          "x": 193736.11892069055,
+          "y": 547359.4698452484
+        },
+        "wgs84": {
+          "lat": 37.52570553093166,
+          "lng": 126.9291377116933
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ESCALATOR_DOWN",
+        "object_ids": [
+          "OB-VXC_dpE8PT7245"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-UGoSau5nz6732",
+      "type": "escalator",
+      "name": "ES3-DN(TOB1)",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 2071.783406380628,
+          "y": 1404.4191423969398
+        },
+        "local_m": {
+          "x": 96.13744616887828,
+          "y": 49.3351650797349
+        },
+        "projected": {
+          "x": 193737.44276185072,
+          "y": 547359.4698452484
+        },
+        "wgs84": {
+          "lat": 37.52570553991648,
+          "lng": 126.92915268808687
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ESCALATOR_DOWN",
+        "object_ids": [
+          "OB-YiOrj4JEDb7244"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-DFWgcx5bA9876",
+      "type": "escalator",
+      "name": "ES2-UP(FRB1)",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1474.9235841428042,
+          "y": 1401.0653917798868
+        },
+        "local_m": {
+          "x": 56.16276435908957,
+          "y": 49.02229726919777
+        },
+        "projected": {
+          "x": 193697.46808004094,
+          "y": 547359.7827130589
+        },
+        "wgs84": {
+          "lat": 37.525708086717664,
+          "lng": 126.92870045851947
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ESCALATOR_UP",
+        "object_ids": [
+          "OB-QZm_8kWvPg7248"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-k5XlGr56f2388",
+      "type": "escalator",
+      "name": "ES2-UP(TO2F)",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1492.11278580554,
+          "y": 1401.0653917798868
+        },
+        "local_m": {
+          "x": 57.31401100265801,
+          "y": 49.02229726919777
+        },
+        "projected": {
+          "x": 193698.6193266845,
+          "y": 547359.7827130589
+        },
+        "wgs84": {
+          "lat": 37.525708094579414,
+          "lng": 126.92871348238047
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ESCALATOR_UP",
+        "object_ids": [
+          "OB-jIqLyGY6S57247"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-knl6QTsvh7604",
+      "type": "escalator",
+      "name": "ES2-1-DN(FR2F)",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1520.8546965086998,
+          "y": 1401.2285764213325
+        },
+        "local_m": {
+          "x": 59.23900024159923,
+          "y": 49.037520589984595
+        },
+        "projected": {
+          "x": 193700.54431592344,
+          "y": 547359.7674897381
+        },
+        "wgs84": {
+          "lat": 37.52570797055944,
+          "lng": 126.9287352595927
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ESCALATOR_DOWN",
+        "object_ids": [
+          "OB-eNrZ0UphBZ7250"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-k4q-72JBh9364",
+      "type": "escalator",
+      "name": "ES2-1-DN(TOB1)",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1537.9354418503149,
+          "y": 1401.2285764213325
+        },
+        "local_m": {
+          "x": 60.38298302393003,
+          "y": 49.037520589984595
+        },
+        "projected": {
+          "x": 193701.6882987058,
+          "y": 547359.7674897381
+        },
+        "wgs84": {
+          "lat": 37.52570797836778,
+          "lng": 126.92874820127884
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ESCALATOR_DOWN",
+        "object_ids": [
+          "OB-u8QyIbqWkX7249"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-HxBpFmmz-2675",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1563.5021393709212,
+          "y": 1616.0071798595936
+        },
+        "local_m": {
+          "x": 62.095312385423085,
+          "y": 69.07398694686516
+        },
+        "projected": {
+          "x": 193703.40062806726,
+          "y": 547339.7310233812
+        },
+        "wgs84": {
+          "lat": 37.52552746118832,
+          "lng": 126.9287677442261
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-ZMwYSLP70W79429"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-ahEBpWpgh3396",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 4,
+      "position": {
+        "source": {
+          "x": 1563.5021393709212,
+          "y": 1598.7706434942538
+        },
+        "local_m": {
+          "x": 62.095312385423085,
+          "y": 67.46600889195359
+        },
+        "projected": {
+          "x": 193703.40062806726,
+          "y": 547341.3390014361
+        },
+        "wgs84": {
+          "lat": 37.525541949095086,
+          "lng": 126.92876773045072
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-_YE0dEdnd8675",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 4,
+      "position": {
+        "source": {
+          "x": 1529.323629488171,
+          "y": 1598.670643494254
+        },
+        "local_m": {
+          "x": 59.80620696001006,
+          "y": 67.45667999883476
+        },
+        "projected": {
+          "x": 193701.11152264185,
+          "y": 547341.3483303293
+        },
+        "wgs84": {
+          "lat": 37.52554201752701,
+          "lng": 126.92874183416082
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-xAMaYWopJ0051",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 4,
+      "position": {
+        "source": {
+          "x": 1483.7310667504782,
+          "y": 1598.670643494254
+        },
+        "local_m": {
+          "x": 56.75264543613538,
+          "y": 67.45667999883476
+        },
+        "projected": {
+          "x": 193698.05796111797,
+          "y": 547341.3483303293
+        },
+        "wgs84": {
+          "lat": 37.525541996679735,
+          "lng": 126.9287072898059
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-p7mzWvDi61268",
+      "type": "escalator",
+      "name": "ES2-DN(TOB1)",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 1492.0931665052444,
+          "y": 1576.9870618610394
+        },
+        "local_m": {
+          "x": 57.312697000178,
+          "y": 65.43384184393697
+        },
+        "projected": {
+          "x": 193698.61801268204,
+          "y": 547343.3711684841
+        },
+        "wgs84": {
+          "lat": 37.52556022630659,
+          "lng": 126.92871360821901
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ESCALATOR_DOWN",
+        "object_ids": [
+          "OB-xn9UkI7Xs97247"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-XNAu6NkFC2236",
+      "type": "escalator",
+      "name": "ES2-DN(FR2F)",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 1473.9051687853257,
+          "y": 1576.9870618610394
+        },
+        "local_m": {
+          "x": 56.09455599868634,
+          "y": 65.43384184393697
+        },
+        "projected": {
+          "x": 193697.39987168054,
+          "y": 547343.3711684841
+        },
+        "wgs84": {
+          "lat": 37.52556021798801,
+          "lng": 126.92869982762052
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ESCALATOR_DOWN",
+        "object_ids": [
+          "OB-iYCTERNtjv7248"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-amnSSqfMq7059",
+      "type": "escalator",
+      "name": "ES2-1-UP(TO2F)",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 1538.6021785268072,
+          "y": 1576.3997251388168
+        },
+        "local_m": {
+          "x": 60.42763770749336,
+          "y": 65.37904982887316
+        },
+        "projected": {
+          "x": 193701.73295338935,
+          "y": 547343.4259604992
+        },
+        "wgs84": {
+          "lat": 37.5255607412478,
+          "lng": 126.92874884648393
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ESCALATOR_UP",
+        "object_ids": [
+          "OB-zzUzIzb1787249"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-XIMqJJoY18387",
+      "type": "escalator",
+      "name": "ES2-1-UP(FRB1)",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 1519.0648713445953,
+          "y": 1576.3997251388168
+        },
+        "local_m": {
+          "x": 59.119126715581054,
+          "y": 65.37904982887316
+        },
+        "projected": {
+          "x": 193700.42444239743,
+          "y": 547343.4259604992
+        },
+        "wgs84": {
+          "lat": 37.52556073231645,
+          "lng": 126.9287340435467
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ESCALATOR_UP",
+        "object_ids": [
+          "OB-MwI_0znU6x7249"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-ha9dxgWqR0843",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 4,
+      "position": {
+        "source": {
+          "x": 1445.149660835708,
+          "y": 1598.7845979143021
+        },
+        "local_m": {
+          "x": 54.168656084272605,
+          "y": 67.46731068488525
+        },
+        "projected": {
+          "x": 193695.47397176613,
+          "y": 547341.3376996432
+        },
+        "wgs84": {
+          "lat": 37.52554188324781,
+          "lng": 126.92867805772195
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-s4suRKntD8867",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 1445.149660835708,
+          "y": 1577.0082103864825
+        },
+        "local_m": {
+          "x": 54.168656084272605,
+          "y": 65.43581476727176
+        },
+        "projected": {
+          "x": 193695.47397176613,
+          "y": 547343.3691955608
+        },
+        "wgs84": {
+          "lat": 37.52556018705687,
+          "lng": 126.92867804029639
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-zFpXIZXDO9891",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1445.149660835708,
+          "y": 1553.816112308617
+        },
+        "local_m": {
+          "x": 54.168656084272605,
+          "y": 63.272248725572446
+        },
+        "projected": {
+          "x": 193695.47397176613,
+          "y": 547345.5327616025
+        },
+        "wgs84": {
+          "lat": 37.525579680819696,
+          "lng": 126.92867802173795
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-VdYOQp-MM5333"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-pLiGzopE_1163",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1445.149660835708,
+          "y": 1506.0151707578236
+        },
+        "local_m": {
+          "x": 54.168656084272605,
+          "y": 58.81294997850243
+        },
+        "projected": {
+          "x": 193695.47397176613,
+          "y": 547349.9920603496
+        },
+        "wgs84": {
+          "lat": 37.525619859168785,
+          "lng": 126.92867798348736
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-pNr8RieUQA5337"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-2NzytmibA2290",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1445.149660835708,
+          "y": 1437.0159557655766
+        },
+        "local_m": {
+          "x": 54.168656084272605,
+          "y": 52.37608695904094
+        },
+        "projected": {
+          "x": 193695.47397176613,
+          "y": 547356.428923369
+        },
+        "wgs84": {
+          "lat": 37.525677855401376,
+          "lng": 126.92867792827364
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-zUlg5Kl7uz5338"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-h6EtLVcbD4908",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 4,
+      "position": {
+        "source": {
+          "x": 1445.149660835708,
+          "y": 1387.59888264161
+        },
+        "local_m": {
+          "x": 54.168656084272605,
+          "y": 47.76602102484987
+        },
+        "projected": {
+          "x": 193695.47397176613,
+          "y": 547361.0389893032
+        },
+        "wgs84": {
+          "lat": 37.52571939216441,
+          "lng": 126.9286778887296
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-klytMZIr76444",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1445.149660835708,
+          "y": 1351.3094017951855
+        },
+        "local_m": {
+          "x": 54.168656084272605,
+          "y": 44.38061414330704
+        },
+        "projected": {
+          "x": 193695.47397176613,
+          "y": 547364.4243961847
+        },
+        "wgs84": {
+          "lat": 37.525749894730865,
+          "lng": 126.92867785969034
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-kO6RMT9w39043",
+      "type": "escalator",
+      "name": "ES1-DN(FR2F)",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 4,
+      "position": {
+        "source": {
+          "x": 853.4540612482759,
+          "y": 1402.8314075881945
+        },
+        "local_m": {
+          "x": 14.539848045096086,
+          "y": 49.18704699641651
+        },
+        "projected": {
+          "x": 193655.84516372695,
+          "y": 547359.6179633316
+        },
+        "wgs84": {
+          "lat": 37.52570631711656,
+          "lng": 126.92822958684472
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ESCALATOR_DOWN",
+        "object_ids": [
+          "OB-7qNdmEU_IU7247"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-vNkzxL7bF9707",
+      "type": "escalator",
+      "name": "ES1-DN(TOB1)",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 873.4257467264524,
+          "y": 1402.8314075881945
+        },
+        "local_m": {
+          "x": 15.87745151989853,
+          "y": 49.18704699641651
+        },
+        "projected": {
+          "x": 193657.18276720174,
+          "y": 547359.6179633316
+        },
+        "wgs84": {
+          "lat": 37.52570632631112,
+          "lng": 126.92824471892888
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ESCALATOR_DOWN",
+        "object_ids": [
+          "OB-HVyUxifiWu7246"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-dxqdNpg1c4213",
+      "type": "escalator",
+      "name": "ES1-UP(TO2F)",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 872.9785572261594,
+          "y": 1584.5967577241126
+        },
+        "local_m": {
+          "x": 15.847501006701199,
+          "y": 66.14374223767145
+        },
+        "projected": {
+          "x": 193657.15281668855,
+          "y": 547342.6612680904
+        },
+        "wgs84": {
+          "lat": 37.52555354602715,
+          "lng": 126.9282445264378
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ESCALATOR_UP",
+        "object_ids": [
+          "OB-HOgrlH_Hev7246"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-5_0BwXc265244",
+      "type": "escalator",
+      "name": "ES1-UP(FRB1)",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 4,
+      "position": {
+        "source": {
+          "x": 853.1977891707875,
+          "y": 1584.7965168980083
+        },
+        "local_m": {
+          "x": 14.522684224760642,
+          "y": 66.16237755749924
+        },
+        "projected": {
+          "x": 193655.8279999066,
+          "y": 547342.6426327706
+        },
+        "wgs84": {
+          "lat": 37.52555336901599,
+          "lng": 126.92822953919877
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ESCALATOR_UP",
+        "object_ids": [
+          "OB-Hh1hhCzSlH7246"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-pMJU3A7D86715",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 4,
+      "position": {
+        "source": {
+          "x": 1185.9229433262826,
+          "y": 1339.538646928641
+        },
+        "local_m": {
+          "x": 36.80694875711023,
+          "y": 43.282533002527096
+        },
+        "projected": {
+          "x": 193678.11226443897,
+          "y": 547365.5224773255
+        },
+        "wgs84": {
+          "lat": 37.52575966968494,
+          "lng": 126.92848144004124
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-dPqNERNT61659",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1185.9229433262826,
+          "y": 1487.893182361484
+        },
+        "local_m": {
+          "x": 36.80694875711023,
+          "y": 57.12236905000033
+        },
+        "projected": {
+          "x": 193678.11226443897,
+          "y": 547351.682641278
+        },
+        "wgs84": {
+          "lat": 37.52563497255562,
+          "lng": 126.92848155908293
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-8_CpYNTBLG5339"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-AfHsn-cll3891",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 4,
+      "position": {
+        "source": {
+          "x": 1185.9229433262826,
+          "y": 1410.0549419521587
+        },
+        "local_m": {
+          "x": 36.80694875711023,
+          "y": 49.86092279663301
+        },
+        "projected": {
+          "x": 193678.11226443897,
+          "y": 547358.9440875314
+        },
+        "wgs84": {
+          "lat": 37.525700398295044,
+          "lng": 126.92848149662454
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-CWq1vjgVv5115",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1185.9229433262826,
+          "y": 1442.5561570620555
+        },
+        "local_m": {
+          "x": 36.80694875711023,
+          "y": 52.892926416557735
+        },
+        "projected": {
+          "x": 193678.11226443897,
+          "y": 547355.9120839115
+        },
+        "wgs84": {
+          "lat": 37.52567307989714,
+          "lng": 126.92848152270395
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-W3gSdGSkR_5339"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND--mEEYOk4l1195",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1234.1149786315523,
+          "y": 1404.6778233953619
+        },
+        "local_m": {
+          "x": 40.034609935360294,
+          "y": 49.35929715359642
+        },
+        "projected": {
+          "x": 193681.3399256172,
+          "y": 547359.4457131745
+        },
+        "wgs84": {
+          "lat": 37.525704940055036,
+          "lng": 126.92851800629998
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-bkGkpNmj-3635",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1318.2087576289257,
+          "y": 1393.9864495310505
+        },
+        "local_m": {
+          "x": 45.666790109590934,
+          "y": 48.36191031285983
+        },
+        "projected": {
+          "x": 193686.97210579144,
+          "y": 547360.4431000152
+        },
+        "wgs84": {
+          "lat": 37.52571396507173,
+          "lng": 126.92858171364384
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB--3id50z6yB5338",
+          "OB-KGwBEwc_t_7348"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-JIOQjAF9a0523",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1119.1401346652447,
+          "y": 1420.901866416194
+        },
+        "local_m": {
+          "x": 32.334170682386244,
+          "y": 50.872820786563565
+        },
+        "projected": {
+          "x": 193673.63948636423,
+          "y": 547357.9321895415
+        },
+        "wgs84": {
+          "lat": 37.52569125042745,
+          "lng": 126.92843090554862
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-Z2sDCqsob3715",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1069.4488694471586,
+          "y": 1438.8768829541673
+        },
+        "local_m": {
+          "x": 29.00609859274353,
+          "y": 52.5496908674839
+        },
+        "projected": {
+          "x": 193670.3114142746,
+          "y": 547356.2553194605
+        },
+        "wgs84": {
+          "lat": 37.525676118981906,
+          "lng": 126.92839327007484
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-_8aSyIkvJN9419"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-Ocw6ypX_T5019",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 4,
+      "position": {
+        "source": {
+          "x": 1026.0194546535934,
+          "y": 1454.9125487129504
+        },
+        "local_m": {
+          "x": 26.097413885086418,
+          "y": 54.0456409870143
+        },
+        "projected": {
+          "x": 193667.40272956694,
+          "y": 547354.7593693411
+        },
+        "wgs84": {
+          "lat": 37.52566262049387,
+          "lng": 126.92836037751385
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-QFYbS1nGa5315",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 4,
+      "position": {
+        "source": {
+          "x": 1185.9229433262826,
+          "y": 1567.382708668977
+        },
+        "local_m": {
+          "x": 36.80694875711023,
+          "y": 64.53786199989412
+        },
+        "projected": {
+          "x": 193678.11226443897,
+          "y": 547344.2671483281
+        },
+        "wgs84": {
+          "lat": 37.525568158852394,
+          "lng": 126.9284816228661
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-gq38k9H1F4579",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1025.7487649361933,
+          "y": 1483.1104446110116
+        },
+        "local_m": {
+          "x": 26.079284443433473,
+          "y": 56.67619255710463
+        },
+        "projected": {
+          "x": 193667.38460012528,
+          "y": 547352.128817771
+        },
+        "wgs84": {
+          "lat": 37.52563891906045,
+          "lng": 126.92836019508336
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-lGJ_K7EBTI9422"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-HDZ_0vEJT6091",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1025.7487649361933,
+          "y": 1504.5870802702784
+        },
+        "local_m": {
+          "x": 26.079284443433473,
+          "y": 58.6797249432791
+        },
+        "projected": {
+          "x": 193667.38460012528,
+          "y": 547350.1252853848
+        },
+        "wgs84": {
+          "lat": 37.52562086720358,
+          "lng": 126.92836021234568
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-RC-uKQe0do6915",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1026.0194546535934,
+          "y": 1515.8131093821817
+        },
+        "local_m": {
+          "x": 26.097413885086418,
+          "y": 59.72698920061779
+        },
+        "projected": {
+          "x": 193667.40272956694,
+          "y": 547349.0780211275
+        },
+        "wgs84": {
+          "lat": 37.52561143146129,
+          "lng": 126.92836042646394
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-NNWpujXXS-9418"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-Fp41GwLML9243",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1185.9229433262826,
+          "y": 1517.3894051262746
+        },
+        "local_m": {
+          "x": 36.80694875711023,
+          "y": 59.87404014582095
+        },
+        "projected": {
+          "x": 193678.11226443897,
+          "y": 547348.9309701823
+        },
+        "wgs84": {
+          "lat": 37.52561017995767,
+          "lng": 126.92848158275102
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-8dq6g3a7d9418"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-_wJfSHEatf0043",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1185.9229433262826,
+          "y": 1536.7284854554891
+        },
+        "local_m": {
+          "x": 36.80694875711023,
+          "y": 61.678162279898906
+        },
+        "projected": {
+          "x": 193678.11226443897,
+          "y": 547347.1268480482
+        },
+        "wgs84": {
+          "lat": 37.52559392479005,
+          "lng": 126.92848159826886
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-SoTjbj3R3r5339"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-XJziATUz07428",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1510.061101051261,
+          "y": 1103.7517960793307
+        },
+        "local_m": {
+          "x": 58.516099272361636,
+          "y": 21.28622969852946
+        },
+        "projected": {
+          "x": 193699.8214149542,
+          "y": 547387.5187806295
+        },
+        "wgs84": {
+          "lat": 37.52595800516512,
+          "lng": 126.92872684365346
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-B2dugn7h08876",
+      "type": "dead_end",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1388.2094461421675,
+          "y": 1103.7517960793307
+        },
+        "local_m": {
+          "x": 50.355085661620876,
+          "y": 21.28622969852946
+        },
+        "projected": {
+          "x": 193691.66040134348,
+          "y": 547387.5187806295
+        },
+        "wgs84": {
+          "lat": 37.52595794941347,
+          "lng": 126.92863451916168
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-2C69n7B556581",
+          "OB-W-aKOu0O-4453"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-z3ngosK-18332",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 1879.9396511498796,
+          "y": 1384.5022564832475
+        },
+        "local_m": {
+          "x": 83.28871220017027,
+          "y": 47.47714008024636
+        },
+        "projected": {
+          "x": 193724.59402788203,
+          "y": 547361.3278702478
+        },
+        "wgs84": {
+          "lat": 37.52572219346591,
+          "lng": 126.9290073166453
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-_7BU71r7l0244",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1925.2564213362152,
+          "y": 1442.9494614521923
+        },
+        "local_m": {
+          "x": 86.32380252012862,
+          "y": 52.92961736274528
+        },
+        "projected": {
+          "x": 193727.629118202,
+          "y": 547355.8753929653
+        },
+        "wgs84": {
+          "lat": 37.52567308719767,
+          "lng": 126.92904169865335
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-PJDoXxjPs1444",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 1933.2067318952213,
+          "y": 1484.6761695267269
+        },
+        "local_m": {
+          "x": 86.85627450608622,
+          "y": 56.82225736102666
+        },
+        "projected": {
+          "x": 193728.16159018793,
+          "y": 547351.982752967
+        },
+        "wgs84": {
+          "lat": 37.525638018071504,
+          "lng": 126.92904775563416
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-APwvbDrci3554",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 2025.4337611740289,
+          "y": 1484.6761695267269
+        },
+        "local_m": {
+          "x": 93.03317905271759,
+          "y": 56.82225736102666
+        },
+        "projected": {
+          "x": 193734.33849473458,
+          "y": 547351.982752967
+        },
+        "wgs84": {
+          "lat": 37.52563806003063,
+          "lng": 126.92911763385884
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-sdV7EVwcG4612",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 2025.4337611740289,
+          "y": 1404.0601677281893
+        },
+        "local_m": {
+          "x": 93.03317905271759,
+          "y": 49.30167671656347
+        },
+        "projected": {
+          "x": 193734.33849473458,
+          "y": 547359.5033336115
+        },
+        "wgs84": {
+          "lat": 37.525705820575695,
+          "lng": 126.92911756974685
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-AciBpxUB62684",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 1884.1954056255827,
+          "y": 1607.8241417590993
+        },
+        "local_m": {
+          "x": 83.5737413220652,
+          "y": 68.31060006859656
+        },
+        "projected": {
+          "x": 193724.8790570039,
+          "y": 547340.4944102594
+        },
+        "wgs84": {
+          "lat": 37.525534485614344,
+          "lng": 126.92901071900306
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-nCJCCVGxA3692",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1923.7007033968657,
+          "y": 1534.7514344152914
+        },
+        "local_m": {
+          "x": 86.21960832361175,
+          "y": 61.493725301454056
+        },
+        "projected": {
+          "x": 193727.52492400547,
+          "y": 547347.3112850266
+        },
+        "wgs84": {
+          "lat": 37.5255959237474,
+          "lng": 126.9290405930095
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-dt9ogFZtb9907",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 2025.4337611740289,
+          "y": 1581.4415040888007
+        },
+        "local_m": {
+          "x": 93.03317905271759,
+          "y": 65.84939199840505
+        },
+        "projected": {
+          "x": 193734.33849473458,
+          "y": 547342.9556183297
+        },
+        "wgs84": {
+          "lat": 37.52555672541033,
+          "lng": 126.9291177108137
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-3GD4Z-gGj7627",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 2184.289289461113,
+          "y": 1580.8508237392339
+        },
+        "local_m": {
+          "x": 103.67252678631623,
+          "y": 65.79428805992
+        },
+        "projected": {
+          "x": 193744.97784246816,
+          "y": 547343.0107222681
+        },
+        "wgs84": {
+          "lat": 37.525557294072605,
+          "lng": 126.92923807126672
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-HN0y71UqvLk9440"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-zDrGMyfX08731",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 2202.3492402758357,
+          "y": 1580.8508237392339
+        },
+        "local_m": {
+          "x": 104.88209184735882,
+          "y": 65.79428805992
+        },
+        "projected": {
+          "x": 193746.1874075292,
+          "y": 547343.0107222681
+        },
+        "wgs84": {
+          "lat": 37.52555730227025,
+          "lng": 126.92925175484685
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-KjeW7UMz08930",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 1506.5497484461118,
+          "y": 1669.4653088041923
+        },
+        "local_m": {
+          "x": 58.28092645977973,
+          "y": 74.06103865943545
+        },
+        "projected": {
+          "x": 193699.58624214164,
+          "y": 547334.7439716686
+        },
+        "wgs84": {
+          "lat": 37.525482501742616,
+          "lng": 126.92872463556866
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-kO7t5k2iy2184"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-714c8z7wb5954",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 4,
+      "position": {
+        "source": {
+          "x": 894.5310677006332,
+          "y": 1402.8314075881945
+        },
+        "local_m": {
+          "x": 17.29098022295834,
+          "y": 49.18704699641651
+        },
+        "projected": {
+          "x": 193658.5962959048,
+          "y": 547359.6179633316
+        },
+        "wgs84": {
+          "lat": 37.52570633602548,
+          "lng": 126.92826070994248
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-oKqhWfdTk6658",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 894.5310677006332,
+          "y": 1486.2657509285134
+        },
+        "local_m": {
+          "x": 17.29098022295834,
+          "y": 56.9705477110362
+        },
+        "projected": {
+          "x": 193658.5962959048,
+          "y": 547351.8344626171
+        },
+        "wgs84": {
+          "lat": 37.52563620656793,
+          "lng": 126.92826077709793
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-ET3VGYG8D49423"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-RGNGncH2k8860",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 5,
+      "position": {
+        "source": {
+          "x": 894.1488412314502,
+          "y": 1583.8807059402322
+        },
+        "local_m": {
+          "x": 17.265380608248837,
+          "y": 66.07694253207772
+        },
+        "projected": {
+          "x": 193658.5706962901,
+          "y": 547342.728067796
+        },
+        "wgs84": {
+          "lat": 37.52555415763775,
+          "lng": 126.92826056606333
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-vIuNH30UO2042",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 975.2649994024649,
+          "y": 1527.5015987423762
+        },
+        "local_m": {
+          "x": 22.698134651503516,
+          "y": 60.817395880236674
+        },
+        "projected": {
+          "x": 193664.00345033334,
+          "y": 547347.9876144478
+        },
+        "wgs84": {
+          "lat": 37.52560158354833,
+          "lng": 126.92832198043554
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-XqklFUK425843",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 975.4025908584479,
+          "y": 1489.4712370606092
+        },
+        "local_m": {
+          "x": 22.707349838165,
+          "y": 57.26958408623847
+        },
+        "projected": {
+          "x": 193664.01266552001,
+          "y": 547351.5354262418
+        },
+        "wgs84": {
+          "lat": 37.525633549449125,
+          "lng": 126.92832205410123
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-lGJ_K7EBTI9422"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-z8BzuiZdf9258",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 957.3991013795821,
+          "y": 1443.7482061586638
+        },
+        "local_m": {
+          "x": 21.501566274638805,
+          "y": 53.00413140270436
+        },
+        "projected": {
+          "x": 193662.8068819565,
+          "y": 547355.8008789254
+        },
+        "wgs84": {
+          "lat": 37.52567197296218,
+          "lng": 126.92830837650935
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-FFEwRryWG5d9436"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-u5zolO_VO0483",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 975.396354079414,
+          "y": 1455.087159158255
+        },
+        "local_m": {
+          "x": 22.7069321299392,
+          "y": 54.061930208831086
+        },
+        "projected": {
+          "x": 193664.0122478118,
+          "y": 547354.7430801193
+        },
+        "wgs84": {
+          "lat": 37.5256624504557,
+          "lng": 126.92832202172406
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-PHj1hhyDg5740",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 4,
+      "position": {
+        "source": {
+          "x": 1013.189166579116,
+          "y": 1527.5049360338726
+        },
+        "local_m": {
+          "x": 25.23810544414935,
+          "y": 60.817707212593426
+        },
+        "projected": {
+          "x": 193666.543421126,
+          "y": 547347.9873031154
+        },
+        "wgs84": {
+          "lat": 37.52560159817856,
+          "lng": 126.92835071466247
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-KHcP8FR944500",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1067.1020462522647,
+          "y": 1541.236512561909
+        },
+        "local_m": {
+          "x": 28.848920128078284,
+          "y": 62.098711310424896
+        },
+        "projected": {
+          "x": 193670.15423580993,
+          "y": 547346.7062990176
+        },
+        "wgs84": {
+          "lat": 37.525590081086364,
+          "lng": 126.92839157417978
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-NNWpujXXS-9418",
+          "OB-tabFht2QAp9424"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-i7sLiauPs8278",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1153.8209481966874,
+          "y": 1562.307773492957
+        },
+        "local_m": {
+          "x": 34.656917890643854,
+          "y": 64.06442672147308
+        },
+        "projected": {
+          "x": 193675.9622335725,
+          "y": 547344.7405836066
+        },
+        "wgs84": {
+          "lat": 37.525572409780175,
+          "lng": 126.92845729589801
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-8dq6g3a7d9418",
+          "OB-NZz0ihtZMh9425"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-eVkG7veBm0890",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1229.4627691792177,
+          "y": 1575.1711066074997
+        },
+        "local_m": {
+          "x": 39.72302824458355,
+          "y": 65.2644333192484
+        },
+        "projected": {
+          "x": 193681.02834392645,
+          "y": 547343.5405770089
+        },
+        "wgs84": {
+          "lat": 37.52556163240572,
+          "lng": 126.92851461817112
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-SoTjbj3R3r5339",
+          "OB-MBSge8kIoB7347"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-xvPkIDw1w1994",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1274.2988229131488,
+          "y": 1581.255607546399
+        },
+        "local_m": {
+          "x": 42.725922583995676,
+          "y": 65.83204990865279
+        },
+        "projected": {
+          "x": 193684.03123826586,
+          "y": 547342.9729604194
+        },
+        "wgs84": {
+          "lat": 37.5255565387285,
+          "lng": 126.92854859422435
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-xm-zsHxUm2746",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1313.1259209920167,
+          "y": 1585.5778811272166
+        },
+        "local_m": {
+          "x": 45.326367166579345,
+          "y": 66.23527019131089
+        },
+        "projected": {
+          "x": 193686.63168284844,
+          "y": 547342.5697401367
+        },
+        "wgs84": {
+          "lat": 37.52555292350156,
+          "lng": 126.92857801602355
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-h8dL3_xhme5337"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-LIhhbGrQE1554",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1358.3204367587455,
+          "y": 1589.8586167408325
+        },
+        "local_m": {
+          "x": 48.35326949776456,
+          "y": 66.63461544140499
+        },
+        "projected": {
+          "x": 193689.65858517963,
+          "y": 547342.1703948866
+        },
+        "wgs84": {
+          "lat": 37.525549346097584,
+          "lng": 126.92861226222168
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-8uo9t_LZg3858",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1378.1962131562614,
+          "y": 1591.4811290998134
+        },
+        "local_m": {
+          "x": 49.6844494626586,
+          "y": 66.7859778852142
+        },
+        "projected": {
+          "x": 193690.9897651445,
+          "y": 547342.0190324428
+        },
+        "wgs84": {
+          "lat": 37.525547991421256,
+          "lng": 126.9286273229056
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-sLRY3D1Yj4706",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1404.5620389897006,
+          "y": 1594.1036414587943
+        },
+        "local_m": {
+          "x": 51.450300436497606,
+          "y": 67.03062926021174
+        },
+        "projected": {
+          "x": 193692.75561611835,
+          "y": 547341.7743810678
+        },
+        "wgs84": {
+          "lat": 37.52554579917921,
+          "lng": 126.92864730173946
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-VdYOQp-MM5333"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-YA3LtgPpG1826",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 2030.6082637331492,
+          "y": 1845.7319386323015
+        },
+        "local_m": {
+          "x": 93.37974132013446,
+          "y": 90.50476416027124
+        },
+        "projected": {
+          "x": 193734.68505700197,
+          "y": 547318.3002461678
+        },
+        "wgs84": {
+          "lat": 37.525334582479566,
+          "lng": 126.92912184157673
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-qpqxeP12C2601",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 2080.8640997412117,
+          "y": 1845.7319386323015
+        },
+        "local_m": {
+          "x": 96.74562553391009,
+          "y": 90.50476416027124
+        },
+        "projected": {
+          "x": 193738.05094121577,
+          "y": 547318.3002461678
+        },
+        "wgs84": {
+          "lat": 37.5253346053248,
+          "lng": 126.92915991907319
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-yXLBfQ---3497",
+      "type": "elevator",
+      "name": "EV3",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 2080.8640997412117,
+          "y": 1912.9627749521178
+        },
+        "local_m": {
+          "x": 96.74562553391009,
+          "y": 96.7766570234454
+        },
+        "projected": {
+          "x": 193738.05094121577,
+          "y": 547312.0283533046
+        },
+        "wgs84": {
+          "lat": 37.52527809547192,
+          "lng": 126.92915997250759
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ELEVATOR",
+        "object_ids": [
+          "OB-jgE8Sd0zA6373"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-yinh2VAvd9411",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 973.3727731090046,
+          "y": 1840.8666895938284
+        },
+        "local_m": {
+          "x": 22.571402810667603,
+          "y": 90.05089027750695
+        },
+        "projected": {
+          "x": 193663.8767184925,
+          "y": 547318.7541200506
+        },
+        "wgs84": {
+          "lat": 37.525338188448195,
+          "lng": 126.92832079875322
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-WCvsig2if1283",
+      "type": "elevator",
+      "name": "EV4",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 946.2349378398097,
+          "y": 1881.4332724619653
+        },
+        "local_m": {
+          "x": 20.753846511057496,
+          "y": 93.83530343523884
+        },
+        "projected": {
+          "x": 193662.05916219292,
+          "y": 547314.9697068929
+        },
+        "wgs84": {
+          "lat": 37.525304078346295,
+          "lng": 126.92830026977731
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ELEVATOR",
+        "object_ids": [
+          "OB-2ayEuac0pH6375"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-AtD81yOed2354",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 803.3137098764334,
+          "y": 1401.2861701393524
+        },
+        "local_m": {
+          "x": 11.181698413905535,
+          "y": 49.04289344638183
+        },
+        "projected": {
+          "x": 193652.48701409576,
+          "y": 547359.7621168817
+        },
+        "wgs84": {
+          "lat": 37.52570759285004,
+          "lng": 126.9281915954152
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-3zJd-FVPp7018",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 803.3137098764334,
+          "y": 1478.0848196351576
+        },
+        "local_m": {
+          "x": 11.181698413905535,
+          "y": 56.20735737455375
+        },
+        "projected": {
+          "x": 193652.48701409576,
+          "y": 547352.5976529535
+        },
+        "wgs84": {
+          "lat": 37.5256430409233,
+          "lng": 126.92819165728919
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-nF9Rakzif8490",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 804.388076168191,
+          "y": 1585.0073788852997
+        },
+        "local_m": {
+          "x": 11.253654087683586,
+          "y": 66.1820486469219
+        },
+        "projected": {
+          "x": 193652.55896976954,
+          "y": 547342.6229616811
+        },
+        "wgs84": {
+          "lat": 37.52555316930007,
+          "lng": 126.9281925574535
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-YalFSQ-7V0482",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 946.2156454413996,
+          "y": 1867.5211547042659
+        },
+        "local_m": {
+          "x": 20.752554402828633,
+          "y": 92.53745683905667
+        },
+        "projected": {
+          "x": 193662.05787008468,
+          "y": 547316.267553489
+        },
+        "wgs84": {
+          "lat": 37.525315771955334,
+          "lng": 126.92830024396858
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-5c1Bx7olY7217",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 946.2156454413996,
+          "y": 1841.0800616928602
+        },
+        "local_m": {
+          "x": 20.752554402828633,
+          "y": 90.07079553257105
+        },
+        "projected": {
+          "x": 193662.05787008468,
+          "y": 547318.7342147955
+        },
+        "wgs84": {
+          "lat": 37.525337996611825,
+          "lng": 126.92830022269841
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-SJj2P-bPL5559",
+          "OB-LGExsdB6y4421"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-NDqVVnKly3378",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 4,
+      "position": {
+        "source": {
+          "x": 1780.9211467472926,
+          "y": 1707.8537831567287
+        },
+        "local_m": {
+          "x": 76.65694866156608,
+          "y": 77.64225840173472
+        },
+        "projected": {
+          "x": 193717.96226434343,
+          "y": 547331.1627519263
+        },
+        "wgs84": {
+          "lat": 37.52545036017115,
+          "lng": 126.92893255042223
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-vsudfQQ9j9528",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 1912.1238462689394,
+          "y": 1681.7860784161971
+        },
+        "local_m": {
+          "x": 85.4442484102721,
+          "y": 75.2104300879572
+        },
+        "projected": {
+          "x": 193726.7495640921,
+          "y": 547333.5945802401
+        },
+        "wgs84": {
+          "lat": 37.52547233075727,
+          "lng": 126.92903193857934
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-rourmomKR06897"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-t7RjoBsdw8529",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 2025.4056500734355,
+          "y": 1652.4710344715795
+        },
+        "local_m": {
+          "x": 93.03129631198068,
+          "y": 72.47566097062449
+        },
+        "projected": {
+          "x": 193734.33661199384,
+          "y": 547336.3293493574
+        },
+        "wgs84": {
+          "lat": 37.52549702261266,
+          "lng": 126.92911774600229
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-Rjtx6oXBk5643",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 4,
+      "position": {
+        "source": {
+          "x": 1444.288364146108,
+          "y": 1308.4426379794565
+        },
+        "local_m": {
+          "x": 54.11097074539104,
+          "y": 40.381619563434505
+        },
+        "projected": {
+          "x": 193695.41628642724,
+          "y": 547368.4233907646
+        },
+        "wgs84": {
+          "lat": 37.52578592533734,
+          "lng": 126.92867717280254
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-lUAioyVJ97616",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1397.951808718758,
+          "y": 1311.1536677620347
+        },
+        "local_m": {
+          "x": 51.00758031709062,
+          "y": 40.63452863427099
+        },
+        "projected": {
+          "x": 193692.31289599894,
+          "y": 547368.1704816938
+        },
+        "wgs84": {
+          "lat": 37.52578362541599,
+          "lng": 126.92864206679901
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-9VwVox8etM3505"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-rZ91rfxFD0473",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 4,
+      "position": {
+        "source": {
+          "x": 1358.3508572025082,
+          "y": 1315.4656657909259
+        },
+        "local_m": {
+          "x": 48.35530690674171,
+          "y": 41.03679032167249
+        },
+        "projected": {
+          "x": 193689.6606225886,
+          "y": 547367.7682200064
+        },
+        "wgs84": {
+          "lat": 37.52577998289977,
+          "lng": 126.92861206549642
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-wY_RYLctK6585",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 1359.175433771703,
+          "y": 1389.59888264161
+        },
+        "local_m": {
+          "x": 48.4105329158535,
+          "y": 47.95259888722656
+        },
+        "projected": {
+          "x": 193689.7158485977,
+          "y": 547360.8524114408
+        },
+        "wgs84": {
+          "lat": 37.52571767173939,
+          "lng": 126.9286127496361
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-YlwZA3Eng6889",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1314.7285846248244,
+          "y": 1321.130171662683
+        },
+        "local_m": {
+          "x": 45.43370555053926,
+          "y": 41.565226020158825
+        },
+        "projected": {
+          "x": 193686.73902123238,
+          "y": 547367.2397843079
+        },
+        "wgs84": {
+          "lat": 37.525775201703745,
+          "lng": 126.92857901841572
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-z5rTphgIDw7348"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-vaGRD3YSs8585",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1230.853087111801,
+          "y": 1332.8106257159666
+        },
+        "local_m": {
+          "x": 39.816144776973154,
+          "y": 42.6548830945842
+        },
+        "projected": {
+          "x": 193681.12146045882,
+          "y": 547366.1501272335
+        },
+        "wgs84": {
+          "lat": 37.525765345429555,
+          "lng": 126.92851547720038
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-FDoohfgVj6883"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-xGu0gmm8u4505",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1148.5659248621323,
+          "y": 1345.1078033247047
+        },
+        "local_m": {
+          "x": 34.30496274493771,
+          "y": 43.80207365033662
+        },
+        "projected": {
+          "x": 193675.6102784268,
+          "y": 547365.0029366778
+        },
+        "wgs84": {
+          "lat": 37.5257549714727,
+          "lng": 126.92845313994258
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-08gzW2uCiX3505"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-qVtyHsxck8257",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1080.5656087537773,
+          "y": 1357.6954742702326
+        },
+        "local_m": {
+          "x": 29.750642118689534,
+          "y": 44.97636401899548
+        },
+        "projected": {
+          "x": 193671.05595780053,
+          "y": 547363.8286463091
+        },
+        "wgs84": {
+          "lat": 37.52574435987604,
+          "lng": 126.92840162775391
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-uRDgLuRn9g3504"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-5eq_NYZU-9577",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1045.1538272756843,
+          "y": 1365.66262725019
+        },
+        "local_m": {
+          "x": 27.37893833806466,
+          "y": 45.71961120510975
+        },
+        "projected": {
+          "x": 193668.68425401993,
+          "y": 547363.0853991229
+        },
+        "wgs84": {
+          "lat": 37.5257376469393,
+          "lng": 126.92837480345489
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB--pIFchSBh3502"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-gZnYoVX4C0889",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 4,
+      "position": {
+        "source": {
+          "x": 1024.406951839619,
+          "y": 1370.8864815086104
+        },
+        "local_m": {
+          "x": 25.98941652204675,
+          "y": 46.20693898556146
+        },
+        "projected": {
+          "x": 193667.2947322039,
+          "y": 547362.5980713425
+        },
+        "wgs84": {
+          "lat": 37.52573324657459,
+          "lng": 126.92835908821945
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-msMa6nlgr2344",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 972.2747168986955,
+          "y": 1383.5917737743785
+        },
+        "local_m": {
+          "x": 22.49786050478447,
+          "y": 47.3922021214705
+        },
+        "projected": {
+          "x": 193663.80317618663,
+          "y": 547361.4128082066
+        },
+        "wgs84": {
+          "lat": 37.52572254336967,
+          "lng": 126.92831959903444
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-FFEwRryWG5d9436"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-3vZ7YnTGv1025",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 1185.9229433262826,
+          "y": 1279.4067457923952
+        },
+        "local_m": {
+          "x": 36.80694875711023,
+          "y": 37.67289221520356
+        },
+        "projected": {
+          "x": 193678.11226443897,
+          "y": 547371.1321181129
+        },
+        "wgs84": {
+          "lat": 37.525810212631384,
+          "lng": 126.92848139179036
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-6SlOSPK_Z2753",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1132.0005876297273,
+          "y": 1291.227127094156
+        },
+        "local_m": {
+          "x": 33.195499416589605,
+          "y": 38.775602953083514
+        },
+        "projected": {
+          "x": 193674.50081509844,
+          "y": 547370.029407375
+        },
+        "wgs84": {
+          "lat": 37.525800252443965,
+          "lng": 126.928440545502
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-hHRaxp1xJK8127"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-CMrIBfE8t9825",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 1019.6817521222729,
+          "y": 1658.4713456782683
+        },
+        "local_m": {
+          "x": 25.672946308855966,
+          "y": 73.03542358989394
+        },
+        "projected": {
+          "x": 193666.9782619907,
+          "y": 547335.7695867382
+        },
+        "wgs84": {
+          "lat": 37.52549151935338,
+          "lng": 126.92835573921106
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-gxdRbsUKPu9337"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-2xspp1VeW1599",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1115.722974409113,
+          "y": 1680.8635024472196
+        },
+        "local_m": {
+          "x": 32.10530640162471,
+          "y": 75.12436396187124
+        },
+        "projected": {
+          "x": 193673.41062208347,
+          "y": 547333.6806463662
+        },
+        "wgs84": {
+          "lat": 37.52547274208853,
+          "lng": 126.92842852519654
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-zLCONFljy56894"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-5Obvc9PpO3495",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 1188.1893954117509,
+          "y": 1697.6527653849028
+        },
+        "local_m": {
+          "x": 36.95874436736597,
+          "y": 76.69061635676778
+        },
+        "projected": {
+          "x": 193678.2640600492,
+          "y": 547332.1143939713
+        },
+        "wgs84": {
+          "lat": 37.525458663390715,
+          "lng": 126.92848344462828
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-wPOtN2CP0Z6893"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-mjWf6RrkT4823",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 1236.7002903369118,
+          "y": 1706.1186038942196
+        },
+        "local_m": {
+          "x": 40.207761166102195,
+          "y": 77.48038538291507
+        },
+        "projected": {
+          "x": 193681.51307684794,
+          "y": 547331.3246249452
+        },
+        "wgs84": {
+          "lat": 37.525451569810656,
+          "lng": 126.9285202068795
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-XgQtL0V-u0767",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 1304.5496192888581,
+          "y": 1714.6154983041574
+        },
+        "local_m": {
+          "x": 44.751969428760255,
+          "y": 78.27305158083838
+        },
+        "projected": {
+          "x": 193686.0572851106,
+          "y": 547330.5319587472
+        },
+        "wgs84": {
+          "lat": 37.52544445897797,
+          "lng": 126.92857162138175
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-_-fvdMboS26896"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-2r7P3AXJe2471",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1388.072883198311,
+          "y": 1721.0772037233544
+        },
+        "local_m": {
+          "x": 50.34593935955082,
+          "y": 78.8758571730492
+        },
+        "projected": {
+          "x": 193691.6512550414,
+          "y": 547329.9291531551
+        },
+        "wgs84": {
+          "lat": 37.52543906594637,
+          "lng": 126.92863490998022
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-M76jMnJG9i6896"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-3bw-ezBiS4719",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 1444.4341066980296,
+          "y": 1722.2894228925802
+        },
+        "local_m": {
+          "x": 54.12073185163768,
+          "y": 78.9889438037123
+        },
+        "projected": {
+          "x": 193695.4260475335,
+          "y": 547329.8160665244
+        },
+        "wgs84": {
+          "lat": 37.52543807282998,
+          "lng": 126.92867761439383
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-LOWf9kinV6223",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 956.9093880454438,
+          "y": 1583.8807059402322
+        },
+        "local_m": {
+          "x": 21.468767728010565,
+          "y": 66.07694253207772
+        },
+        "projected": {
+          "x": 193662.77408340987,
+          "y": 547342.728067796
+        },
+        "wgs84": {
+          "lat": 37.525554186512345,
+          "lng": 126.92830811818162
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-NGJH1V2BUw9423"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-SLi6A_k777367",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 4,
+      "position": {
+        "source": {
+          "x": 1011.1310357295015,
+          "y": 1600.1966188675374
+        },
+        "local_m": {
+          "x": 25.100262146994954,
+          "y": 67.59903661042812
+        },
+        "projected": {
+          "x": 193666.40557782885,
+          "y": 547341.2059737176
+        },
+        "wgs84": {
+          "lat": 37.52554049735233,
+          "lng": 126.92834921370294
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-y9c42z8Nm9663",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1034.9889560231784,
+          "y": 1603.802063125237
+        },
+        "local_m": {
+          "x": 26.698146167412432,
+          "y": 67.93538465168807
+        },
+        "projected": {
+          "x": 193668.00346184926,
+          "y": 547340.8696256764
+        },
+        "wgs84": {
+          "lat": 37.52553747781651,
+          "lng": 126.92836729315508
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-eb2xyjLk80767",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1066.4426471057875,
+          "y": 1612.2300542498003
+        },
+        "local_m": {
+          "x": 28.804756875528895,
+          "y": 68.72162293576342
+        },
+        "projected": {
+          "x": 193670.11007255738,
+          "y": 547340.0833873923
+        },
+        "wgs84": {
+          "lat": 37.52553040824959,
+          "lng": 126.92839113160697
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-uXRbFgTuSa9424"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-hAONRJm-y6264",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 4,
+      "position": {
+        "source": {
+          "x": 1187.326652682824,
+          "y": 1640.1810836227055
+        },
+        "local_m": {
+          "x": 36.90096218001208,
+          "y": 71.32914459157575
+        },
+        "projected": {
+          "x": 193678.20627786187,
+          "y": 547337.4758657365
+        },
+        "wgs84": {
+          "lat": 37.52550696993727,
+          "lng": 126.92848274483535
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-M0vbjijvj8200",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1226.2563810026563,
+          "y": 1645.2849823643355
+        },
+        "local_m": {
+          "x": 39.508280422161626,
+          "y": 71.80528185007596
+        },
+        "projected": {
+          "x": 193680.813596104,
+          "y": 547336.999728478
+        },
+        "wgs84": {
+          "lat": 37.52550269779069,
+          "lng": 126.92851224500546
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-VVpKun8g_U7348"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-RPPMFdnYk0640",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 1309.75105247269,
+          "y": 1655.4578401199863
+        },
+        "local_m": {
+          "x": 45.10033537455129,
+          "y": 72.75429687723167
+        },
+        "projected": {
+          "x": 193686.4056510564,
+          "y": 547336.0507134509
+        },
+        "wgs84": {
+          "lat": 37.52549418542563,
+          "lng": 126.92857551496753
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-Bxgs1c9SM529427"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-QTZOxTYAN2776",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1397.215493395202,
+          "y": 1665.4126030460707
+        },
+        "local_m": {
+          "x": 50.958265604197955,
+          "y": 73.68296607083944
+        },
+        "projected": {
+          "x": 193692.26358128604,
+          "y": 547335.1220442572
+        },
+        "wgs84": {
+          "lat": 37.52548585816024,
+          "lng": 126.92864179253435
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-bxW5adz25H89427"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-p-F1dDC9S5200",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 4,
+      "position": {
+        "source": {
+          "x": 1445.665759824012,
+          "y": 1668.5332687880957
+        },
+        "local_m": {
+          "x": 54.203221809877085,
+          "y": 73.97408964250903
+        },
+        "projected": {
+          "x": 193695.50853749173,
+          "y": 547334.8309206855
+        },
+        "wgs84": {
+          "lat": 37.52548325730636,
+          "lng": 126.92867850457013
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND--9qoaNWhd9455",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1114.0115688484402,
+          "y": 1624.9761084155634
+        },
+        "local_m": {
+          "x": 31.990685027917735,
+          "y": 69.9106887057562
+        },
+        "projected": {
+          "x": 193673.29600070976,
+          "y": 547338.8943216223
+        },
+        "wgs84": {
+          "lat": 37.52551971659616,
+          "lng": 126.92842718362964
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-Skc0K7WGa0528",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1152.1375250946057,
+          "y": 1634.1272036333235
+        },
+        "local_m": {
+          "x": 34.54417064187671,
+          "y": 70.7643845978238
+        },
+        "projected": {
+          "x": 193675.8494863237,
+          "y": 547338.0406257303
+        },
+        "wgs84": {
+          "lat": 37.52551204228554,
+          "lng": 126.92845607805862
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-FKr7UDG1Hf9425"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-J3ORkjQav4710",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1632.924258883858,
+          "y": 1253.2695440113912
+        },
+        "local_m": {
+          "x": 66.74485828329557,
+          "y": 35.23458059679962
+        },
+        "projected": {
+          "x": 193708.05017396514,
+          "y": 547373.5704297313
+        },
+        "wgs84": {
+          "lat": 37.52583238646007,
+          "lng": 126.92882005394856
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-EjWeKJF3c9855"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-Ogj7-mAZb6206",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 1739.7846768464851,
+          "y": 1265.0716660237258
+        },
+        "local_m": {
+          "x": 73.90183391972054,
+          "y": 36.33558794508474
+        },
+        "projected": {
+          "x": 193715.20714960157,
+          "y": 547372.469422383
+        },
+        "wgs84": {
+          "lat": 37.52582251513673,
+          "lng": 126.92890102916785
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-NN761rRg4B9859"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-1nCirZhzw2550",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1843.138714113567,
+          "y": 1286.537504533043
+        },
+        "local_m": {
+          "x": 80.82396973716948,
+          "y": 38.33811307668053
+        },
+        "projected": {
+          "x": 193722.129285419,
+          "y": 547370.4668972514
+        },
+        "wgs84": {
+          "lat": 37.52580451947168,
+          "lng": 126.92897935535888
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-SuuMk45wT4846",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 1562.1971878717382,
+          "y": 1250.8451056729396
+        },
+        "local_m": {
+          "x": 62.007913269226144,
+          "y": 35.00840733547342
+        },
+        "projected": {
+          "x": 193703.31322895107,
+          "y": 547373.7966029926
+        },
+        "wgs84": {
+          "lat": 37.5258343919754,
+          "lng": 126.92876646365414
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-6hnhMBxDc6158",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 4,
+      "position": {
+        "source": {
+          "x": 1563.1971878717382,
+          "y": 1305.8444246258196
+        },
+        "local_m": {
+          "x": 62.07488826120987,
+          "y": 40.13923501667443
+        },
+        "projected": {
+          "x": 193703.38020394306,
+          "y": 547368.6657753114
+        },
+        "wgs84": {
+          "lat": 37.525788163599,
+          "lng": 126.92876726528836
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-nccG5gLEx0061",
+      "type": "dead_end",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1603.2262432399561,
+          "y": 1305.8444246258196
+        },
+        "local_m": {
+          "x": 64.75583392361256,
+          "y": 40.13923501667443
+        },
+        "projected": {
+          "x": 193706.06114960546,
+          "y": 547368.6657753114
+        },
+        "wgs84": {
+          "lat": 37.52578818188759,
+          "lng": 126.92879759441134
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-rFbYpy0tgAx9428"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-u1hBcVMgp5101",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1778.2054167870742,
+          "y": 1331.9666160642344
+        },
+        "local_m": {
+          "x": 76.47506266925048,
+          "y": 42.57614633626145
+        },
+        "projected": {
+          "x": 193717.7803783511,
+          "y": 547366.2288639918
+        },
+        "wgs84": {
+          "lat": 37.52576630513385,
+          "lng": 126.92893019306037
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-o9XljztO36310",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1844.3139774135943,
+          "y": 1351.84239246175
+        },
+        "local_m": {
+          "x": 80.90268298726758,
+          "y": 44.43033627292421
+        },
+        "projected": {
+          "x": 193722.20799866912,
+          "y": 547364.3746740551
+        },
+        "wgs84": {
+          "lat": 37.52574962898539,
+          "lng": 126.9289802978661
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-T5eXUEb474238",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 4,
+      "position": {
+        "source": {
+          "x": 1562.9175577121707,
+          "y": 1668.6789363276641
+        },
+        "local_m": {
+          "x": 62.05616003351444,
+          "y": 73.9876788115842
+        },
+        "projected": {
+          "x": 193703.36147571536,
+          "y": 547334.8173315165
+        },
+        "wgs84": {
+          "lat": 37.52548318848244,
+          "lng": 126.92876734339849
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-EVGwY4nbP5326",
+      "type": "junction",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 3,
+      "position": {
+        "source": {
+          "x": 1562.9175577121707,
+          "y": 1721.4717008562295
+        },
+        "local_m": {
+          "x": 62.05616003351444,
+          "y": 78.91265938893198
+        },
+        "projected": {
+          "x": 193703.36147571536,
+          "y": 547329.8923509391
+        },
+        "wgs84": {
+          "lat": 37.525438814331885,
+          "lng": 126.92876738559043
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-AXlfpAVnW0662",
+      "type": "dead_end",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1604.4999140356472,
+          "y": 1667.717521124485
+        },
+        "local_m": {
+          "x": 64.84113801494387,
+          "y": 73.89798941485141
+        },
+        "projected": {
+          "x": 193706.1464536968,
+          "y": 547334.9070209132
+        },
+        "wgs84": {
+          "lat": 37.525484015583224,
+          "lng": 126.9287988485267
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-ZMwYSLP70W79429"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-0ZSJPAPvB3429",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1778.5372011014967,
+          "y": 1649.488356697741
+        },
+        "local_m": {
+          "x": 76.49728392104925,
+          "y": 72.19741014902387
+        },
+        "projected": {
+          "x": 193717.8025996029,
+          "y": 547336.607600179
+        },
+        "wgs84": {
+          "lat": 37.52549941725059,
+          "lng": 126.92893069762924
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-RbXFG8BWvm0270"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-u-WeJcqFr4902",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1852.226704268725,
+          "y": 1633.9772414536444
+        },
+        "local_m": {
+          "x": 81.4326378049594,
+          "y": 70.75039478636288
+        },
+        "projected": {
+          "x": 193722.73795348682,
+          "y": 547338.0546155417
+        },
+        "wgs84": {
+          "lat": 37.52551248846512,
+          "lng": 126.92898651794985
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-5G4d8pPn99219",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1236.7002903369118,
+          "y": 1877.3779360603774
+        },
+        "local_m": {
+          "x": 40.207761166102195,
+          "y": 93.45698543672552
+        },
+        "projected": {
+          "x": 193681.51307684794,
+          "y": 547315.3480248913
+        },
+        "wgs84": {
+          "lat": 37.52530762039787,
+          "lng": 126.92852034422422
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-rxPtY47tv3572",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 2,
+      "position": {
+        "source": {
+          "x": 1780.9211467472926,
+          "y": 1872.1754394021345
+        },
+        "local_m": {
+          "x": 76.65694866156608,
+          "y": 92.9716500839671
+        },
+        "projected": {
+          "x": 193717.96226434343,
+          "y": 547315.833360244
+        },
+        "wgs84": {
+          "lat": 37.525312242114566,
+          "lng": 126.92893268144299
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-Jcu7MR0wA4631",
+      "type": "elevator",
+      "name": "EV6",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1710.8631856490774,
+          "y": 1872.1754394021345
+        },
+        "local_m": {
+          "x": 71.96481727861665,
+          "y": 92.9716500839671
+        },
+        "projected": {
+          "x": 193713.27013296046,
+          "y": 547315.833360244
+        },
+        "wgs84": {
+          "lat": 37.52531221016224,
+          "lng": 126.9288796004246
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ELEVATOR",
+        "object_ids": [
+          "OB-Tzgz_hK5V6174"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-e4K01UMM07647",
+      "type": "dead_end",
+      "name": "EV5",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1298.5299447297075,
+          "y": 1877.3779360603774
+        },
+        "local_m": {
+          "x": 44.348801773416476,
+          "y": 93.45698543672552
+        },
+        "projected": {
+          "x": 193685.65411745527,
+          "y": 547315.3480248913
+        },
+        "wgs84": {
+          "lat": 37.525307648741126,
+          "lng": 126.92856719087438
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-xEVy9AVEk9636",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 0,
+      "position": {
+        "source": {
+          "x": 1694.5011628545813,
+          "y": 1316.1224751405475
+        },
+        "local_m": {
+          "x": 70.86897093311767,
+          "y": 41.09806336389321
+        },
+        "projected": {
+          "x": 193712.17428661496,
+          "y": 547367.7069469641
+        },
+        "wgs84": {
+          "lat": 37.525779584502736,
+          "lng": 126.92886675958627
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-y_dnsjCyP1519",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 0,
+      "position": {
+        "source": {
+          "x": 1663.7358763528505,
+          "y": 1311.7961067262418
+        },
+        "local_m": {
+          "x": 68.8084661162871,
+          "y": 40.69446107859561
+        },
+        "projected": {
+          "x": 193710.11378179814,
+          "y": 547368.1105492495
+        },
+        "wgs84": {
+          "lat": 37.52578320692354,
+          "lng": 126.92884344596315
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-PhsDAJcgX3434",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 0,
+      "position": {
+        "source": {
+          "x": 1632.4898822495302,
+          "y": 1307.9504459135253
+        },
+        "local_m": {
+          "x": 66.71576591169354,
+          "y": 40.3357034916644
+        },
+        "projected": {
+          "x": 193708.02108159356,
+          "y": 547368.4693068364
+        },
+        "wgs84": {
+          "lat": 37.525786425068844,
+          "lng": 126.92881976850023
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-Byt4EjC2f4250",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 0,
+      "position": {
+        "source": {
+          "x": 1702.6731920816037,
+          "y": 1660.7898254802517
+        },
+        "local_m": {
+          "x": 71.4162925250883,
+          "y": 73.25171209260273
+        },
+        "projected": {
+          "x": 193712.72160820695,
+          "y": 547335.5532982355
+        },
+        "wgs84": {
+          "lat": 37.5254898833714,
+          "lng": 126.9288732264008
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-j6Sit4I3R5375",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 0,
+      "position": {
+        "source": {
+          "x": 1666.6201219623877,
+          "y": 1664.635486292968
+        },
+        "local_m": {
+          "x": 69.00163844286494,
+          "y": 73.61046967953392
+        },
+        "projected": {
+          "x": 193710.3069541247,
+          "y": 547335.1945406485
+        },
+        "wgs84": {
+          "lat": 37.52548663450597,
+          "lng": 126.92884591297202
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-zV0AnBhbQ6672",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 0,
+      "position": {
+        "source": {
+          "x": 1632.48988224953,
+          "y": 1666.5845371139583
+        },
+        "local_m": {
+          "x": 66.71576591169352,
+          "y": 73.79229454745588
+        },
+        "projected": {
+          "x": 193708.02108159356,
+          "y": 547335.0127157806
+        },
+        "wgs84": {
+          "lat": 37.52548498067878,
+          "lng": 126.92882005491079
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-NKwIAag298223",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 0,
+      "position": {
+        "source": {
+          "x": 1632.48988224953,
+          "y": 1591.5542410458193
+        },
+        "local_m": {
+          "x": 66.71576591169352,
+          "y": 66.79279842051417
+        },
+        "projected": {
+          "x": 193708.02108159356,
+          "y": 547342.0122119075
+        },
+        "wgs84": {
+          "lat": 37.525548046245746,
+          "lng": 126.92881999499082
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-6sJdzc_5k0183",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 0,
+      "position": {
+        "source": {
+          "x": 1632.48988224953,
+          "y": 1487.6950323864585
+        },
+        "local_m": {
+          "x": 66.71576591169352,
+          "y": 57.10388385061521
+        },
+        "projected": {
+          "x": 193708.02108159356,
+          "y": 547351.7011264774
+        },
+        "wgs84": {
+          "lat": 37.52563534351281,
+          "lng": 126.92881991204747
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-krJJHIRWo1772",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 0,
+      "position": {
+        "source": {
+          "x": 1632.48988224953,
+          "y": 1387.6739504851555
+        },
+        "local_m": {
+          "x": 66.71576591169352,
+          "y": 47.77302402374083
+        },
+        "projected": {
+          "x": 193708.02108159356,
+          "y": 547361.0319863043
+        },
+        "wgs84": {
+          "lat": 37.5257194147,
+          "lng": 126.92881983216898
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-NqmMxuF3E8686",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 0,
+      "position": {
+        "source": {
+          "x": 1557.1216858575199,
+          "y": 1103.7517960793307
+        },
+        "local_m": {
+          "x": 61.66798156251047,
+          "y": 21.28622969852946
+        },
+        "projected": {
+          "x": 193702.97329724437,
+          "y": 547387.5187806295
+        },
+        "wgs84": {
+          "lat": 37.52595802667778,
+          "lng": 126.92876250049036
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-R9OtNLOZZ9866",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 0,
+      "position": {
+        "source": {
+          "x": 1557.1216858575199,
+          "y": 1021.7620896368097
+        },
+        "local_m": {
+          "x": 61.66798156251047,
+          "y": 13.637497616060594
+        },
+        "projected": {
+          "x": 193702.97329724437,
+          "y": 547395.167512712
+        },
+        "wgs84": {
+          "lat": 37.52602694186495,
+          "lng": 126.92876243495847
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-PwB1cHPN_1923"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-eNvFB4KrG5055",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 0,
+      "position": {
+        "source": {
+          "x": 723.9038409411397,
+          "y": 1585.0073788852997
+        },
+        "local_m": {
+          "x": 5.863223078535194,
+          "y": 66.1820486469219
+        },
+        "projected": {
+          "x": 193647.1685387604,
+          "y": 547342.6229616811
+        },
+        "wgs84": {
+          "lat": 37.5255531322081,
+          "lng": 126.92813157653465
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-a3aPUFuRGS6582"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-v81XAOpoZ7406",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 0,
+      "position": {
+        "source": {
+          "x": 1557.1216858575199,
+          "y": 1120.7527483859249
+        },
+        "local_m": {
+          "x": 61.66798156251047,
+          "y": 22.87223036839564
+        },
+        "projected": {
+          "x": 193702.97329724437,
+          "y": 547385.9327799596
+        },
+        "wgs84": {
+          "lat": 37.5259437367886,
+          "lng": 126.92876251407868
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-Oj7Hv9agx4923"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-B8JfkPLDE4485",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 0,
+      "position": {
+        "source": {
+          "x": 1556.8654595196672,
+          "y": 1075.9304140894192
+        },
+        "local_m": {
+          "x": 61.65082080558677,
+          "y": 18.69080270850797
+        },
+        "projected": {
+          "x": 193702.95613648742,
+          "y": 547390.1142076196
+        },
+        "wgs84": {
+          "lat": 37.525981411395655,
+          "lng": 126.9287622841161
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-cQk8aMDOg1337"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-5iZ0py7438366",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 0,
+      "position": {
+        "source": {
+          "x": 1506.5470763550534,
+          "y": 1943.1244651861812
+        },
+        "local_m": {
+          "x": 58.28074749650251,
+          "y": 99.59040886821508
+        },
+        "projected": {
+          "x": 193699.58606317834,
+          "y": 547309.2146014598
+        },
+        "wgs84": {
+          "lat": 37.52525248172074,
+          "lng": 126.92872485238246
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-i2ekYAH1k8598",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 0,
+      "position": {
+        "source": {
+          "x": 865.2920613246146,
+          "y": 1867.5211547042659
+        },
+        "local_m": {
+          "x": 15.33269800531226,
+          "y": 92.53745683905667
+        },
+        "projected": {
+          "x": 193656.63801368716,
+          "y": 547316.267553489
+        },
+        "wgs84": {
+          "lat": 37.52531573471691,
+          "lng": 126.92823893036008
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": []
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-JuSgs7tsN9231",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 0,
+      "position": {
+        "source": {
+          "x": 865.2920613246146,
+          "y": 1835.44298937967
+        },
+        "local_m": {
+          "x": 15.33269800531226,
+          "y": 89.54491908144213
+        },
+        "projected": {
+          "x": 193656.63801368716,
+          "y": 547319.2600912466
+        },
+        "wgs84": {
+          "lat": 37.525342697528295,
+          "lng": 126.92823890453316
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-SJj2P-bPL5559"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "ND-pdOq3ox-s3174",
+      "type": "corridor",
+      "name": "NODE",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 0,
+      "position": {
+        "source": {
+          "x": 865.2920613246146,
+          "y": 1897.7504337376088
+        },
+        "local_m": {
+          "x": 15.33269800531226,
+          "y": 95.35751397067145
+        },
+        "projected": {
+          "x": 193656.63801368716,
+          "y": 547313.4474963574
+        },
+        "wgs84": {
+          "lat": 37.5252903259585,
+          "lng": 126.9282389546984
+        }
+      },
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": null,
+        "object_ids": [
+          "OB-LGExsdB6y4421"
+        ]
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "store_entrance_000",
+      "type": "store_entrance",
+      "name": "보테가 베네타",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 804.7258590708531,
+          "y": 1641.750362138769
+        },
+        "local_m": {
+          "x": 11.27627709488162,
+          "y": 71.47554090707617
+        },
+        "projected": {
+          "x": 193652.58159277673,
+          "y": 547337.329469421
+        },
+        "wgs84": {
+          "lat": 37.52550547501035,
+          "lng": 126.92819285909809
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-Nmycfl6kW6313",
+        "nearest_edge_id": "edge_00016",
+        "nearest_node_id": "ND-QCNbdWLZi7268"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_001",
+      "type": "store_entrance",
+      "name": "펜디",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 973.8534807105941,
+          "y": 1733.5926351164758
+        },
+        "local_m": {
+          "x": 22.603598198430582,
+          "y": 80.04340839107455
+        },
+        "projected": {
+          "x": 193663.90891388027,
+          "y": 547328.761601937
+        },
+        "wgs84": {
+          "lat": 37.525428356234876,
+          "lng": 126.92832107670225
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-HO4Szxple8130",
+        "nearest_edge_id": "edge_00026",
+        "nearest_node_id": "ND-vT4MNbhZY1236"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_002",
+      "type": "store_entrance",
+      "name": "불가리",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 973.6866682917127,
+          "y": 1784.3402339444467
+        },
+        "local_m": {
+          "x": 22.592425938013214,
+          "y": 84.7775976461108
+        },
+        "projected": {
+          "x": 193663.89774161988,
+          "y": 547324.027412682
+        },
+        "wgs84": {
+          "lat": 37.52538570104037,
+          "lng": 126.92832099112437
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-aNOI0qviT9257",
+        "nearest_edge_id": "edge_00027",
+        "nearest_node_id": "ND-vT4MNbhZY1236"
+      },
+      "confidence": 0.8421
+    },
+    {
+      "id": "store_entrance_003",
+      "type": "store_entrance",
+      "name": "부쉐론",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1236.7002903369118,
+          "y": 1795.3436913180672
+        },
+        "local_m": {
+          "x": 40.207761166102195,
+          "y": 85.80409842387236
+        },
+        "projected": {
+          "x": 193681.51307684794,
+          "y": 547323.0009119041
+        },
+        "wgs84": {
+          "lat": 37.52537657302827,
+          "lng": 126.9285202784354
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-vMDL4LoLl0289",
+        "nearest_edge_id": "edge_00190",
+        "nearest_node_id": "ND-5G4d8pPn99219"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_004",
+      "type": "store_entrance",
+      "name": "리모와",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1236.7002903369118,
+          "y": 1802.0251458280443
+        },
+        "local_m": {
+          "x": 40.207761166102195,
+          "y": 86.42740417389167
+        },
+        "projected": {
+          "x": 193681.51307684794,
+          "y": 547322.3776061542
+        },
+        "wgs84": {
+          "lat": 37.52537095703385,
+          "lng": 126.92852028379372
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-C3lhY03Nq2306",
+        "nearest_edge_id": "edge_00190",
+        "nearest_node_id": "ND-5G4d8pPn99219"
+      },
+      "confidence": 0.8548
+    },
+    {
+      "id": "store_entrance_005",
+      "type": "store_entrance",
+      "name": "토즈",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1236.7002903369118,
+          "y": 1762.7796539952706
+        },
+        "local_m": {
+          "x": 40.207761166102195,
+          "y": 82.76623418685134
+        },
+        "projected": {
+          "x": 193681.51307684794,
+          "y": 547326.0387761412
+        },
+        "wgs84": {
+          "lat": 37.52540394423184,
+          "lng": 126.92852025232004
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-Ek5WaJIDm4448",
+        "nearest_edge_id": "edge_00190",
+        "nearest_node_id": "ND-mjWf6RrkT4823"
+      },
+      "confidence": 0.8532
+    },
+    {
+      "id": "store_entrance_006",
+      "type": "store_entrance",
+      "name": "버버리",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1298.5299447297075,
+          "y": 1877.3779360603774
+        },
+        "local_m": {
+          "x": 44.348801773416476,
+          "y": 93.45698543672552
+        },
+        "projected": {
+          "x": 193685.65411745527,
+          "y": 547315.3480248913
+        },
+        "wgs84": {
+          "lat": 37.525307648741126,
+          "lng": 126.92856719087438
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-QBYQxxAAR6145",
+        "nearest_edge_id": "edge_00215",
+        "nearest_node_id": "ND-e4K01UMM07647"
+      },
+      "confidence": 0.8549
+    },
+    {
+      "id": "store_entrance_007",
+      "type": "store_entrance",
+      "name": "미우미우",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 974.8604000107039,
+          "y": 1217.7137527852303
+        },
+        "local_m": {
+          "x": 22.671036610483696,
+          "y": 31.91761883575517
+        },
+        "projected": {
+          "x": 193663.97635229235,
+          "y": 547376.8873914923
+        },
+        "wgs84": {
+          "lat": 37.52586197078227,
+          "lng": 126.92832142474613
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-7fAC1zcRT7649",
+        "nearest_edge_id": "edge_00000",
+        "nearest_node_id": "ND-6OEzy_zfT8980"
+      },
+      "confidence": 0.855
+    },
+    {
+      "id": "store_entrance_008",
+      "type": "store_entrance",
+      "name": "셀린느",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 2078.03175308119,
+          "y": 1178.9944161990293
+        },
+        "local_m": {
+          "x": 96.55592913905998,
+          "y": 28.30553330930673
+        },
+        "projected": {
+          "x": 193737.8612448209,
+          "y": 547380.4994770187
+        },
+        "wgs84": {
+          "lat": 37.52589502005184,
+          "lng": 126.92915724313949
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-xVTcQys5A8977",
+        "nearest_edge_id": "edge_00045",
+        "nearest_node_id": "ND-dwvi-_GRh5900"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_009",
+      "type": "store_entrance",
+      "name": "티파니앤코",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1388.2094461421675,
+          "y": 1103.7517960793307
+        },
+        "local_m": {
+          "x": 50.355085661620876,
+          "y": 21.28622969852946
+        },
+        "projected": {
+          "x": 193691.66040134348,
+          "y": 547387.5187806295
+        },
+        "wgs84": {
+          "lat": 37.52595794941347,
+          "lng": 126.92863451916168
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-RVDD0gwWA0601",
+        "nearest_edge_id": "edge_00129",
+        "nearest_node_id": "ND-B2dugn7h08876"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_010",
+      "type": "store_entrance",
+      "name": "샤넬 뷰티",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 894.513683534787,
+          "y": 1490.7054083144285
+        },
+        "local_m": {
+          "x": 17.289815918590143,
+          "y": 57.384718603410654
+        },
+        "projected": {
+          "x": 193658.59513160045,
+          "y": 547351.4202917246
+        },
+        "wgs84": {
+          "lat": 37.52563247487397,
+          "lng": 126.92826076749978
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-gm_1EWj5f2065",
+        "nearest_edge_id": "edge_00147",
+        "nearest_node_id": "ND-oKqhWfdTk6658"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_011",
+      "type": "store_entrance",
+      "name": "쿠오카",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1080.5656087537773,
+          "y": 1357.6954742702326
+        },
+        "local_m": {
+          "x": 29.750642118689534,
+          "y": 44.97636401899548
+        },
+        "projected": {
+          "x": 193671.05595780053,
+          "y": 547363.8286463091
+        },
+        "wgs84": {
+          "lat": 37.52574435987604,
+          "lng": 126.92840162775391
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-CSZWZOZm_7000",
+        "nearest_edge_id": "edge_00180",
+        "nearest_node_id": "ND-qVtyHsxck8257"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_012",
+      "type": "store_entrance",
+      "name": "마티에 프리미에르",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1025.1596510291097,
+          "y": 1410.108957359618
+        },
+        "local_m": {
+          "x": 26.039828544229042,
+          "y": 49.86596183626259
+        },
+        "projected": {
+          "x": 193667.34514422607,
+          "y": 547358.9390484918
+        },
+        "wgs84": {
+          "lat": 37.52570027907024,
+          "lng": 126.92835969004871
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-Gf_NsQZzV8544",
+        "nearest_edge_id": "edge_00119",
+        "nearest_node_id": "ND-gZnYoVX4C0889"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_013",
+      "type": "store_entrance",
+      "name": "톰포드 뷰티",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1012.22193700703,
+          "y": 1561.666780162775
+        },
+        "local_m": {
+          "x": 25.173325251312463,
+          "y": 64.00462913880155
+        },
+        "projected": {
+          "x": 193666.47864093317,
+          "y": 547344.8003811892
+        },
+        "wgs84": {
+          "lat": 37.525572883519395,
+          "lng": 126.92835000927825
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-4RBf7brmK0553",
+        "nearest_edge_id": "edge_00154",
+        "nearest_node_id": "ND-PHj1hhyDg5740"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_014",
+      "type": "store_entrance",
+      "name": "에스티 로더",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1445.149660835708,
+          "y": 1433.641117242717
+        },
+        "local_m": {
+          "x": 54.168656084272605,
+          "y": 52.061251880310124
+        },
+        "projected": {
+          "x": 193695.47397176613,
+          "y": 547356.7437584477
+        },
+        "wgs84": {
+          "lat": 37.52568069207016,
+          "lng": 126.92867792557307
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-yZUm4etzn2289",
+        "nearest_edge_id": "edge_00095",
+        "nearest_node_id": "ND-2NzytmibA2290"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_015",
+      "type": "store_entrance",
+      "name": "프라다 뷰티",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1185.9229433262826,
+          "y": 1490.8906539542088
+        },
+        "local_m": {
+          "x": 36.80694875711023,
+          "y": 57.40199997115305
+        },
+        "projected": {
+          "x": 193678.11226443897,
+          "y": 547351.4030103569
+        },
+        "wgs84": {
+          "lat": 37.52563245307682,
+          "lng": 126.92848156148814
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO--SDnFDwCT3864",
+        "nearest_edge_id": "edge_00110",
+        "nearest_node_id": "ND-dPqNERNT61659"
+      },
+      "confidence": 0.8345
+    },
+    {
+      "id": "store_entrance_016",
+      "type": "store_entrance",
+      "name": "조 말론 런던",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1025.801117741491,
+          "y": 1477.6568242521253
+        },
+        "local_m": {
+          "x": 26.082790772148613,
+          "y": 56.16743014271712
+        },
+        "projected": {
+          "x": 193667.388106454,
+          "y": 547352.6375801853
+        },
+        "wgs84": {
+          "lat": 37.52564350304147,
+          "lng": 126.92836023036635
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-TRzx47byR5369",
+        "nearest_edge_id": "edge_00120",
+        "nearest_node_id": "ND-gq38k9H1F4579"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_017",
+      "type": "store_entrance",
+      "name": "로에베",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1629.9353791224453,
+          "y": 1253.16708883293
+        },
+        "local_m": {
+          "x": 66.54467808523462,
+          "y": 35.22502266270626
+        },
+        "projected": {
+          "x": 193707.84999376707,
+          "y": 547373.5799876654
+        },
+        "wgs84": {
+          "lat": 37.525832471212325,
+          "lng": 126.92881778925782
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-iK68VYKov8809",
+        "nearest_edge_id": "edge_00206",
+        "nearest_node_id": "ND-J3ORkjQav4710"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_018",
+      "type": "store_entrance",
+      "name": "오픈 준비중",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1735.6334732031148,
+          "y": 1264.613189322706
+        },
+        "local_m": {
+          "x": 73.62380708898299,
+          "y": 36.29281714367184
+        },
+        "projected": {
+          "x": 193714.92912277085,
+          "y": 547372.5121931843
+        },
+        "wgs84": {
+          "lat": 37.525822898608794,
+          "lng": 126.92889788352619
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-zSLxgiZPp0753",
+        "nearest_edge_id": "edge_00205",
+        "nearest_node_id": "ND-Ogj7-mAZb6206"
+      },
+      "confidence": 0.8303
+    },
+    {
+      "id": "store_entrance_019",
+      "type": "store_entrance",
+      "name": "루이비통",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1926.3844136206858,
+          "y": 1520.6143528396176
+        },
+        "local_m": {
+          "x": 86.39934979433875,
+          "y": 60.174892071137016
+        },
+        "projected": {
+          "x": 193727.7046654762,
+          "y": 547348.6301182569
+        },
+        "wgs84": {
+          "lat": 37.52560780767649,
+          "lng": 126.92904261513698
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-H9EW5K6NS2833",
+        "nearest_edge_id": "edge_00134",
+        "nearest_node_id": "ND-nCJCCVGxA3692"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_020",
+      "type": "store_entrance",
+      "name": "구찌",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1910.5417677357843,
+          "y": 1302.8949198567955
+        },
+        "local_m": {
+          "x": 85.3382887131964,
+          "y": 39.86407886923725
+        },
+        "projected": {
+          "x": 193726.64360439504,
+          "y": 547368.9409314588
+        },
+        "wgs84": {
+          "lat": 37.525790801196294,
+          "lng": 126.92903043818625
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-nkTkSy3st5151",
+        "nearest_edge_id": "edge_00040",
+        "nearest_node_id": "ND-WK2fgePom3964"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_021",
+      "type": "store_entrance",
+      "name": "발렌티노",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1185.9229433262826,
+          "y": 1279.4067457923952
+        },
+        "local_m": {
+          "x": 36.80694875711023,
+          "y": 37.67289221520356
+        },
+        "projected": {
+          "x": 193678.11226443897,
+          "y": 547371.1321181129
+        },
+        "wgs84": {
+          "lat": 37.525810212631384,
+          "lng": 126.92848139179036
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-VUPb_mowY7218",
+        "nearest_edge_id": "edge_00007",
+        "nearest_node_id": "ND-3vZ7YnTGv1025"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_022",
+      "type": "store_entrance",
+      "name": "톰브라운",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 2202.3366500561224,
+          "y": 1481.165533023584
+        },
+        "local_m": {
+          "x": 104.88124861749445,
+          "y": 56.49475383385767
+        },
+        "projected": {
+          "x": 193746.18656429934,
+          "y": 547352.3102564942
+        },
+        "wgs84": {
+          "lat": 37.52564109120948,
+          "lng": 126.92925166618045
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-nZDHFEAfT9816",
+        "nearest_edge_id": "edge_00052",
+        "nearest_node_id": "ND-Gc0mcAvj_5011"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_023",
+      "type": "store_entrance",
+      "name": "생로랑",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 2202.3363870947564,
+          "y": 1371.217797560153
+        },
+        "local_m": {
+          "x": 104.88123100565907,
+          "y": 46.23784710589541
+        },
+        "projected": {
+          "x": 193746.1865466875,
+          "y": 547362.5671632221
+        },
+        "wgs84": {
+          "lat": 37.52573350609375,
+          "lng": 126.92925157870768
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-lB8Eh8MAx1081",
+        "nearest_edge_id": "edge_00049",
+        "nearest_node_id": "ND-EVk8jv5jc4867"
+      },
+      "confidence": 0.7966
+    },
+    {
+      "id": "store_entrance_024",
+      "type": "store_entrance",
+      "name": "몽클레르",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 2202.341511266163,
+          "y": 1623.9182401340888
+        },
+        "local_m": {
+          "x": 104.88157419699795,
+          "y": 69.81200130443939
+        },
+        "projected": {
+          "x": 193746.18688987885,
+          "y": 547338.9930090236
+        },
+        "wgs84": {
+          "lat": 37.52552110260886,
+          "lng": 126.92925178317626
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-AZP5VspPq4681",
+        "nearest_edge_id": "edge_00054",
+        "nearest_node_id": "ND-ttYxOC4dv6148"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_025",
+      "type": "store_entrance",
+      "name": "발렌시아가",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 843.9119657932398,
+          "y": 1351.3737578213108
+        },
+        "local_m": {
+          "x": 13.900766278487055,
+          "y": 44.3866178481998
+        },
+        "projected": {
+          "x": 193655.20608196035,
+          "y": 547364.4183924799
+        },
+        "wgs84": {
+          "lat": 37.52574956466068,
+          "lng": 126.92822231557969
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-XE5AyvOY-6217",
+        "nearest_edge_id": "edge_00013",
+        "nearest_node_id": "ND-GlfJ_zwwc9683"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_026",
+      "type": "store_entrance",
+      "name": "프라다",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1710.8631856490774,
+          "y": 1872.1754394021345
+        },
+        "local_m": {
+          "x": 71.96481727861665,
+          "y": 92.9716500839671
+        },
+        "projected": {
+          "x": 193713.27013296046,
+          "y": 547315.833360244
+        },
+        "wgs84": {
+          "lat": 37.52531221016224,
+          "lng": 126.9288796004246
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-zo0B7h0Ci1073",
+        "nearest_edge_id": "edge_00216",
+        "nearest_node_id": "ND-Jcu7MR0wA4631"
+      },
+      "confidence": 0.8345
+    },
+    {
+      "id": "store_entrance_027",
+      "type": "store_entrance",
+      "name": "메종 프란시스 커정",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1050.0229690139968,
+          "y": 1536.8864823363426
+        },
+        "local_m": {
+          "x": 27.705049066955784,
+          "y": 61.692901640044816
+        },
+        "projected": {
+          "x": 193669.0103647488,
+          "y": 547347.112108688
+        },
+        "wgs84": {
+          "lat": 37.525593729590966,
+          "lng": 126.92837863028245
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-z2Y_PMpLN3210",
+        "nearest_edge_id": "edge_00155",
+        "nearest_node_id": "ND-KHcP8FR944500"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_028",
+      "type": "store_entrance",
+      "name": "프레 데릭말",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1063.3244039730268,
+          "y": 1611.394523520573
+        },
+        "local_m": {
+          "x": 28.59591256670893,
+          "y": 68.6436771670588
+        },
+        "projected": {
+          "x": 193669.90122824855,
+          "y": 547340.161333161
+        },
+        "wgs84": {
+          "lat": 37.525531109109636,
+          "lng": 126.92838876832049
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-gPxUdR00y4529",
+        "nearest_edge_id": "edge_00197",
+        "nearest_node_id": "ND-eb2xyjLk80767"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_029",
+      "type": "store_entrance",
+      "name": "산타 마리아 노벨라",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1136.513877846571,
+          "y": 1558.1024412398685
+        },
+        "local_m": {
+          "x": 33.49777699268295,
+          "y": 63.67211577029058
+        },
+        "projected": {
+          "x": 193674.80309267453,
+          "y": 547345.1328945578
+        },
+        "wgs84": {
+          "lat": 37.525575936563676,
+          "lng": 126.92844417937829
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-mUhFcvK7w5817",
+        "nearest_edge_id": "edge_00156",
+        "nearest_node_id": "ND-i7sLiauPs8278"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_030",
+      "type": "store_entrance",
+      "name": "헤라",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1061.6207582957647,
+          "y": 1539.8404319684926
+        },
+        "local_m": {
+          "x": 28.481810911131184,
+          "y": 61.96847244401229
+        },
+        "projected": {
+          "x": 193669.78712659297,
+          "y": 547346.8365378841
+        },
+        "wgs84": {
+          "lat": 37.52559125202239,
+          "lng": 126.92838742001939
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-21bWY7vNS8090",
+        "nearest_edge_id": "edge_00155",
+        "nearest_node_id": "ND-KHcP8FR944500"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_031",
+      "type": "store_entrance",
+      "name": "설화수",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1309.75105247269,
+          "y": 1655.4578401199863
+        },
+        "local_m": {
+          "x": 45.10033537455129,
+          "y": 72.75429687723167
+        },
+        "projected": {
+          "x": 193686.4056510564,
+          "y": 547336.0507134509
+        },
+        "wgs84": {
+          "lat": 37.52549418542563,
+          "lng": 126.92857551496753
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-b1f2u6pn19153",
+        "nearest_edge_id": "edge_00191",
+        "nearest_node_id": "ND-RPPMFdnYk0640"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_032",
+      "type": "store_entrance",
+      "name": "나스",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1358.7353694978083,
+          "y": 1350.0350853380633
+        },
+        "local_m": {
+          "x": 48.38105961463708,
+          "y": 44.261734523026384
+        },
+        "projected": {
+          "x": 193689.6863752965,
+          "y": 547364.5432758051
+        },
+        "wgs84": {
+          "lat": 37.52575092628074,
+          "lng": 126.92861238452105
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-NKL2Noskp0569",
+        "nearest_edge_id": "edge_00177",
+        "nearest_node_id": "ND-rZ91rfxFD0473"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_033",
+      "type": "store_entrance",
+      "name": "에르메스 뷰티",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1185.9229433262826,
+          "y": 1380.8527646576001
+        },
+        "local_m": {
+          "x": 36.80694875711023,
+          "y": 47.13668288845111
+        },
+        "projected": {
+          "x": 193678.11226443897,
+          "y": 547361.6683274396
+        },
+        "wgs84": {
+          "lat": 37.52572494373721,
+          "lng": 126.9284814731923
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO--Aksc58lQ1986",
+        "nearest_edge_id": "edge_00106",
+        "nearest_node_id": "ND-AfHsn-cll3891"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_034",
+      "type": "store_entrance",
+      "name": "아르마니 뷰티",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1185.9229433262826,
+          "y": 1444.5271377148044
+        },
+        "local_m": {
+          "x": 36.80694875711023,
+          "y": 53.07679709504559
+        },
+        "projected": {
+          "x": 193678.11226443897,
+          "y": 547355.7282132331
+        },
+        "wgs84": {
+          "lat": 37.52567142321958,
+          "lng": 126.9284815242855
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-qBb4RVzVr4193",
+        "nearest_edge_id": "edge_00109",
+        "nearest_node_id": "ND-CWq1vjgVv5115"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_035",
+      "type": "store_entrance",
+      "name": "아쿠아 디 파르마",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1185.9229433262826,
+          "y": 1537.9087575440587
+        },
+        "local_m": {
+          "x": 36.80694875711023,
+          "y": 61.788268601553
+        },
+        "projected": {
+          "x": 193678.11226443897,
+          "y": 547347.0167417265
+        },
+        "wgs84": {
+          "lat": 37.52559293273043,
+          "lng": 126.92848159921593
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-E8I-xAJ145321",
+        "nearest_edge_id": "edge_00121",
+        "nearest_node_id": "ND-_wJfSHEatf0043"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_036",
+      "type": "store_entrance",
+      "name": "시슬리",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1313.1259209920167,
+          "y": 1585.5778811272166
+        },
+        "local_m": {
+          "x": 45.326367166579345,
+          "y": 66.23527019131089
+        },
+        "projected": {
+          "x": 193686.63168284844,
+          "y": 547342.5697401367
+        },
+        "wgs84": {
+          "lat": 37.52555292350156,
+          "lng": 126.92857801602355
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-8G-7fm4tJ6353",
+        "nearest_edge_id": "edge_00158",
+        "nearest_node_id": "ND-xm-zsHxUm2746"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_037",
+      "type": "store_entrance",
+      "name": "입생로랑",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1314.09347591798,
+          "y": 1394.5096513166434
+        },
+        "local_m": {
+          "x": 45.39116914998955,
+          "y": 48.41071924823361
+        },
+        "projected": {
+          "x": 193686.69648483183,
+          "y": 547360.3942910798
+        },
+        "wgs84": {
+          "lat": 37.52571352341697,
+          "lng": 126.92857859600898
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-lNZXXqB2j7833",
+        "nearest_edge_id": "edge_00114",
+        "nearest_node_id": "ND-bkGkpNmj-3635"
+      },
+      "confidence": 0.7966
+    },
+    {
+      "id": "store_entrance_038",
+      "type": "store_entrance",
+      "name": "메종 마르지엘라 퍼퓸",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1445.149660835708,
+          "y": 1559.298053379799
+        },
+        "local_m": {
+          "x": 54.168656084272605,
+          "y": 63.78365314894051
+        },
+        "projected": {
+          "x": 193695.47397176613,
+          "y": 547345.0213571792
+        },
+        "wgs84": {
+          "lat": 37.52557507305811,
+          "lng": 126.92867802612464
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-pn6YzQkUO9153",
+        "nearest_edge_id": "edge_00092",
+        "nearest_node_id": "ND-zFpXIZXDO9891"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_039",
+      "type": "store_entrance",
+      "name": "디올 뷰티",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1445.149660835708,
+          "y": 1502.9070000000002
+        },
+        "local_m": {
+          "x": 54.168656084272605,
+          "y": 58.522992050554215
+        },
+        "projected": {
+          "x": 193695.47397176613,
+          "y": 547350.2820182776
+        },
+        "wgs84": {
+          "lat": 37.525622471694085,
+          "lng": 126.92867798100019
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-psrx-E2QU1009",
+        "nearest_edge_id": "edge_00094",
+        "nearest_node_id": "ND-pLiGzopE_1163"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_040",
+      "type": "store_entrance",
+      "name": "탬버린즈",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1239.5124385588854,
+          "y": 1403.9916101856718
+        },
+        "local_m": {
+          "x": 40.396104770725934,
+          "y": 49.295281056697114
+        },
+        "projected": {
+          "x": 193681.70142045256,
+          "y": 547359.5097292714
+        },
+        "wgs84": {
+          "lat": 37.52570551931611,
+          "lng": 126.92852209528019
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-LkwW7ARVY5105",
+        "nearest_edge_id": "edge_00114",
+        "nearest_node_id": "ND--mEEYOk4l1195"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_041",
+      "type": "store_entrance",
+      "name": "오휘/후",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1240.5587284576166,
+          "y": 1647.0275575930245
+        },
+        "local_m": {
+          "x": 40.46618002830611,
+          "y": 71.96784483067563
+        },
+        "projected": {
+          "x": 193681.77149571016,
+          "y": 547336.8371654974
+        },
+        "wgs84": {
+          "lat": 37.5255012396545,
+          "lng": 126.92852308293139
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-EIdQCH0YT6586",
+        "nearest_edge_id": "edge_00201",
+        "nearest_node_id": "ND-M0vbjijvj8200"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_042",
+      "type": "store_entrance",
+      "name": "MAC",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1358.7588157751593,
+          "y": 1352.143013246923
+        },
+        "local_m": {
+          "x": 48.382629928874714,
+          "y": 44.45838086466598
+        },
+        "projected": {
+          "x": 193689.68794561073,
+          "y": 547364.3466294634
+        },
+        "wgs84": {
+          "lat": 37.52574915450502,
+          "lng": 126.92861240397411
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-B6vMKNxDm8009",
+        "nearest_edge_id": "edge_00177",
+        "nearest_node_id": "ND-rZ91rfxFD0473"
+      },
+      "confidence": 0.8446
+    },
+    {
+      "id": "store_entrance_043",
+      "type": "store_entrance",
+      "name": "젠틀몬스터",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1563.5021393709212,
+          "y": 1605.743261416853
+        },
+        "local_m": {
+          "x": 62.095312385423085,
+          "y": 68.11647696553757
+        },
+        "projected": {
+          "x": 193703.40062806726,
+          "y": 547340.6885333626
+        },
+        "wgs84": {
+          "lat": 37.525536088367836,
+          "lng": 126.9287677360232
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-ZUUKB6sdh1593",
+        "nearest_edge_id": "edge_00075",
+        "nearest_node_id": "ND-ahEBpWpgh3396"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_044",
+      "type": "store_entrance",
+      "name": "바이 레도",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1025.339429519921,
+          "y": 1419.4770523606894
+        },
+        "local_m": {
+          "x": 26.051869207209975,
+          "y": 50.739901406183414
+        },
+        "projected": {
+          "x": 193667.35718488906,
+          "y": 547358.0651089218
+        },
+        "wgs84": {
+          "lat": 37.525692404944316,
+          "lng": 126.92835983379256
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-2-rJKPQYe3337",
+        "nearest_edge_id": "edge_00119",
+        "nearest_node_id": "ND-Ocw6ypX_T5019"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_045",
+      "type": "store_entrance",
+      "name": "딥티크",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1563.5021393709212,
+          "y": 1494.1660497612784
+        },
+        "local_m": {
+          "x": 62.095312385423085,
+          "y": 57.70755814521336
+        },
+        "projected": {
+          "x": 193703.40062806726,
+          "y": 547351.0974521829
+        },
+        "wgs84": {
+          "lat": 37.525629872884146,
+          "lng": 126.92876764685079
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-qbEdDnd895130",
+        "nearest_edge_id": "edge_00033",
+        "nearest_node_id": "ND-n10BJN9pK5619"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_046",
+      "type": "store_entrance",
+      "name": "크리드",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1229.4627691792177,
+          "y": 1575.1711066074997
+        },
+        "local_m": {
+          "x": 39.72302824458355,
+          "y": 65.2644333192484
+        },
+        "projected": {
+          "x": 193681.02834392645,
+          "y": 547343.5405770089
+        },
+        "wgs84": {
+          "lat": 37.52556163240572,
+          "lng": 126.92851461817112
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-ABijlzm397680",
+        "nearest_edge_id": "edge_00157",
+        "nearest_node_id": "ND-eVkG7veBm0890"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_047",
+      "type": "store_entrance",
+      "name": "키엘",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1185.9229433262826,
+          "y": 1522.7333184003
+        },
+        "local_m": {
+          "x": 36.80694875711023,
+          "y": 60.37256810351799
+        },
+        "projected": {
+          "x": 193678.11226443897,
+          "y": 547348.4324422246
+        },
+        "wgs84": {
+          "lat": 37.525605688213254,
+          "lng": 126.92848158703902
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-teUtsih2N9762",
+        "nearest_edge_id": "edge_00128",
+        "nearest_node_id": "ND-Fp41GwLML9243"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_048",
+      "type": "store_entrance",
+      "name": "이솝",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1445.3635627152707,
+          "y": 1627.6925635081604
+        },
+        "local_m": {
+          "x": 54.182982160941634,
+          "y": 70.16410389796572
+        },
+        "projected": {
+          "x": 193695.4882978428,
+          "y": 547338.6409064301
+        },
+        "wgs84": {
+          "lat": 37.52551758519779,
+          "lng": 126.9286782429223
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-jH2tLhTWM1936",
+        "nearest_edge_id": "edge_00089",
+        "nearest_node_id": "ND-ha9dxgWqR0843"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_049",
+      "type": "store_entrance",
+      "name": "페어몬트 호텔",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 2202.3363870947564,
+          "y": 1471.4969420793861
+        },
+        "local_m": {
+          "x": 104.88123100565907,
+          "y": 55.59278131857616
+        },
+        "projected": {
+          "x": 193746.1865466875,
+          "y": 547353.2122290095
+        },
+        "wgs84": {
+          "lat": 37.525649217995394,
+          "lng": 126.92925165830654
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-1MUAt0Fom4757",
+        "nearest_edge_id": "edge_00051",
+        "nearest_node_id": "ND-Gc0mcAvj_5011"
+      },
+      "confidence": 0.684
+    },
+    {
+      "id": "store_entrance_050",
+      "type": "store_entrance",
+      "name": "메모 파리",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1025.7487649361933,
+          "y": 1487.7770373722738
+        },
+        "local_m": {
+          "x": 26.079284443433473,
+          "y": 57.11153400809403
+        },
+        "projected": {
+          "x": 193667.38460012528,
+          "y": 547351.69347632
+        },
+        "wgs84": {
+          "lat": 37.52563499662744,
+          "lng": 126.92836019883423
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-FnAfnhVcz5929",
+        "nearest_edge_id": "edge_00125",
+        "nearest_node_id": "ND-gq38k9H1F4579"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_051",
+      "type": "store_entrance",
+      "name": "크리스챤 디올 (남/여)",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1904.0891901738325,
+          "y": 1683.382425469593
+        },
+        "local_m": {
+          "x": 84.90612738271028,
+          "y": 75.35935159837418
+        },
+        "projected": {
+          "x": 193726.21144306456,
+          "y": 547333.4456587296
+        },
+        "wgs84": {
+          "lat": 37.52547098531401,
+          "lng": 126.92902585219632
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-ycohmIvZf5120",
+        "nearest_edge_id": "edge_00170",
+        "nearest_node_id": "ND-vsudfQQ9j9528"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_052",
+      "type": "store_entrance",
+      "name": "록시땅",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1186.6024792935377,
+          "y": 1602.6244158701459
+        },
+        "local_m": {
+          "x": 36.8524606730698,
+          "y": 67.82552319794372
+        },
+        "projected": {
+          "x": 193678.15777635493,
+          "y": 547340.9794871301
+        },
+        "wgs84": {
+          "lat": 37.52553853728699,
+          "lng": 126.92848216601188
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-olgaHsx-80298",
+        "nearest_edge_id": "edge_00124",
+        "nearest_node_id": "ND-QFYbS1nGa5315"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_053",
+      "type": "store_entrance",
+      "name": "르 라보",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1563.5021393709212,
+          "y": 1376.9803941775692
+        },
+        "local_m": {
+          "x": 62.095312385423085,
+          "y": 46.775433585203736
+        },
+        "projected": {
+          "x": 193703.40062806726,
+          "y": 547362.0295767429
+        },
+        "wgs84": {
+          "lat": 37.52572837149049,
+          "lng": 126.92876755319564
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-bEaXkQ92W3387",
+        "nearest_edge_id": "edge_00033",
+        "nearest_node_id": "ND-OBzjbJhAj6899"
+      },
+      "confidence": 0.8547
+    },
+    {
+      "id": "store_entrance_054",
+      "type": "store_entrance",
+      "name": "스킨 케어룸",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 946.2156454413996,
+          "y": 1841.0800616928602
+        },
+        "local_m": {
+          "x": 20.752554402828633,
+          "y": 90.07079553257105
+        },
+        "projected": {
+          "x": 193662.05787008468,
+          "y": 547318.7342147955
+        },
+        "wgs84": {
+          "lat": 37.525337996611825,
+          "lng": 126.92830022269841
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-KUcsEB8l37533",
+        "nearest_edge_id": "edge_00164",
+        "nearest_node_id": "ND-5c1Bx7olY7217"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_055",
+      "type": "store_entrance",
+      "name": "커뮤니티 라운지",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 946.2349378398097,
+          "y": 1881.4332724619653
+        },
+        "local_m": {
+          "x": 20.753846511057496,
+          "y": 93.83530343523884
+        },
+        "projected": {
+          "x": 193662.05916219292,
+          "y": 547314.9697068929
+        },
+        "wgs84": {
+          "lat": 37.525304078346295,
+          "lng": 126.92830026977731
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-07DinRnZI3871",
+        "nearest_edge_id": "edge_00165",
+        "nearest_node_id": "ND-WCvsig2if1283"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_056",
+      "type": "store_entrance",
+      "name": "구찌 뷰티",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1314.09347591798,
+          "y": 1394.5096513166434
+        },
+        "local_m": {
+          "x": 45.39116914998955,
+          "y": 48.41071924823361
+        },
+        "projected": {
+          "x": 193686.69648483183,
+          "y": 547360.3942910798
+        },
+        "wgs84": {
+          "lat": 37.52571352341697,
+          "lng": 126.92857859600898
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-QDhLZPwn-9734",
+        "nearest_edge_id": "store_edge_037",
+        "nearest_node_id": "store_entrance_037"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_057",
+      "type": "store_entrance",
+      "name": "다미아니",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 2202.3363870947564,
+          "y": 1478.0151360485866
+        },
+        "local_m": {
+          "x": 104.88123100565907,
+          "y": 56.20085666724117
+        },
+        "projected": {
+          "x": 193746.1865466875,
+          "y": 547352.6041536608
+        },
+        "wgs84": {
+          "lat": 37.52564373922729,
+          "lng": 126.92925166348051
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-JX50wNRGi2737",
+        "nearest_edge_id": "edge_00051",
+        "nearest_node_id": "ND-Gc0mcAvj_5011"
+      },
+      "confidence": 0.8449
+    },
+    {
+      "id": "store_entrance_058",
+      "type": "store_entrance",
+      "name": "정수기",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 1509.964967726385,
+          "y": 1115.3687560698231
+        },
+        "local_m": {
+          "x": 58.50966074369871,
+          "y": 22.369963479700253
+        },
+        "projected": {
+          "x": 193699.81497642555,
+          "y": 547386.4350468484
+        },
+        "wgs84": {
+          "lat": 37.525948240664,
+          "lng": 126.92872678010494
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-0d_J1ehum94259",
+        "nearest_edge_id": "edge_00036",
+        "nearest_node_id": "ND-XJziATUz07428"
+      },
+      "confidence": 0.792
+    },
+    {
+      "id": "store_entrance_059",
+      "type": "store_entrance",
+      "name": "페라가모",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 2080.8640997412117,
+          "y": 1857.9836762436457
+        },
+        "local_m": {
+          "x": 96.74562553391009,
+          "y": 91.64771566723357
+        },
+        "projected": {
+          "x": 193738.05094121577,
+          "y": 547317.1572946608
+        },
+        "wgs84": {
+          "lat": 37.52532430731387,
+          "lng": 126.92915992881075
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-nwmgi9vgb5269",
+        "nearest_edge_id": "edge_00163",
+        "nearest_node_id": "ND-qpqxeP12C2601"
+      },
+      "confidence": 0.85
+    },
+    {
+      "id": "store_entrance_060",
+      "type": "store_entrance",
+      "name": "반클리프아펠",
+      "floor_id": "FL-soem999bnha10599",
+      "degree": 1,
+      "position": {
+        "source": {
+          "x": 2030.6082637331492,
+          "y": 1735.5575923964877
+        },
+        "local_m": {
+          "x": 93.37974132013446,
+          "y": 80.22671715555762
+        },
+        "projected": {
+          "x": 193734.68505700197,
+          "y": 547328.5782931725
+        },
+        "wgs84": {
+          "lat": 37.525427187842716,
+          "lng": 126.92912175396383
+        }
+      },
+      "source": {
+        "kind": "generated_store_entrance",
+        "store_poi_id": "PO-FmmYZib575409",
+        "nearest_edge_id": "edge_00062",
+        "nearest_node_id": "ND-uTCudaGza9139"
+      },
+      "confidence": 0.792
+    }
+  ]
+}

@@ -1,0 +1,1419 @@
+{
+  "pois": [
+    {
+      "id": "poi_ND-6OEzy_zfT8980",
+      "type": "elevator",
+      "name": "EV1",
+      "centroid": {
+        "source": {
+          "x": 974.8671188689422,
+          "y": 1208.1496320910526
+        },
+        "local_m": {
+          "x": 22.671486605960343,
+          "y": 31.025392238439007
+        },
+        "projected": {
+          "x": 193663.9768022878,
+          "y": 547377.7796180897
+        },
+        "wgs84": {
+          "lat": 37.52587000976006,
+          "lng": 126.92832142214527
+        }
+      },
+      "linked_node_id": "ND-6OEzy_zfT8980",
+      "confidence": 0.94,
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ELEVATOR"
+      }
+    },
+    {
+      "id": "poi_ND-dwvi-_GRh5900",
+      "type": "elevator",
+      "name": "EV2",
+      "centroid": {
+        "source": {
+          "x": 2078.03175308119,
+          "y": 1178.9944161990293
+        },
+        "local_m": {
+          "x": 96.55592913905998,
+          "y": 28.30553330930673
+        },
+        "projected": {
+          "x": 193737.8612448209,
+          "y": 547380.4994770187
+        },
+        "wgs84": {
+          "lat": 37.52589502005184,
+          "lng": 126.92915724313949
+        }
+      },
+      "linked_node_id": "ND-dwvi-_GRh5900",
+      "confidence": 0.94,
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ELEVATOR"
+      }
+    },
+    {
+      "id": "poi_ND-HXaBphHsA1916",
+      "type": "escalator",
+      "name": "ES3-UP(TO2F)",
+      "centroid": {
+        "source": {
+          "x": 2074.8106535950974,
+          "y": 1580.8508237392339
+        },
+        "local_m": {
+          "x": 96.34019602680014,
+          "y": 65.79428805992
+        },
+        "projected": {
+          "x": 193737.64551170866,
+          "y": 547343.0107222681
+        },
+        "wgs84": {
+          "lat": 37.525557244344846,
+          "lng": 126.92915512199963
+        }
+      },
+      "linked_node_id": "ND-HXaBphHsA1916",
+      "confidence": 0.94,
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ESCALATOR_UP"
+      }
+    },
+    {
+      "id": "poi_ND-Wpb0-uW9D3316",
+      "type": "escalator",
+      "name": "ES3-UP(FRB1)",
+      "centroid": {
+        "source": {
+          "x": 2053.9530203833706,
+          "y": 1580.8508237392339
+        },
+        "local_m": {
+          "x": 94.94325620964516,
+          "y": 65.79428805992
+        },
+        "projected": {
+          "x": 193736.24857189148,
+          "y": 547343.0107222681
+        },
+        "wgs84": {
+          "lat": 37.52555723486422,
+          "lng": 126.92913931868448
+        }
+      },
+      "linked_node_id": "ND-Wpb0-uW9D3316",
+      "confidence": 0.94,
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ESCALATOR_UP"
+      }
+    },
+    {
+      "id": "poi_ND-2Nd0fUp-J5580",
+      "type": "escalator",
+      "name": "ES3-DN(FR2F)",
+      "centroid": {
+        "source": {
+          "x": 2052.0172052812068,
+          "y": 1404.4191423969398
+        },
+        "local_m": {
+          "x": 94.81360500869575,
+          "y": 49.3351650797349
+        },
+        "projected": {
+          "x": 193736.11892069055,
+          "y": 547359.4698452484
+        },
+        "wgs84": {
+          "lat": 37.52570553093166,
+          "lng": 126.9291377116933
+        }
+      },
+      "linked_node_id": "ND-2Nd0fUp-J5580",
+      "confidence": 0.94,
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ESCALATOR_DOWN"
+      }
+    },
+    {
+      "id": "poi_ND-UGoSau5nz6732",
+      "type": "escalator",
+      "name": "ES3-DN(TOB1)",
+      "centroid": {
+        "source": {
+          "x": 2071.783406380628,
+          "y": 1404.4191423969398
+        },
+        "local_m": {
+          "x": 96.13744616887828,
+          "y": 49.3351650797349
+        },
+        "projected": {
+          "x": 193737.44276185072,
+          "y": 547359.4698452484
+        },
+        "wgs84": {
+          "lat": 37.52570553991648,
+          "lng": 126.92915268808687
+        }
+      },
+      "linked_node_id": "ND-UGoSau5nz6732",
+      "confidence": 0.94,
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ESCALATOR_DOWN"
+      }
+    },
+    {
+      "id": "poi_ND-DFWgcx5bA9876",
+      "type": "escalator",
+      "name": "ES2-UP(FRB1)",
+      "centroid": {
+        "source": {
+          "x": 1474.9235841428042,
+          "y": 1401.0653917798868
+        },
+        "local_m": {
+          "x": 56.16276435908957,
+          "y": 49.02229726919777
+        },
+        "projected": {
+          "x": 193697.46808004094,
+          "y": 547359.7827130589
+        },
+        "wgs84": {
+          "lat": 37.525708086717664,
+          "lng": 126.92870045851947
+        }
+      },
+      "linked_node_id": "ND-DFWgcx5bA9876",
+      "confidence": 0.94,
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ESCALATOR_UP"
+      }
+    },
+    {
+      "id": "poi_ND-k5XlGr56f2388",
+      "type": "escalator",
+      "name": "ES2-UP(TO2F)",
+      "centroid": {
+        "source": {
+          "x": 1492.11278580554,
+          "y": 1401.0653917798868
+        },
+        "local_m": {
+          "x": 57.31401100265801,
+          "y": 49.02229726919777
+        },
+        "projected": {
+          "x": 193698.6193266845,
+          "y": 547359.7827130589
+        },
+        "wgs84": {
+          "lat": 37.525708094579414,
+          "lng": 126.92871348238047
+        }
+      },
+      "linked_node_id": "ND-k5XlGr56f2388",
+      "confidence": 0.94,
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ESCALATOR_UP"
+      }
+    },
+    {
+      "id": "poi_ND-knl6QTsvh7604",
+      "type": "escalator",
+      "name": "ES2-1-DN(FR2F)",
+      "centroid": {
+        "source": {
+          "x": 1520.8546965086998,
+          "y": 1401.2285764213325
+        },
+        "local_m": {
+          "x": 59.23900024159923,
+          "y": 49.037520589984595
+        },
+        "projected": {
+          "x": 193700.54431592344,
+          "y": 547359.7674897381
+        },
+        "wgs84": {
+          "lat": 37.52570797055944,
+          "lng": 126.9287352595927
+        }
+      },
+      "linked_node_id": "ND-knl6QTsvh7604",
+      "confidence": 0.94,
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ESCALATOR_DOWN"
+      }
+    },
+    {
+      "id": "poi_ND-k4q-72JBh9364",
+      "type": "escalator",
+      "name": "ES2-1-DN(TOB1)",
+      "centroid": {
+        "source": {
+          "x": 1537.9354418503149,
+          "y": 1401.2285764213325
+        },
+        "local_m": {
+          "x": 60.38298302393003,
+          "y": 49.037520589984595
+        },
+        "projected": {
+          "x": 193701.6882987058,
+          "y": 547359.7674897381
+        },
+        "wgs84": {
+          "lat": 37.52570797836778,
+          "lng": 126.92874820127884
+        }
+      },
+      "linked_node_id": "ND-k4q-72JBh9364",
+      "confidence": 0.94,
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ESCALATOR_DOWN"
+      }
+    },
+    {
+      "id": "poi_ND-p7mzWvDi61268",
+      "type": "escalator",
+      "name": "ES2-DN(TOB1)",
+      "centroid": {
+        "source": {
+          "x": 1492.0931665052444,
+          "y": 1576.9870618610394
+        },
+        "local_m": {
+          "x": 57.312697000178,
+          "y": 65.43384184393697
+        },
+        "projected": {
+          "x": 193698.61801268204,
+          "y": 547343.3711684841
+        },
+        "wgs84": {
+          "lat": 37.52556022630659,
+          "lng": 126.92871360821901
+        }
+      },
+      "linked_node_id": "ND-p7mzWvDi61268",
+      "confidence": 0.94,
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ESCALATOR_DOWN"
+      }
+    },
+    {
+      "id": "poi_ND-XNAu6NkFC2236",
+      "type": "escalator",
+      "name": "ES2-DN(FR2F)",
+      "centroid": {
+        "source": {
+          "x": 1473.9051687853257,
+          "y": 1576.9870618610394
+        },
+        "local_m": {
+          "x": 56.09455599868634,
+          "y": 65.43384184393697
+        },
+        "projected": {
+          "x": 193697.39987168054,
+          "y": 547343.3711684841
+        },
+        "wgs84": {
+          "lat": 37.52556021798801,
+          "lng": 126.92869982762052
+        }
+      },
+      "linked_node_id": "ND-XNAu6NkFC2236",
+      "confidence": 0.94,
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ESCALATOR_DOWN"
+      }
+    },
+    {
+      "id": "poi_ND-amnSSqfMq7059",
+      "type": "escalator",
+      "name": "ES2-1-UP(TO2F)",
+      "centroid": {
+        "source": {
+          "x": 1538.6021785268072,
+          "y": 1576.3997251388168
+        },
+        "local_m": {
+          "x": 60.42763770749336,
+          "y": 65.37904982887316
+        },
+        "projected": {
+          "x": 193701.73295338935,
+          "y": 547343.4259604992
+        },
+        "wgs84": {
+          "lat": 37.5255607412478,
+          "lng": 126.92874884648393
+        }
+      },
+      "linked_node_id": "ND-amnSSqfMq7059",
+      "confidence": 0.94,
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ESCALATOR_UP"
+      }
+    },
+    {
+      "id": "poi_ND-XIMqJJoY18387",
+      "type": "escalator",
+      "name": "ES2-1-UP(FRB1)",
+      "centroid": {
+        "source": {
+          "x": 1519.0648713445953,
+          "y": 1576.3997251388168
+        },
+        "local_m": {
+          "x": 59.119126715581054,
+          "y": 65.37904982887316
+        },
+        "projected": {
+          "x": 193700.42444239743,
+          "y": 547343.4259604992
+        },
+        "wgs84": {
+          "lat": 37.52556073231645,
+          "lng": 126.9287340435467
+        }
+      },
+      "linked_node_id": "ND-XIMqJJoY18387",
+      "confidence": 0.94,
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ESCALATOR_UP"
+      }
+    },
+    {
+      "id": "poi_ND-kO6RMT9w39043",
+      "type": "escalator",
+      "name": "ES1-DN(FR2F)",
+      "centroid": {
+        "source": {
+          "x": 853.4540612482759,
+          "y": 1402.8314075881945
+        },
+        "local_m": {
+          "x": 14.539848045096086,
+          "y": 49.18704699641651
+        },
+        "projected": {
+          "x": 193655.84516372695,
+          "y": 547359.6179633316
+        },
+        "wgs84": {
+          "lat": 37.52570631711656,
+          "lng": 126.92822958684472
+        }
+      },
+      "linked_node_id": "ND-kO6RMT9w39043",
+      "confidence": 0.94,
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ESCALATOR_DOWN"
+      }
+    },
+    {
+      "id": "poi_ND-vNkzxL7bF9707",
+      "type": "escalator",
+      "name": "ES1-DN(TOB1)",
+      "centroid": {
+        "source": {
+          "x": 873.4257467264524,
+          "y": 1402.8314075881945
+        },
+        "local_m": {
+          "x": 15.87745151989853,
+          "y": 49.18704699641651
+        },
+        "projected": {
+          "x": 193657.18276720174,
+          "y": 547359.6179633316
+        },
+        "wgs84": {
+          "lat": 37.52570632631112,
+          "lng": 126.92824471892888
+        }
+      },
+      "linked_node_id": "ND-vNkzxL7bF9707",
+      "confidence": 0.94,
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ESCALATOR_DOWN"
+      }
+    },
+    {
+      "id": "poi_ND-dxqdNpg1c4213",
+      "type": "escalator",
+      "name": "ES1-UP(TO2F)",
+      "centroid": {
+        "source": {
+          "x": 872.9785572261594,
+          "y": 1584.5967577241126
+        },
+        "local_m": {
+          "x": 15.847501006701199,
+          "y": 66.14374223767145
+        },
+        "projected": {
+          "x": 193657.15281668855,
+          "y": 547342.6612680904
+        },
+        "wgs84": {
+          "lat": 37.52555354602715,
+          "lng": 126.9282445264378
+        }
+      },
+      "linked_node_id": "ND-dxqdNpg1c4213",
+      "confidence": 0.94,
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ESCALATOR_UP"
+      }
+    },
+    {
+      "id": "poi_ND-5_0BwXc265244",
+      "type": "escalator",
+      "name": "ES1-UP(FRB1)",
+      "centroid": {
+        "source": {
+          "x": 853.1977891707875,
+          "y": 1584.7965168980083
+        },
+        "local_m": {
+          "x": 14.522684224760642,
+          "y": 66.16237755749924
+        },
+        "projected": {
+          "x": 193655.8279999066,
+          "y": 547342.6426327706
+        },
+        "wgs84": {
+          "lat": 37.52555336901599,
+          "lng": 126.92822953919877
+        }
+      },
+      "linked_node_id": "ND-5_0BwXc265244",
+      "confidence": 0.94,
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ESCALATOR_UP"
+      }
+    },
+    {
+      "id": "poi_ND-yXLBfQ---3497",
+      "type": "elevator",
+      "name": "EV3",
+      "centroid": {
+        "source": {
+          "x": 2080.8640997412117,
+          "y": 1912.9627749521178
+        },
+        "local_m": {
+          "x": 96.74562553391009,
+          "y": 96.7766570234454
+        },
+        "projected": {
+          "x": 193738.05094121577,
+          "y": 547312.0283533046
+        },
+        "wgs84": {
+          "lat": 37.52527809547192,
+          "lng": 126.92915997250759
+        }
+      },
+      "linked_node_id": "ND-yXLBfQ---3497",
+      "confidence": 0.94,
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ELEVATOR"
+      }
+    },
+    {
+      "id": "poi_ND-WCvsig2if1283",
+      "type": "elevator",
+      "name": "EV4",
+      "centroid": {
+        "source": {
+          "x": 946.2349378398097,
+          "y": 1881.4332724619653
+        },
+        "local_m": {
+          "x": 20.753846511057496,
+          "y": 93.83530343523884
+        },
+        "projected": {
+          "x": 193662.05916219292,
+          "y": 547314.9697068929
+        },
+        "wgs84": {
+          "lat": 37.525304078346295,
+          "lng": 126.92830026977731
+        }
+      },
+      "linked_node_id": "ND-WCvsig2if1283",
+      "confidence": 0.94,
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ELEVATOR"
+      }
+    },
+    {
+      "id": "poi_ND-Jcu7MR0wA4631",
+      "type": "elevator",
+      "name": "EV6",
+      "centroid": {
+        "source": {
+          "x": 1710.8631856490774,
+          "y": 1872.1754394021345
+        },
+        "local_m": {
+          "x": 71.96481727861665,
+          "y": 92.9716500839671
+        },
+        "projected": {
+          "x": 193713.27013296046,
+          "y": 547315.833360244
+        },
+        "wgs84": {
+          "lat": 37.52531221016224,
+          "lng": 126.9288796004246
+        }
+      },
+      "linked_node_id": "ND-Jcu7MR0wA4631",
+      "confidence": 0.94,
+      "source": {
+        "kind": "dabeeo_node",
+        "trans_code": "OB-ELEVATOR"
+      }
+    },
+    {
+      "id": "poi_021",
+      "source_id": "PO-NyezFOtR45461",
+      "type": "facility",
+      "name": "투어리스트 데스크 서비스 - 유모차 대여",
+      "centroid": {
+        "source": {
+          "x": 1386.5183521376982,
+          "y": 1023.9676776092339
+        },
+        "local_m": {
+          "x": 50.24182465422781,
+          "y": 13.84325456064991
+        },
+        "projected": {
+          "x": 193691.54714033607,
+          "y": 547394.9617557675
+        },
+        "wgs84": {
+          "lat": 37.526025009953145,
+          "lng": 126.92863317396981
+        }
+      },
+      "linked_node_id": "ND-B2dugn7h08876",
+      "confidence": 0.82,
+      "source": {
+        "kind": "dabeeo_poi",
+        "category_code": "9992",
+        "object_id": "OB-2C69n7B556581"
+      }
+    },
+    {
+      "id": "poi_022",
+      "source_id": "PO-iVhobbC-v0998",
+      "type": "facility",
+      "name": "발레 라운지",
+      "centroid": {
+        "source": {
+          "x": 729.3252540892347,
+          "y": 1659.7904376901615
+        },
+        "local_m": {
+          "x": 6.226322180669343,
+          "y": 73.15848027382253
+        },
+        "projected": {
+          "x": 193647.53163786253,
+          "y": 547335.6465300543
+        },
+        "wgs84": {
+          "lat": 37.525490276953136,
+          "lng": 126.9281357445023
+        }
+      },
+      "linked_node_id": "ND-QCNbdWLZi7268",
+      "confidence": 0.82,
+      "source": {
+        "kind": "dabeeo_poi",
+        "category_code": "9992",
+        "object_id": "OB-a3aPUFuRGS6582"
+      }
+    },
+    {
+      "id": "poi_023",
+      "source_id": "PO-_az6DiEe43889",
+      "type": "facility",
+      "name": "WATERFALL GARDEN",
+      "centroid": {
+        "source": {
+          "x": 1970.88971066674,
+          "y": 1487.0374479268405
+        },
+        "local_m": {
+          "x": 89.38009170723176,
+          "y": 57.04253849921138
+        },
+        "projected": {
+          "x": 193730.68540738907,
+          "y": 547351.7624718288
+        },
+        "wgs84": {
+          "lat": 37.52563605048415,
+          "lng": 126.92907630900908
+        }
+      },
+      "linked_node_id": "ND-PJDoXxjPs1444",
+      "confidence": 0.82,
+      "source": {
+        "kind": "dabeeo_poi",
+        "category_code": "9992",
+        "object_id": ""
+      }
+    },
+    {
+      "id": "poi_024",
+      "source_id": "PO-ZtznVXoG01054",
+      "type": "poi",
+      "name": "유아차 전용 E/V",
+      "centroid": {
+        "source": {
+          "x": 1703.9852914234966,
+          "y": 1951.3101777714414
+        },
+        "local_m": {
+          "x": 71.50417036799344,
+          "y": 100.35404524630898
+        },
+        "projected": {
+          "x": 193712.80948604984,
+          "y": 547308.4509650818
+        },
+        "wgs84": {
+          "lat": 37.52524569152819,
+          "lng": 126.92887445237955
+        }
+      },
+      "linked_node_id": "ND-Jcu7MR0wA4631",
+      "confidence": 0.82,
+      "source": {
+        "kind": "dabeeo_poi",
+        "category_code": "",
+        "object_id": "OB-Tzgz_hK5V6174"
+      }
+    },
+    {
+      "id": "poi_025",
+      "source_id": "PO-U6hZ2idzw9372",
+      "type": "facility",
+      "name": "투어리스트 데스크 서비스 - 캐리어 보관 서비스",
+      "centroid": {
+        "source": {
+          "x": 1386.5183521376982,
+          "y": 1075.4340267713071
+        },
+        "local_m": {
+          "x": 50.24182465422781,
+          "y": 18.64449526614585
+        },
+        "projected": {
+          "x": 193691.54714033607,
+          "y": 547390.1605150619
+        },
+        "wgs84": {
+          "lat": 37.52598175070485,
+          "lng": 126.92863321517996
+        }
+      },
+      "linked_node_id": "ND-B2dugn7h08876",
+      "confidence": 0.82,
+      "source": {
+        "kind": "dabeeo_poi",
+        "category_code": "9992",
+        "object_id": "OB-W-aKOu0O-4453"
+      }
+    },
+    {
+      "id": "poi_026",
+      "source_id": "PO-g-Qs2usRK5184",
+      "type": "escalator",
+      "name": "에스컬레이터",
+      "centroid": {
+        "source": {
+          "x": 863.6772905290692,
+          "y": 1495.719147090097
+        },
+        "local_m": {
+          "x": 15.224548744225046,
+          "y": 57.85244493505033
+        },
+        "projected": {
+          "x": 193656.52986442606,
+          "y": 547350.9525653931
+        },
+        "wgs84": {
+          "lat": 37.52562824645866,
+          "lng": 126.92823740753782
+        }
+      },
+      "linked_node_id": "store_entrance_010",
+      "confidence": 0.82,
+      "source": {
+        "kind": "dabeeo_poi",
+        "category_code": "9994",
+        "object_id": "OB-7qNdmEU_IU7247"
+      }
+    },
+    {
+      "id": "poi_027",
+      "source_id": "PO-79T5tNCbX1542",
+      "type": "escalator",
+      "name": "에스컬레이터",
+      "centroid": {
+        "source": {
+          "x": 1484.2827036380286,
+          "y": 1495.660197481988
+        },
+        "local_m": {
+          "x": 56.789591312256995,
+          "y": 57.84694558911586
+        },
+        "projected": {
+          "x": 193698.0949069941,
+          "y": 547350.958064739
+        },
+        "wgs84": {
+          "lat": 37.525628580784556,
+          "lng": 126.92870762537223
+        }
+      },
+      "linked_node_id": "store_entrance_039",
+      "confidence": 0.82,
+      "source": {
+        "kind": "dabeeo_poi",
+        "category_code": "9994",
+        "object_id": "OB-jIqLyGY6S57247"
+      }
+    },
+    {
+      "id": "poi_028",
+      "source_id": "PO-CrRXuYr7I8723",
+      "type": "escalator",
+      "name": "에스컬레이터",
+      "centroid": {
+        "source": {
+          "x": 1529.022254321056,
+          "y": 1494.5176337850535
+        },
+        "local_m": {
+          "x": 59.78602236060843,
+          "y": 57.740357043014235
+        },
+        "projected": {
+          "x": 193701.09133804246,
+          "y": 547351.0646532851
+        },
+        "wgs84": {
+          "lat": 37.52562956160621,
+          "lng": 126.92874152254676
+        }
+      },
+      "linked_node_id": "ND-n10BJN9pK5619",
+      "confidence": 0.82,
+      "source": {
+        "kind": "dabeeo_poi",
+        "category_code": "9994",
+        "object_id": "OB-eNrZ0UphBZ7250"
+      }
+    },
+    {
+      "id": "poi_029",
+      "source_id": "PO-ZDIiTbuxX7875",
+      "type": "escalator",
+      "name": "에스컬레이터",
+      "centroid": {
+        "source": {
+          "x": 2062.5830813297625,
+          "y": 1492.0401222900052
+        },
+        "local_m": {
+          "x": 95.52125447234886,
+          "y": 57.50923264363435
+        },
+        "projected": {
+          "x": 193736.8265701542,
+          "y": 547351.2957776844
+        },
+        "wgs84": {
+          "lat": 37.52563188726251,
+          "lng": 126.92914578686846
+        }
+      },
+      "linked_node_id": "ND-APwvbDrci3554",
+      "confidence": 0.82,
+      "source": {
+        "kind": "dabeeo_poi",
+        "category_code": "9994",
+        "object_id": "OB-VXC_dpE8PT7245"
+      }
+    },
+    {
+      "id": "poi_030",
+      "source_id": "PO-OtkDgCUwm0591",
+      "type": "exit",
+      "name": "출구",
+      "centroid": {
+        "source": {
+          "x": 636.3603727767907,
+          "y": 1512.3908410144886
+        },
+        "local_m": {
+          "x": 0.0,
+          "y": 59.40772944235602
+        },
+        "projected": {
+          "x": 193641.30531568185,
+          "y": 547349.3972808857
+        },
+        "wgs84": {
+          "lat": 37.52561412854481,
+          "lng": 126.92806518840194
+        }
+      },
+      "linked_node_id": "ND-eNvFB4KrG5055",
+      "confidence": 0.82,
+      "source": {
+        "kind": "dabeeo_poi",
+        "category_code": "9995",
+        "object_id": "OB-J-oxgdtqR8080"
+      }
+    },
+    {
+      "id": "poi_031",
+      "source_id": "PO-aCd83OWPJ4438",
+      "type": "exit",
+      "name": "출구",
+      "centroid": {
+        "source": {
+          "x": 1511.016815443916,
+          "y": 925.0780809931007
+        },
+        "local_m": {
+          "x": 58.58010823614844,
+          "y": 4.617949786684365
+        },
+        "projected": {
+          "x": 193699.885423918,
+          "y": 547404.1870605414
+        },
+        "wgs84": {
+          "lat": 37.526108187045104,
+          "lng": 126.92872742489979
+        }
+      },
+      "linked_node_id": "ND-R9OtNLOZZ9866",
+      "confidence": 0.82,
+      "source": {
+        "kind": "dabeeo_poi",
+        "category_code": "9995",
+        "object_id": "OB-VFr-4p-Ma6249"
+      }
+    },
+    {
+      "id": "poi_032",
+      "source_id": "PO-IUr0JcJdy0927",
+      "type": "exit",
+      "name": "출구",
+      "centroid": {
+        "source": {
+          "x": 2349.1044857747256,
+          "y": 1230.8406230068758
+        },
+        "local_m": {
+          "x": 114.7110232382173,
+          "y": 33.14221052858058
+        },
+        "projected": {
+          "x": 193756.01633892008,
+          "y": 547375.6627997995
+        },
+        "wgs84": {
+          "lat": 37.52585156453672,
+          "lng": 126.92936267029158
+        }
+      },
+      "linked_node_id": "ND-yiJ6BrK7c8492",
+      "confidence": 0.82,
+      "source": {
+        "kind": "dabeeo_poi",
+        "category_code": "9995",
+        "object_id": "OB-xD5o5hOoh8335"
+      }
+    },
+    {
+      "id": "poi_033",
+      "source_id": "PO-37OFT9ZUH7718",
+      "type": "exit",
+      "name": "출구",
+      "centroid": {
+        "source": {
+          "x": 2385.724845715272,
+          "y": 1801.8939252493515
+        },
+        "local_m": {
+          "x": 117.16367155167669,
+          "y": 86.4151627463555
+        },
+        "projected": {
+          "x": 193758.46898723353,
+          "y": 547322.3898475817
+        },
+        "wgs84": {
+          "lat": 37.52537159101745,
+          "lng": 126.92939086914048
+        }
+      },
+      "linked_node_id": "ND-5LBgeDifkg7059",
+      "confidence": 0.82,
+      "source": {
+        "kind": "dabeeo_poi",
+        "category_code": "9995",
+        "object_id": "OB-KKkQglffd1864"
+      }
+    },
+    {
+      "id": "poi_034",
+      "source_id": "PO-HwdghqaiS1983",
+      "type": "exit",
+      "name": "출구",
+      "centroid": {
+        "source": {
+          "x": 1512.9992746953983,
+          "y": 2062.3224453981966
+        },
+        "local_m": {
+          "x": 58.712883428624544,
+          "y": 110.71026104200338
+        },
+        "projected": {
+          "x": 193700.01819911046,
+          "y": 547298.0947492861
+        },
+        "wgs84": {
+          "lat": 37.525152294627894,
+          "lng": 126.92872983634668
+        }
+      },
+      "linked_node_id": "ND-5iZ0py7438366",
+      "confidence": 0.82,
+      "source": {
+        "kind": "dabeeo_poi",
+        "category_code": "9995",
+        "object_id": "OB-GW5bCvGGn1876"
+      }
+    },
+    {
+      "id": "poi_035",
+      "source_id": "PO-r52wm2fcn1150",
+      "type": "poi",
+      "name": "9호선, 5호선 여의도역",
+      "centroid": {
+        "source": {
+          "x": 2268.909440157209,
+          "y": 2173.6161975220184
+        },
+        "local_m": {
+          "x": 109.33996070084925,
+          "y": 121.09273622557521
+        },
+        "projected": {
+          "x": 193750.6452763827,
+          "y": 547287.7122741025
+        },
+        "wgs84": {
+          "lat": 37.525059092584144,
+          "lng": 126.92930265604852
+        }
+      },
+      "linked_node_id": "ND-yXLBfQ---3497",
+      "confidence": 0.82,
+      "source": {
+        "kind": "dabeeo_poi",
+        "category_code": "",
+        "object_id": "OB-jpTVvS7265477"
+      }
+    },
+    {
+      "id": "poi_036",
+      "source_id": "PO-SbEjEmz0A5237",
+      "type": "facility",
+      "name": "컨시어지 (안내데스크)",
+      "centroid": {
+        "source": {
+          "x": 1504.9415549478585,
+          "y": 1635.7738085970577
+        },
+        "local_m": {
+          "x": 58.17321771312592,
+          "y": 70.91799461497999
+        },
+        "projected": {
+          "x": 193699.47853339498,
+          "y": 547337.8870157131
+        },
+        "wgs84": {
+          "lat": 37.525510819882115,
+          "lng": 126.92872339013837
+        }
+      },
+      "linked_node_id": "ND-KjeW7UMz08930",
+      "confidence": 0.82,
+      "source": {
+        "kind": "dabeeo_poi",
+        "category_code": "9992",
+        "object_id": "OB-kO7t5k2iy2184"
+      }
+    },
+    {
+      "id": "poi_037",
+      "source_id": "PO-1GQgwcc4B6958",
+      "type": "poi",
+      "name": "5호선 여의나루역",
+      "centroid": {
+        "source": {
+          "x": 2270.368343313897,
+          "y": 908.9764978164103
+        },
+        "local_m": {
+          "x": 109.4376707280735,
+          "y": 3.1158503016906987
+        },
+        "projected": {
+          "x": 193750.74298640992,
+          "y": 547405.6891600264
+        },
+        "wgs84": {
+          "lat": 37.52612206678677,
+          "lng": 126.92930275831577
+        }
+      },
+      "linked_node_id": "ND-dwvi-_GRh5900",
+      "confidence": 0.82,
+      "source": {
+        "kind": "dabeeo_poi",
+        "category_code": "",
+        "object_id": "OB-ZLIwO3Xvm9967"
+      }
+    },
+    {
+      "id": "poi_038",
+      "source_id": "PO-ScHxkQcAR4247",
+      "type": "toilet",
+      "name": "화장실",
+      "centroid": {
+        "source": {
+          "x": 1602.07491438334,
+          "y": 1022.913024902344
+        },
+        "local_m": {
+          "x": 64.67872368267005,
+          "y": 13.744867136849258
+        },
+        "projected": {
+          "x": 193705.98403936453,
+          "y": 547395.0601431913
+        },
+        "wgs84": {
+          "lat": 37.52602599500333,
+          "lng": 126.9287964960457
+        }
+      },
+      "linked_node_id": "ND-R9OtNLOZZ9866",
+      "confidence": 0.82,
+      "source": {
+        "kind": "dabeeo_poi",
+        "category_code": "9991",
+        "object_id": "OB-PwB1cHPN_1923"
+      }
+    },
+    {
+      "id": "poi_039",
+      "source_id": "PO-QuY1qFi9vs4258",
+      "type": "elevator",
+      "name": "엘리베이터",
+      "centroid": {
+        "source": {
+          "x": 1702.1356201171898,
+          "y": 1906.8337471988293
+        },
+        "local_m": {
+          "x": 71.380288647081,
+          "y": 96.20488657511741
+        },
+        "projected": {
+          "x": 193712.68560432893,
+          "y": 547312.600123753
+        },
+        "wgs84": {
+          "lat": 37.5252830746688,
+          "lng": 126.92887301544239
+        }
+      },
+      "linked_node_id": "ND-Jcu7MR0wA4631",
+      "confidence": 0.82,
+      "source": {
+        "kind": "dabeeo_poi",
+        "category_code": "9993",
+        "object_id": "OB-Tzgz_hK5V6174"
+      }
+    },
+    {
+      "id": "poi_040",
+      "source_id": "PO-6TUC1J65u8791",
+      "type": "elevator",
+      "name": "엘리베이터",
+      "centroid": {
+        "source": {
+          "x": 2043.63101438334,
+          "y": 1914.8870660751506
+        },
+        "local_m": {
+          "x": 94.2519399405371,
+          "y": 96.95617208560834
+        },
+        "projected": {
+          "x": 193735.55725562238,
+          "y": 547311.8488382425
+        },
+        "wgs84": {
+          "lat": 37.525276461114245,
+          "lng": 126.92913176355067
+        }
+      },
+      "linked_node_id": "ND-yXLBfQ---3497",
+      "confidence": 0.82,
+      "source": {
+        "kind": "dabeeo_poi",
+        "category_code": "9993",
+        "object_id": "OB-jgE8Sd0zA6373"
+      }
+    },
+    {
+      "id": "poi_041",
+      "source_id": "PO-liVt_3V4D1703",
+      "type": "elevator",
+      "name": "엘리베이터",
+      "centroid": {
+        "source": {
+          "x": 2020.58131438334,
+          "y": 1175.7891
+        },
+        "local_m": {
+          "x": 92.70818646780971,
+          "y": 28.0065127869786
+        },
+        "projected": {
+          "x": 193734.01350214967,
+          "y": 547380.7984975411
+        },
+        "wgs84": {
+          "lat": 37.5258976881131,
+          "lng": 126.92911371161101
+        }
+      },
+      "linked_node_id": "ND-dwvi-_GRh5900",
+      "confidence": 0.82,
+      "source": {
+        "kind": "dabeeo_poi",
+        "category_code": "9993",
+        "object_id": "OB-6oCzB-AELo6376"
+      }
+    },
+    {
+      "id": "poi_042",
+      "source_id": "PO-G1_ZRKAf44894",
+      "type": "elevator",
+      "name": "엘리베이터",
+      "centroid": {
+        "source": {
+          "x": 951.4274710800988,
+          "y": 1168.2202114282943
+        },
+        "local_m": {
+          "x": 21.101616383201108,
+          "y": 27.300419261840506
+        },
+        "projected": {
+          "x": 193662.40693206506,
+          "y": 547381.5045910663
+        },
+        "wgs84": {
+          "lat": 37.52590356104112,
+          "lng": 126.9283036303076
+        }
+      },
+      "linked_node_id": "ND-6OEzy_zfT8980",
+      "confidence": 0.82,
+      "source": {
+        "kind": "dabeeo_poi",
+        "category_code": "9993",
+        "object_id": "OB-bVOj9CksJP6375"
+      }
+    },
+    {
+      "id": "poi_043",
+      "source_id": "PO-lbJ6GZW007895",
+      "type": "elevator",
+      "name": "엘리베이터",
+      "centroid": {
+        "source": {
+          "x": 963.0875819067451,
+          "y": 1910.3655470950152
+        },
+        "local_m": {
+          "x": 21.882552212345143,
+          "y": 96.53436441260371
+        },
+        "projected": {
+          "x": 193663.1878678942,
+          "y": 547312.2706459154
+        },
+        "wgs84": {
+          "lat": 37.525279767516054,
+          "lng": 126.9283130618374
+        }
+      },
+      "linked_node_id": "ND-WCvsig2if1283",
+      "confidence": 0.82,
+      "source": {
+        "kind": "dabeeo_poi",
+        "category_code": "9993",
+        "object_id": "OB-2ayEuac0pH6375"
+      }
+    },
+    {
+      "id": "poi_044",
+      "source_id": "PO-1D9bSv_Bv8346",
+      "type": "toilet",
+      "name": "장애인화장실",
+      "centroid": {
+        "source": {
+          "x": 1602.07491438334,
+          "y": 1072.913024902344
+        },
+        "local_m": {
+          "x": 64.67872368267005,
+          "y": 18.40931369626646
+        },
+        "projected": {
+          "x": 193705.98403936453,
+          "y": 547390.3956966317
+        },
+        "wgs84": {
+          "lat": 37.52598396827212,
+          "lng": 126.92879653599009
+        }
+      },
+      "linked_node_id": "ND-B8JfkPLDE4485",
+      "confidence": 0.82,
+      "source": {
+        "kind": "dabeeo_poi",
+        "category_code": "9991",
+        "object_id": "OB-cQk8aMDOg1337"
+      }
+    },
+    {
+      "id": "poi_045",
+      "source_id": "PO-BCVLQ7SGQ6385",
+      "type": "facility",
+      "name": "서혜영 작품",
+      "centroid": {
+        "source": {
+          "x": 1277.15627668035,
+          "y": 1296.9144306052347
+        },
+        "local_m": {
+          "x": 42.91730052714785,
+          "y": 39.30616541897576
+        },
+        "projected": {
+          "x": 193684.222616209,
+          "y": 547369.4988449091
+        },
+        "wgs84": {
+          "lat": 37.5257955386546,
+          "lng": 126.92855053130823
+        }
+      },
+      "linked_node_id": "ND-YlwZA3Eng6889",
+      "confidence": 0.82,
+      "source": {
+        "kind": "dabeeo_poi",
+        "category_code": "9992",
+        "object_id": ""
+      }
+    },
+    {
+      "id": "poi_046",
+      "source_id": "PO-wSgJRrl_P8410",
+      "type": "facility",
+      "name": "박선기 작품",
+      "centroid": {
+        "source": {
+          "x": 1271.8316013556744,
+          "y": 1689.637490226264
+        },
+        "local_m": {
+          "x": 42.560680439961736,
+          "y": 75.94287990403788
+        },
+        "projected": {
+          "x": 193683.8659961218,
+          "y": 547332.862130424
+        },
+        "wgs84": {
+          "lat": 37.52546543886541,
+          "lng": 126.92854681175851
+        }
+      },
+      "linked_node_id": "ND-mjWf6RrkT4823",
+      "confidence": 0.82,
+      "source": {
+        "kind": "dabeeo_poi",
+        "category_code": "9992",
+        "object_id": ""
+      }
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "schema_version": "0.1.0",
+  "format": "split_navigation_map",
+  "generated_from": {
+    "floor_assets_dir": "floor_assets",
+    "map_json": "floor_assets/json/map-c68dcdcf8ff9.json",
+    "floor_image": "floor_assets/map_element_screenshot.png",
+    "building_geojson": "thehyundai_building.geojson",
+    "building_summary": "thehyundai_building_summary.json"
+  },
+  "floor": {
+    "id": "FL-soem999bnha10599",
+    "name": "1F",
+    "level": 5,
+    "order": 5
+  },
+  "counts": {
+    "nodes": 248,
+    "edges": 278,
+    "stores": 61,
+    "pois": 47,
+    "ocr_results": 70,
+    "manual_review_candidates": 48
+  },
+  "files": {
+    "building": "navigation_map_parts/building.json",
+    "coordinate_system": "navigation_map_parts/coordinate_system.json",
+    "preview": "navigation_map_parts/preview.json",
+    "image_analysis": "navigation_map_parts/image_analysis.json",
+    "floor_regions": "navigation_map_parts/floor_regions.json",
+    "nodes": "navigation_map_parts/nodes.json",
+    "edges": "navigation_map_parts/edges.json",
+    "stores": "navigation_map_parts/stores.json",
+    "pois": "navigation_map_parts/pois.json",
+    "ocr_results": "navigation_map_parts/ocr_results.json",
+    "manual_review_candidates": "navigation_map_parts/manual_review_candidates.json",
+    "debug": "navigation_map_parts/debug.json",
+    "notes": "navigation_map_parts/notes.json"
+  }
+}

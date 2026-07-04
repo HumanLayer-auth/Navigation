@@ -122,6 +122,21 @@ def relative_path(from_path: Path, target_path: Path) -> str:
         return str(target_path.resolve())
 
 
+def make_paths_relative(value: Any, base_dir: Path) -> Any:
+    if isinstance(value, dict):
+        return {key: make_paths_relative(item, base_dir) for key, item in value.items()}
+    if isinstance(value, list):
+        return [make_paths_relative(item, base_dir) for item in value]
+    if isinstance(value, str):
+        path = Path(value)
+        if path.is_absolute():
+            try:
+                return str(path.resolve().relative_to(base_dir.resolve()))
+            except ValueError:
+                return value
+    return value
+
+
 def write_navigation_map_parts(
     output_path: Path,
     navigation_map: dict[str, Any],
@@ -1523,6 +1538,7 @@ def build_navigation_map(
         "debug": debug_paths,
         "notes": notes,
     }
+    navigation_map = make_paths_relative(navigation_map, output_path.parent)
     manifest = write_navigation_map_parts(output_path, navigation_map)
     write_json(output_path, manifest)
     print(f"Navigation nodes: {len(nodes)}")

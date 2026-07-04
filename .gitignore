@@ -40,3 +40,8 @@ Thumbs.db
 output/
 thehyundai_indoor_navigation_dataset/*
 !thehyundai_indoor_navigation_dataset/README.md
+!thehyundai_indoor_navigation_dataset/navigation_map.json
+!thehyundai_indoor_navigation_dataset/preview.html
+!thehyundai_indoor_navigation_dataset/navigation_map_parts/
+thehyundai_indoor_navigation_dataset/navigation_map_parts/*
+!thehyundai_indoor_navigation_dataset/navigation_map_parts/*.json

@@ -1,0 +1,11 @@
+{
+  "debug": {
+    "corridors": "debug/corridors.png",
+    "walls": "debug/walls.png",
+    "stores": "debug/stores.png",
+    "calibration": "debug/calibration.png",
+    "navigation_graph": "debug/navigation_graph.png",
+    "ocr_result": "debug/ocr_result.png",
+    "final_navigation_map": "debug/final_navigation_map.png"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "coordinate_system": {
+    "type": "local_meters_top_left",
+    "source_map_size": {
+      "width": 3000.0,
+      "height": 3000.0
+    },
+    "floor_bounds_source": {
+      "min_x": 636.3603727767907,
+      "min_y": 875.5764978164102,
+      "max_x": 2486.509173761842,
+      "max_y": 2173.6161975220184,
+      "width": 1850.1488009850511,
+      "height": 1298.0396997056082
+    },
+    "scale": {
+      "x_m_per_source_unit": 0.06697499198372991,
+      "y_m_per_source_unit": 0.09328893118834401
+    },
+    "notes": [
+      "좌표 변환은 VWorld 건물 외곽 bbox와 실제 1F floor content bounds의 선형 매핑입니다.",
+      "CAD 정밀도보다 navigation graph topology 보존을 우선합니다."
+    ]
+  }
+}

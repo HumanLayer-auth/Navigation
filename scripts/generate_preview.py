@@ -40,9 +40,9 @@ def load_navigation_map(path: Path) -> dict:
     return merged
 
 
-def html_document(data: dict) -> str:
+def html_document(data: dict, asset_base_dir: Path | None = None) -> str:
     json_blob = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
-    background_data_url = background_image_data_url(data)
+    background_data_url = background_image_data_url(data, asset_base_dir or Path("."))
     title = data.get("building", {}).get("name") or "Indoor Navigation Preview"
     floor = data.get("building", {}).get("floor", {}).get("name") or ""
     return f"""<!doctype html>
@@ -553,11 +553,13 @@ def escape_html(value: str) -> str:
     )
 
 
-def background_image_data_url(data: dict) -> str:
+def background_image_data_url(data: dict, asset_base_dir: Path) -> str:
     path_value = data.get("preview", {}).get("background_image") or data.get("generated_from", {}).get("floor_image")
     if not path_value:
         return ""
     path = Path(path_value)
+    if not path.is_absolute():
+        path = asset_base_dir / path
     if not path.exists():
         return ""
     encoded = base64.b64encode(path.read_bytes()).decode("ascii")
@@ -569,7 +571,7 @@ def background_image_data_url(data: dict) -> str:
 def generate_preview(input_path: Path = DEFAULT_INPUT, output_path: Path = DEFAULT_OUTPUT) -> Path:
     data = load_navigation_map(input_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(html_document(data), encoding="utf-8")
+    output_path.write_text(html_document(data, input_path.parent), encoding="utf-8")
     print(f"Preview 저장: {output_path.resolve()}")
     return output_path
 
