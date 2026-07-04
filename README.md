@@ -33,3 +33,46 @@
 - 자동화 작업은 `AGENTS.md`의 라우팅 표를 기준으로 `prompt/`의 전문을 먼저 읽고 수행한다.
 - 큰 병합이나 버전 변경은 `HISTORY.md`와 `VERSION.md`를 함께 갱신한다.
 - 마일스톤별 GitHub 이슈 초안과 설명은 `issues/issue.md`에 먼저 정리한다.
+
+## 더현대서울 지도 데이터셋 구축
+
+더현대서울 실내 내비게이션 데모용 원천 데이터를 추출한다.
+
+생성 산출물:
+
+- `thehyundai_indoor_navigation_dataset/thehyundai_building.geojson`
+- `thehyundai_indoor_navigation_dataset/thehyundai_building_summary.json`
+- `thehyundai_indoor_navigation_dataset/floor_assets/manifest.json`
+- `thehyundai_indoor_navigation_dataset/floor_assets/page_screenshot.png`
+- `thehyundai_indoor_navigation_dataset/floor_assets/highres_screenshot.png`
+- `thehyundai_indoor_navigation_dataset/floor_assets/map_element_screenshot.png`
+- `thehyundai_indoor_navigation_dataset/thehyundai_dataset_summary.json`
+
+입력 SHP 기본 파일명은 `AL_D010_11_20260609.shp`이다. 스크립트는 현재 작업 디렉토리 아래에서
+`서울특별시 gis 데이터`, `서울특별시 GIS데이터` 등 유사 폴더명을 먼저 찾고, 실패하면 같은 파일명을 재귀 검색한다.
+
+### 실행 방법
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+playwright install chromium
+python scripts/extract_thehyundai_building.py
+python scripts/extract_ehyundai_floor_assets.py
+python scripts/build_thehyundai_dataset.py
+python scripts/build_navigation_map.py
+python scripts/generate_preview.py
+```
+
+SHP 경로를 명시하려면 다음처럼 실행한다.
+
+```bash
+python scripts/extract_thehyundai_building.py --shp "서울특별시 GIS데이터/AL_D010_11_20260609.shp"
+python scripts/build_thehyundai_dataset.py --shp "서울특별시 GIS데이터/AL_D010_11_20260609.shp"
+```
+
+후처리 파이프라인은 `thehyundai_indoor_navigation_dataset/navigation_map.json`,
+`thehyundai_indoor_navigation_dataset/preview.html`,
+`thehyundai_indoor_navigation_dataset/debug/*.png`를 생성한다.
+상세 실행 옵션은 `scripts/README.md`를 참고한다.

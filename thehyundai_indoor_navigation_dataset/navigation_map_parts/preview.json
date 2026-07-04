@@ -1,0 +1,21 @@
+{
+  "preview": {
+    "background_image": "floor_assets/map_element_screenshot.png",
+    "image_size": {
+      "width": 1440,
+      "height": 1752
+    },
+    "map_bbox_image": [
+      17,
+      291,
+      1430,
+      1143
+    ],
+    "source_bounds": {
+      "min_x": 636.3603727767907,
+      "min_y": 875.5764978164102,
+      "max_x": 2486.509173761842,
+      "max_y": 2173.6161975220184
+    }
+  }
+}

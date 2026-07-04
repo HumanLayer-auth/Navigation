@@ -1,0 +1,292 @@
+{
+  "manual_review_candidates": [
+    {
+      "kind": "edge",
+      "id": "store_edge_049",
+      "confidence": 0.646,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_000",
+      "confidence": 0.007061745585677333,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_001",
+      "confidence": 0.0948331026083277,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_002",
+      "confidence": 0.0066085681319236755,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_004",
+      "confidence": 0.20659348368644714,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_005",
+      "confidence": 0.16230840908814292,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_006",
+      "confidence": 0.5950323736988898,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_008",
+      "confidence": 0.12649195968089536,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_010",
+      "confidence": 0.26509612798690796,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_013",
+      "confidence": 0.340266206316606,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_014",
+      "confidence": 0.33089521190423526,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_015",
+      "confidence": 0.4931035101456913,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_017",
+      "confidence": 0.10172201693058014,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_018",
+      "confidence": 0.25431642566837076,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_019",
+      "confidence": 0.35961878299713135,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_022",
+      "confidence": 0.03874493179991751,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_023",
+      "confidence": 0.048930485256017675,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_024",
+      "confidence": 0.15026623010635376,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_027",
+      "confidence": 0.17336406717451497,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_028",
+      "confidence": 0.18399283203443076,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_029",
+      "confidence": 0.07512652894849879,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_030",
+      "confidence": 0.36423804012137,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_031",
+      "confidence": 0.2730396091938019,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_032",
+      "confidence": 0.41081833568505577,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_033",
+      "confidence": 0.4968164265155792,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_035",
+      "confidence": 0.010628443651353405,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_036",
+      "confidence": 0.2002012194302454,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_037",
+      "confidence": 0.12246974520161558,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_039",
+      "confidence": 0.6486183252937042,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_040",
+      "confidence": 0.1075220702872306,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_041",
+      "confidence": 0.45756446701822934,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_042",
+      "confidence": 0.14839577877590043,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_043",
+      "confidence": 0.0537961666945061,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_044",
+      "confidence": 0.20357048511505127,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_045",
+      "confidence": 0.502166211605072,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_048",
+      "confidence": 0.022850871697620984,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_049",
+      "confidence": 0.21229375150987595,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_051",
+      "confidence": 0.5712532902861196,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_053",
+      "confidence": 0.40472545351568134,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_054",
+      "confidence": 0.013123490346492949,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_056",
+      "confidence": 0.2797135924580787,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_058",
+      "confidence": 0.23777315864966214,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_062",
+      "confidence": 0.3104735832717189,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_063",
+      "confidence": 0.015634076583947974,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_065",
+      "confidence": 0.30645858902482603,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_066",
+      "confidence": 0.07631003269624717,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_068",
+      "confidence": 0.5960633775777097,
+      "reason": "low_confidence"
+    },
+    {
+      "kind": "ocr",
+      "id": "ocr_069",
+      "confidence": 0.6475344897800628,
+      "reason": "low_confidence"
+    }
+  ]
+}
