@@ -147,4 +147,31 @@ void main() {
 
     expect(find.textContaining('데모 건물'), findsOneWidget);
   });
+
+  testWidgets('indoor map renders the first floor plan with its POIs', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const MaterialApp(home: IndoorMapScreen()));
+    await tester.pumpAndSettle();
+
+    expect(find.text('데모 건물 · 1층'), findsOneWidget);
+    expect(find.text('강의실 101'), findsOneWidget);
+    expect(find.byIcon(Icons.layers), findsOneWidget);
+  });
+
+  testWidgets('indoor map switches floor plan via the floor switcher', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const MaterialApp(home: IndoorMapScreen()));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.layers));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('2층').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('데모 건물 · 2층'), findsOneWidget);
+    expect(find.text('강의실 201'), findsOneWidget);
+  });
 }
