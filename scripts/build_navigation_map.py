@@ -41,6 +41,7 @@ DEFAULT_BUILDING_GEOJSON = Path("output/thehyundai_building.geojson")
 DEFAULT_BUILDING_SUMMARY = Path("output/thehyundai_building_summary.json")
 DEFAULT_OUTPUT = Path("output/navigation_map.json")
 DEFAULT_DEBUG_DIR = Path("output/debug")
+DEFAULT_PARTS_DIR_NAME = "navigation_map_parts"
 
 LOW_CONFIDENCE_THRESHOLD = 0.65
 STORE_CATEGORY_CODES = {"24", "31", "32", "35", "36", "38", "54", "56"}
@@ -111,6 +112,60 @@ def read_json(path: Path) -> dict[str, Any]:
 def write_json(path: Path, data: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def relative_path(from_path: Path, target_path: Path) -> str:
+    try:
+        return str(target_path.resolve().relative_to(from_path.resolve().parent))
+    except ValueError:
+        return str(target_path.resolve())
+
+
+def write_navigation_map_parts(
+    output_path: Path,
+    navigation_map: dict[str, Any],
+) -> dict[str, Any]:
+    parts_dir = output_path.parent / DEFAULT_PARTS_DIR_NAME
+    parts_dir.mkdir(parents=True, exist_ok=True)
+
+    part_keys = [
+        "building",
+        "coordinate_system",
+        "preview",
+        "image_analysis",
+        "floor_regions",
+        "nodes",
+        "edges",
+        "stores",
+        "pois",
+        "ocr_results",
+        "manual_review_candidates",
+        "debug",
+        "notes",
+    ]
+    files: dict[str, str] = {}
+    for key in part_keys:
+        target = parts_dir / f"{key}.json"
+        write_json(target, {key: navigation_map[key]})
+        files[key] = relative_path(output_path, target)
+
+    counts = {
+        "nodes": len(navigation_map["nodes"]),
+        "edges": len(navigation_map["edges"]),
+        "stores": len(navigation_map["stores"]),
+        "pois": len(navigation_map["pois"]),
+        "ocr_results": len(navigation_map["ocr_results"]),
+        "manual_review_candidates": len(navigation_map["manual_review_candidates"]),
+    }
+
+    return {
+        "schema_version": navigation_map["schema_version"],
+        "format": "split_navigation_map",
+        "generated_from": navigation_map["generated_from"],
+        "floor": navigation_map["building"]["floor"],
+        "counts": counts,
+        "files": files,
+    }
 
 
 def clean_text(value: Any) -> str:
@@ -1467,13 +1522,15 @@ def build_navigation_map(
         "debug": debug_paths,
         "notes": notes,
     }
-    write_json(output_path, navigation_map)
+    manifest = write_navigation_map_parts(output_path, navigation_map)
+    write_json(output_path, manifest)
     print(f"Navigation nodes: {len(nodes)}")
     print(f"Navigation edges: {len(edges)}")
     print(f"Stores: {len(stores)}")
     print(f"POIs: {len(pois)}")
     print(f"Manual review candidates: {len(navigation_map['manual_review_candidates'])}")
-    print(f"Navigation map 저장: {output_path.resolve()}")
+    print(f"Navigation map manifest 저장: {output_path.resolve()}")
+    print(f"Navigation map parts 저장: {(output_path.parent / DEFAULT_PARTS_DIR_NAME).resolve()}")
     return navigation_map
 
 

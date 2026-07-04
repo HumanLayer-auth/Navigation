@@ -20,6 +20,25 @@ def read_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def load_navigation_map(path: Path) -> dict:
+    data = read_json(path)
+    if data.get("format") != "split_navigation_map":
+        return data
+
+    merged = {
+        "schema_version": data.get("schema_version"),
+        "generated_from": data.get("generated_from", {}),
+    }
+    files = data.get("files") or {}
+    for key, value in files.items():
+        part_path = Path(value)
+        if not part_path.is_absolute():
+            part_path = path.parent / part_path
+        part_data = read_json(part_path)
+        merged[key] = part_data.get(key)
+    return merged
+
+
 def html_document(data: dict) -> str:
     json_blob = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
     background_data_url = background_image_data_url(data)
@@ -547,7 +566,7 @@ def background_image_data_url(data: dict) -> str:
 
 
 def generate_preview(input_path: Path = DEFAULT_INPUT, output_path: Path = DEFAULT_OUTPUT) -> Path:
-    data = read_json(input_path)
+    data = load_navigation_map(input_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(html_document(data), encoding="utf-8")
     print(f"Preview 저장: {output_path.resolve()}")

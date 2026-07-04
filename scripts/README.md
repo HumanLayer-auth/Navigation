@@ -31,6 +31,13 @@ python scripts/generate_preview.py
 ## 출력
 
 - `output/navigation_map.json`
+- `output/navigation_map_parts/building.json`
+- `output/navigation_map_parts/nodes.json`
+- `output/navigation_map_parts/edges.json`
+- `output/navigation_map_parts/stores.json`
+- `output/navigation_map_parts/pois.json`
+- `output/navigation_map_parts/ocr_results.json`
+- `output/navigation_map_parts/image_analysis.json`
 - `output/preview.html`
 - `output/debug/corridors.png`
 - `output/debug/navigation_graph.png`
@@ -40,14 +47,17 @@ python scripts/generate_preview.py
 
 ## 구조
 
-`navigation_map.json`은 다음 주요 배열을 포함한다.
+`navigation_map.json`은 이제 큰 데이터를 직접 담지 않고 split manifest 역할만 한다. 실제 데이터는
+`output/navigation_map_parts/`에 분리 저장된다.
 
-- `nodes`: A*/Dijkstra에서 바로 사용할 routing node
-- `edges`: 양방향 이동 가능 edge와 meter length
-- `stores`: 매장명, centroid, entrance, polygon/bbox, confidence
-- `pois`: 엘리베이터, 에스컬레이터, 출구, 화장실 등 주요 POI
-- `ocr_results`: EasyOCR 결과와 confidence
-- `manual_review_candidates`: 낮은 confidence 또는 검토가 필요한 객체
+- `navigation_map_parts/nodes.json`: A*/Dijkstra에서 바로 사용할 routing node
+- `navigation_map_parts/edges.json`: 양방향 이동 가능 edge와 meter length
+- `navigation_map_parts/stores.json`: 매장명, centroid, entrance, polygon/bbox, confidence
+- `navigation_map_parts/pois.json`: 엘리베이터, 에스컬레이터, 출구, 화장실 등 주요 POI
+- `navigation_map_parts/ocr_results.json`: EasyOCR 결과와 confidence
+- `navigation_map_parts/manual_review_candidates.json`: 낮은 confidence 또는 검토가 필요한 객체
+
+앱에서 매장 검색만 필요하면 `stores.json`만 읽고, 경로 탐색은 `nodes.json`과 `edges.json`만 읽으면 된다.
 
 좌표계는 `local_meters_top_left`이다. Dabeeo의 전체 `3000x3000` 캔버스가 아니라 실제 1F에서
 매장/POI/node가 차지하는 `floor_bounds_source`를 계산한 뒤, 이 bounds를 VWorld 건물 외곽 bbox 크기에
