@@ -6,6 +6,8 @@ import '../../core/service_locator.dart';
 import '../../models/building.dart';
 import '../../models/floor_plan.dart';
 import '../../routing/app_routes.dart';
+import '../../widgets/location_marker.dart';
+import '../../widgets/uncertainty_circle.dart';
 
 const _fallbackCenter = LatLng(37.5665, 126.9780);
 
@@ -148,17 +150,8 @@ class _IndoorMapScreenState extends State<IndoorMapScreen> {
               child: const Stack(
                 alignment: Alignment.center,
                 children: [
-                  SizedBox(
-                    width: 40,
-                    height: 40,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Color(0x336C3FE0),
-                      ),
-                    ),
-                  ),
-                  Icon(Icons.circle, size: 14, color: Color(0xFF6C3FE0)),
+                  UncertaintyCircle(diameter: 40, color: Color(0xFF6C3FE0)),
+                  LocationMarker(mode: LocationMode.indoor),
                 ],
               ),
             ),

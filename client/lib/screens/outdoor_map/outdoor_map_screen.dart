@@ -5,6 +5,8 @@ import 'package:latlong2/latlong.dart';
 
 import '../../core/service_locator.dart';
 import '../../routing/app_routes.dart';
+import '../../widgets/location_marker.dart';
+import '../../widgets/status_badge.dart';
 
 // 위치 조회 실패 시 대체 좌표 (서울시청).
 const _fallbackLocation = LatLng(37.5665, 126.9780);
@@ -79,27 +81,20 @@ class _OutdoorMapScreenState extends State<OutdoorMapScreen> {
                     markers: [
                       Marker(
                         point: center,
-                        child: Icon(Icons.navigation, color: markerColor),
+                        child: LocationMarker(
+                          mode: LocationMode.outdoor,
+                          colorOverride: markerColor,
+                        ),
                       ),
                     ],
                   ),
                 ],
               ),
               if (lowAccuracy)
-                Positioned(
+                const Positioned(
                   top: 12,
                   left: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.amber,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: const Text('GPS 신호 약함'),
-                  ),
+                  child: StatusBadge(label: 'GPS 신호 약함'),
                 ),
             ],
           );
