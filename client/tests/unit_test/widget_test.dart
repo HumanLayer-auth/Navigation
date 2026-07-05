@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:latlong2/latlong.dart';
 
 import 'package:navigation_client/app.dart';
 import 'package:navigation_client/core/service_locator.dart';
+import 'package:navigation_client/models/poi_search_result.dart';
 import 'package:navigation_client/routing/app_routes.dart';
+import 'package:navigation_client/screens/arrival/arrival_screen.dart';
 import 'package:navigation_client/screens/debug/api_health_check_screen.dart';
 import 'package:navigation_client/screens/destination/destination_screen.dart';
 import 'package:navigation_client/screens/indoor_map/indoor_map_screen.dart';
@@ -256,5 +259,57 @@ void main() {
 
     expect(find.text('건물 정보 Q&A'), findsOneWidget);
     expect(find.textContaining('화장실'), findsWidgets);
+  });
+
+  testWidgets('arrival screen shows a generic message and navigates on tap', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: const ArrivalScreen(),
+        routes: {
+          AppRoutes.indoorMap: (context) => const Scaffold(body: Text('INDOOR')),
+        },
+      ),
+    );
+
+    expect(find.text('도착했습니다!'), findsOneWidget);
+
+    await tester.tap(find.text('새 목적지 탐색'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('INDOOR'), findsOneWidget);
+  });
+
+  testWidgets('arrival screen shows the destination and auto-dismisses', (
+    WidgetTester tester,
+  ) async {
+    const destination = PoiSearchResult(
+      name: '강의실 101',
+      floor: 1,
+      point: LatLng(37.5665, 126.9780),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        routes: {
+          AppRoutes.indoorMap: (context) => const Scaffold(body: Text('INDOOR')),
+        },
+        onGenerateInitialRoutes: (initialRoute) => [
+          MaterialPageRoute(
+            settings: const RouteSettings(arguments: destination),
+            builder: (context) => const ArrivalScreen(),
+          ),
+        ],
+      ),
+    );
+
+    expect(find.text('강의실 101에 도착했습니다!'), findsOneWidget);
+
+    // 자동 종료 타이머가 만료될 때까지 시간을 진행시킨다.
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pumpAndSettle();
+
+    expect(find.text('INDOOR'), findsOneWidget);
   });
 }

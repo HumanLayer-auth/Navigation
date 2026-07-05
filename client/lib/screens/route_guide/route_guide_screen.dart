@@ -100,7 +100,10 @@ class _RouteGuideScreenState extends State<RouteGuideScreen> {
               if (destination != null) const SizedBox(height: 8),
               FilledButton(
                 onPressed: () {
-                  Navigator.of(context).pushNamed(AppRoutes.arrival);
+                  Navigator.of(context).pushNamed(
+                    AppRoutes.arrival,
+                    arguments: destination,
+                  );
                 },
                 child: const Text('도착'),
               ),
