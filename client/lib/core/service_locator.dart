@@ -1,12 +1,14 @@
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import 'api_config.dart';
 import '../repositories/building_repository.dart';
 import '../repositories/destination_repository.dart';
 import '../repositories/directions_repository.dart';
 import '../repositories/mock_building_repository.dart';
 import '../repositories/mock_destination_repository.dart';
 import '../repositories/mock_directions_repository.dart';
+import '../repositories/tmap_directions_repository.dart';
 
 /// 백엔드가 준비되면 이 한 줄만 [HttpBuildingRepository]로 바꾼다.
 final BuildingRepository buildingRepository = MockBuildingRepository();
@@ -16,9 +18,11 @@ final DestinationRepository destinationRepository = MockDestinationRepository(
   buildingRepository,
 );
 
-/// TMAP appKey(core/api_config.dart의 tmapAppKey) 발급받으면
-/// 이 한 줄만 [TmapDirectionsRepository]로 바꾼다.
-final DirectionsRepository directionsRepository = MockDirectionsRepository();
+/// --dart-define=TMAP_APP_KEY=... 로 키를 넘기면 자동으로 실제 API를 쓰고,
+/// 안 넘기면(테스트·키 미발급 상태) 직선 경로로 동작하는 Mock을 쓴다.
+final DirectionsRepository directionsRepository = tmapAppKey.isEmpty
+    ? MockDirectionsRepository()
+    : TmapDirectionsRepository();
 
 Future<Map<Permission, PermissionStatus>> defaultRequestStartupPermissions() {
   return [
