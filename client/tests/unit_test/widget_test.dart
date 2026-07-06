@@ -14,9 +14,11 @@ import 'package:navigation_client/screens/indoor_map/indoor_map_screen.dart';
 import 'package:navigation_client/screens/outdoor_map/outdoor_map_screen.dart';
 import 'package:navigation_client/screens/route_guide/route_guide_screen.dart';
 
+// 데모 건물 입구(37.5665, 126.9779)에서 약 185m 떨어진 좌표.
+// 자동 건물 진입 감지(반경 50m)에 걸리지 않도록 충분히 멀리 둔다.
 final _fakePosition = Position(
   latitude: 37.5665,
-  longitude: 126.9780,
+  longitude: 126.9800,
   timestamp: DateTime(2024, 1, 1),
   accuracy: 5,
   altitude: 0,
@@ -29,9 +31,23 @@ final _fakePosition = Position(
 
 final _fakeLowAccuracyPosition = Position(
   latitude: 37.5665,
-  longitude: 126.9780,
+  longitude: 126.9800,
   timestamp: DateTime(2024, 1, 1),
   accuracy: 100,
+  altitude: 0,
+  altitudeAccuracy: 0,
+  heading: 0,
+  headingAccuracy: 0,
+  speed: 0,
+  speedAccuracy: 0,
+);
+
+// 데모 건물 입구와 정확히 같은 좌표 (자동 진입 감지 테스트용).
+final _fakePositionAtEntrance = Position(
+  latitude: 37.5665,
+  longitude: 126.9779,
+  timestamp: DateTime(2024, 1, 1),
+  accuracy: 5,
   altitude: 0,
   altitudeAccuracy: 0,
   heading: 0,
@@ -140,6 +156,30 @@ void main() {
     expect(find.byIcon(Icons.place), findsOneWidget);
     expect(find.textContaining('목적지까지 약'), findsOneWidget);
   });
+
+  testWidgets(
+    'outdoor map auto-navigates to indoor map within the entrance radius',
+    (WidgetTester tester) async {
+      getCurrentPosition = () async => _fakePositionAtEntrance;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: const OutdoorMapScreen(),
+          routes: {
+            AppRoutes.indoorMap: (context) =>
+                const Scaffold(body: Text('INDOOR')),
+          },
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump();
+      expect(find.text('건물 감지 중...'), findsOneWidget);
+
+      await tester.pumpAndSettle();
+      expect(find.text('INDOOR'), findsOneWidget);
+    },
+  );
 
   testWidgets('outdoor map falls back to a default location on failure', (
     WidgetTester tester,

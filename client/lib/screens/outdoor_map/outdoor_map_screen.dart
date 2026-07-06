@@ -16,6 +16,12 @@ import '../../widgets/status_badge.dart';
 const _fallbackLocation = LatLng(37.5665, 126.9780);
 const _lowAccuracyThresholdMeters = 30.0;
 
+// 건물 입구 반경 이 안으로 들어오면 실내 진입으로 간주해 자동 전환한다.
+// 실시간 위치 스트림이 아니라 이 화면 진입 시점의 단발 조회 기준이라,
+// 사용자가 화면을 연 채로 계속 걸어서 반경 안으로 들어오는 경우는
+// 아직 감지하지 못한다(추후 위치 스트림으로 개선 여지).
+const _buildingEntryThresholdMeters = 50.0;
+
 class OutdoorMapScreen extends StatefulWidget {
   const OutdoorMapScreen({super.key});
 
@@ -46,6 +52,22 @@ class _OutdoorMapScreenState extends State<OutdoorMapScreen> {
     final building = await buildingRepository.getBuilding(demoBuildingId);
     final entrance = building?.entrance;
 
+    if (position != null && entrance != null) {
+      final distance = const Distance().as(
+        LengthUnit.Meter,
+        LatLng(position.latitude, position.longitude),
+        entrance,
+      );
+      if (distance <= _buildingEntryThresholdMeters) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('건물 감지 중...')));
+        Navigator.of(context).pushNamed(AppRoutes.indoorMap);
+        return;
+      }
+    }
+
     DirectionsRoute? route;
     if (position != null && entrance != null) {
       route = await directionsRepository.getWalkingRoute(
@@ -65,6 +87,7 @@ class _OutdoorMapScreenState extends State<OutdoorMapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final entrance = _entrance;
     return Scaffold(
       appBar: AppBar(title: const Text('야외 지도 (GPS 모드)')),
       body: _loading ? const Center(child: CircularProgressIndicator()) : _buildBody(),
@@ -80,12 +103,15 @@ class _OutdoorMapScreenState extends State<OutdoorMapScreen> {
                   minutes: (_route!.durationSeconds / 60).ceil().clamp(1, 999),
                 ),
               if (_route != null) const SizedBox(height: 8),
-              FilledButton(
-                onPressed: () {
-                  Navigator.of(context).pushNamed(AppRoutes.indoorMap);
-                },
-                child: const Text('건물 진입 감지 (임시)'),
-              ),
+              // 건물 입구 좌표를 모를 때만 수동 진입 버튼을 남겨둔다.
+              // 좌표를 아는 경우엔 design.md 원칙대로 자동 감지만으로 전환한다.
+              if (!_loading && entrance == null)
+                FilledButton(
+                  onPressed: () {
+                    Navigator.of(context).pushNamed(AppRoutes.indoorMap);
+                  },
+                  child: const Text('건물 진입 감지 (임시)'),
+                ),
             ],
           ),
         ),
