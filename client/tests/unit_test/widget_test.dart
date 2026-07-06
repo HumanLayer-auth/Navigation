@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
@@ -61,12 +63,12 @@ void main() {
     // 실제 permission_handler/geolocator 플러그인 채널이 없는 테스트 환경에서
     // 멈추지 않도록 즉시 완료되는 가짜 함수로 교체한다.
     requestStartupPermissions = () async => {};
-    getCurrentPosition = () async => _fakePosition;
+    watchPosition = () => Stream.value(_fakePosition);
   });
 
   tearDown(() {
     requestStartupPermissions = defaultRequestStartupPermissions;
-    getCurrentPosition = defaultGetCurrentPosition;
+    watchPosition = defaultWatchPosition;
   });
 
   testWidgets('splash screen shows entry points', (WidgetTester tester) async {
@@ -138,7 +140,7 @@ void main() {
   testWidgets('outdoor map shows a low-accuracy warning badge', (
     WidgetTester tester,
   ) async {
-    getCurrentPosition = () async => _fakeLowAccuracyPosition;
+    watchPosition = () => Stream.value(_fakeLowAccuracyPosition);
 
     await tester.pumpWidget(const MaterialApp(home: OutdoorMapScreen()));
     await tester.pump();
@@ -160,7 +162,7 @@ void main() {
   testWidgets(
     'outdoor map auto-navigates to indoor map within the entrance radius',
     (WidgetTester tester) async {
-      getCurrentPosition = () async => _fakePositionAtEntrance;
+      watchPosition = () => Stream.value(_fakePositionAtEntrance);
 
       await tester.pumpWidget(
         MaterialApp(
@@ -181,10 +183,29 @@ void main() {
     },
   );
 
+  testWidgets('outdoor map reacts to multiple position stream updates', (
+    WidgetTester tester,
+  ) async {
+    final controller = StreamController<Position>();
+    watchPosition = () => controller.stream;
+
+    await tester.pumpWidget(const MaterialApp(home: OutdoorMapScreen()));
+
+    controller.add(_fakePosition);
+    await tester.pump();
+    expect(find.text('GPS 신호 약함'), findsNothing);
+
+    controller.add(_fakeLowAccuracyPosition);
+    await tester.pump();
+    expect(find.text('GPS 신호 약함'), findsOneWidget);
+
+    await controller.close();
+  });
+
   testWidgets('outdoor map falls back to a default location on failure', (
     WidgetTester tester,
   ) async {
-    getCurrentPosition = () async => throw Exception('위치를 가져올 수 없음');
+    watchPosition = () => Stream.error(Exception('위치를 가져올 수 없음'));
 
     await tester.pumpWidget(const MaterialApp(home: OutdoorMapScreen()));
     await tester.pump();

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
@@ -5,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../../core/api_config.dart';
 import '../../core/service_locator.dart';
+import '../../models/building.dart';
 import '../../models/directions_route.dart';
 import '../../routing/app_routes.dart';
 import '../../widgets/eta_card.dart';
@@ -17,9 +20,6 @@ const _fallbackLocation = LatLng(37.5665, 126.9780);
 const _lowAccuracyThresholdMeters = 30.0;
 
 // 건물 입구 반경 이 안으로 들어오면 실내 진입으로 간주해 자동 전환한다.
-// 실시간 위치 스트림이 아니라 이 화면 진입 시점의 단발 조회 기준이라,
-// 사용자가 화면을 연 채로 계속 걸어서 반경 안으로 들어오는 경우는
-// 아직 감지하지 못한다(추후 위치 스트림으로 개선 여지).
 const _buildingEntryThresholdMeters = 50.0;
 
 class OutdoorMapScreen extends StatefulWidget {
@@ -31,58 +31,83 @@ class OutdoorMapScreen extends StatefulWidget {
 
 class _OutdoorMapScreenState extends State<OutdoorMapScreen> {
   bool _loading = true;
+  bool _autoNavigated = false;
   Position? _position;
   LatLng? _entrance;
   DirectionsRoute? _route;
+  StreamSubscription<Position>? _positionSubscription;
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _loadBuildingEntrance();
+    _positionSubscription = watchPosition().listen(
+      _handlePosition,
+      onError: (Object _) => _handlePositionError(),
+    );
   }
 
-  Future<void> _load() async {
-    Position? position;
-    try {
-      position = await getCurrentPosition();
-    } catch (_) {
-      position = null;
-    }
+  @override
+  void dispose() {
+    _positionSubscription?.cancel();
+    super.dispose();
+  }
 
-    final building = await buildingRepository.getBuilding(demoBuildingId);
-    final entrance = building?.entrance;
+  Future<void> _loadBuildingEntrance() async {
+    final Building? building = await buildingRepository.getBuilding(
+      demoBuildingId,
+    );
+    if (!mounted) return;
+    setState(() => _entrance = building?.entrance);
+  }
 
-    if (position != null && entrance != null) {
-      final distance = const Distance().as(
-        LengthUnit.Meter,
-        LatLng(position.latitude, position.longitude),
-        entrance,
-      );
-      if (distance <= _buildingEntryThresholdMeters) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('건물 감지 중...')));
-        Navigator.of(context).pushNamed(AppRoutes.indoorMap);
-        return;
-      }
-    }
+  void _handlePositionError() {
+    if (!mounted) return;
+    setState(() {
+      _position = null;
+      _loading = false;
+    });
+  }
 
-    DirectionsRoute? route;
-    if (position != null && entrance != null) {
-      route = await directionsRepository.getWalkingRoute(
-        origin: LatLng(position.latitude, position.longitude),
-        destination: entrance,
-      );
-    }
-
+  void _handlePosition(Position position) {
     if (!mounted) return;
     setState(() {
       _position = position;
-      _entrance = entrance;
-      _route = route;
       _loading = false;
     });
+    _maybeAutoEnter(position);
+    _updateRoute(position);
+  }
+
+  void _maybeAutoEnter(Position position) {
+    final entrance = _entrance;
+    if (_autoNavigated || entrance == null) return;
+
+    final distance = const Distance().as(
+      LengthUnit.Meter,
+      LatLng(position.latitude, position.longitude),
+      entrance,
+    );
+    if (distance > _buildingEntryThresholdMeters) return;
+
+    _autoNavigated = true;
+    _positionSubscription?.cancel();
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('건물 감지 중...')));
+    Navigator.of(context).pushNamed(AppRoutes.indoorMap);
+  }
+
+  Future<void> _updateRoute(Position position) async {
+    final entrance = _entrance;
+    if (entrance == null) return;
+
+    final route = await directionsRepository.getWalkingRoute(
+      origin: LatLng(position.latitude, position.longitude),
+      destination: entrance,
+    );
+    if (!mounted) return;
+    setState(() => _route = route);
   }
 
   @override
