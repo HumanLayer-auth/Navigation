@@ -38,6 +38,10 @@ Thumbs.db
 .vscode/
 !.vscode/extensions.json
 
+# Generated SQLite database (api/scripts/load_dataset.py 로 재생성 가능)
+api/data/
+api/dataBase/*.db
+
 # Generated indoor navigation dataset
 output/
 thehyundai_indoor_navigation_dataset/*
