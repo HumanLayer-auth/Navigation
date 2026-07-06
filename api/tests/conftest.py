@@ -1,6 +1,6 @@
 """
-공용 픽스처 
-식 데이터 json 을 etl 로 임시 sqlite 에 적재하여 세션 전체에서 재사용한다. 
+공용 픽스처
+실 데이터 json 을 etl 로 임시 sqlite 에 적재하여 세션 전체에서 재사용한다.
 테스트가 실제 적재 경로를 그대로 검증한다.
 
 api client는 FastAPI의 dependency_overrides 로 get_db만 임시 db로 바꾼다.

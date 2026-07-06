@@ -33,7 +33,7 @@ class SqliteBuildingRepository:
     def find_floors_by_building(self, building_id: str) -> list[Floor]:
         rows = self._conn.execute(
             "select id, building_id, name, level from floors"
-            " where builidng_id = ? order by level",
+            " where building_id = ? order by level",
             (building_id, ),
         ).fetchall()
         # 칼럼 명과 dataclass 피드명이 같으므로 dict 언패킹으로 바로 매핑한다.

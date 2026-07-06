@@ -9,7 +9,8 @@ class Building:
     id: str
     name: str
     area_m2: float
-    footprint_local_m: list[dict] = field(default_factory=list) #[{"X", "y"}, ...]
+    perimeter_m: float
+    footprint_local_m: list[dict] = field(default_factory=list) # [{"x", "y"}, ...]
 
 @dataclass(frozen=True)
 class Floor:
