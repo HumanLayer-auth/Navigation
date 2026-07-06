@@ -19,8 +19,12 @@ import '../../widgets/status_badge.dart';
 const _fallbackLocation = LatLng(37.5665, 126.9780);
 const _lowAccuracyThresholdMeters = 30.0;
 
-// 건물 입구 반경 이 안으로 들어오면 실내 진입으로 간주해 자동 전환한다.
-const _buildingEntryThresholdMeters = 50.0;
+// 건물 진입 판정: "입구 근처" + "신호가 방금 나빠짐"을 같이 봐서
+// 건물 앞을 그냥 지나가는 경우(신호는 안 나빠짐)와 구분한다.
+// 세 값 다 실측 검증 전이라 추정치이고, 실기기 테스트하며 조정이 필요하다.
+const _buildingEntryThresholdMeters = 20.0;
+const _degradedAccuracyFloorMeters = 15.0;
+const _accuracyWorsenedRatio = 1.3;
 
 class OutdoorMapScreen extends StatefulWidget {
   const OutdoorMapScreen({super.key});
@@ -35,6 +39,7 @@ class _OutdoorMapScreenState extends State<OutdoorMapScreen> {
   Position? _position;
   LatLng? _entrance;
   DirectionsRoute? _route;
+  double? _previousAccuracy;
   StreamSubscription<Position>? _positionSubscription;
 
   @override
@@ -88,7 +93,16 @@ class _OutdoorMapScreenState extends State<OutdoorMapScreen> {
       LatLng(position.latitude, position.longitude),
       entrance,
     );
-    if (distance > _buildingEntryThresholdMeters) return;
+    final isNear = distance <= _buildingEntryThresholdMeters;
+
+    final previousAccuracy = _previousAccuracy;
+    _previousAccuracy = position.accuracy;
+    final accuracyWorsened =
+        position.accuracy > _degradedAccuracyFloorMeters &&
+        (previousAccuracy == null ||
+            position.accuracy > previousAccuracy * _accuracyWorsenedRatio);
+
+    if (!isNear || !accuracyWorsened) return;
 
     _autoNavigated = true;
     _positionSubscription?.cancel();

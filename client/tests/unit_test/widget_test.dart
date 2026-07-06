@@ -44,12 +44,13 @@ final _fakeLowAccuracyPosition = Position(
   speedAccuracy: 0,
 );
 
-// 데모 건물 입구와 정확히 같은 좌표 (자동 진입 감지 테스트용).
+// 데모 건물 입구와 정확히 같은 좌표 + 신호 저하(자동 진입 감지 테스트용).
+// accuracy가 저하 기준(15m)을 넘어야 "막 나빠진 신호"로 판정된다.
 final _fakePositionAtEntrance = Position(
   latitude: 37.5665,
   longitude: 126.9779,
   timestamp: DateTime(2024, 1, 1),
-  accuracy: 5,
+  accuracy: 25,
   altitude: 0,
   altitudeAccuracy: 0,
   heading: 0,
@@ -180,6 +181,41 @@ void main() {
 
       await tester.pumpAndSettle();
       expect(find.text('INDOOR'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'outdoor map does not auto-navigate near the entrance when GPS signal stays strong',
+    (WidgetTester tester) async {
+      // 입구와 같은 좌표지만 신호는 계속 양호함 (건물 앞을 지나가는 상황).
+      final passingByPosition = Position(
+        latitude: 37.5665,
+        longitude: 126.9779,
+        timestamp: DateTime(2024, 1, 1),
+        accuracy: 5,
+        altitude: 0,
+        altitudeAccuracy: 0,
+        heading: 0,
+        headingAccuracy: 0,
+        speed: 0,
+        speedAccuracy: 0,
+      );
+      watchPosition = () => Stream.value(passingByPosition);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: const OutdoorMapScreen(),
+          routes: {
+            AppRoutes.indoorMap: (context) =>
+                const Scaffold(body: Text('INDOOR')),
+          },
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text('야외 지도 (GPS 모드)'), findsOneWidget);
+      expect(find.text('INDOOR'), findsNothing);
     },
   );
 
