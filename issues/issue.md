@@ -52,10 +52,8 @@ Playwright는 프론트엔드 또는 백엔드 한쪽의 단위 테스트가 아
 | 마일스톤 | 권장 주차 | 디렉토리 | 이슈 | 내용 |
 |---|---|---|---|---|
 | M1 | 1주차 | [milestone-01-setup/](milestone-01-setup/) | M1-001~004 | Flutter·FastAPI 골격 생성, 연동, CI 기본 게이트 |
-| M2 | 2주차 | [milestone-02-map-data/](milestone-02-map-data/) | M2-001~003 | 실내 평면도 데이터, 렌더링, 기본 경로 |
-| M3 | 3주차 | [milestone-03-pdr/](milestone-03-pdr/) | M3-001~003 | 센서 capability, 걸음/보폭, heading/PDR |
-| M4 | 4주차 | [milestone-04-navigation/](milestone-04-navigation/) | M4-001~003 | 실내 전환, Particle Filter, 실시간 내비게이션 |
-| M5 | 5주차 | [milestone-05-demo-rag/](milestone-05-demo-rag/) | M5-001~004 | 자연어 목적지, 평가 리포트, 발표 데모 패키지, CD 배포 |
+
+M2 이후 상세 이슈 디렉토리는 현재 유지하지 않는다.
 
 ## 우선순위 메모
 
