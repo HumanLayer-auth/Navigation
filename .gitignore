@@ -29,6 +29,8 @@ htmlcov/
 .env
 .env.*
 !.env.example
+.agents/
+.claude/
 
 # IDE / OS
 .DS_Store
