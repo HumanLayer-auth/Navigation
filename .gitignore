@@ -38,6 +38,10 @@ Thumbs.db
 .vscode/
 !.vscode/extensions.json
 
+# 로컬 전용 디자인 참고 문서 (저장소에서 삭제됨, 개인 참고용으로만 복원)
+design.md
+TODO*.md
+
 # Generated indoor navigation dataset
 output/
 thehyundai_indoor_navigation_dataset/*
