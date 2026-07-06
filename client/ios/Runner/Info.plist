@@ -26,6 +26,10 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>실외에서 현재 위치를 지도에 표시하기 위해 위치 권한이 필요합니다.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>실내에서 걸음을 감지해 위치를 추정하기 위해 동작 센서 권한이 필요합니다.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
@@ -13,7 +12,7 @@ void main() {
     app.main();
     await tester.pumpAndSettle(const Duration(seconds: 10));
 
-    expect(find.text(app.apiBaseUrl), findsOneWidget);
-    expect(find.byIcon(Icons.refresh), findsOneWidget);
+    expect(find.text('Navigation'), findsOneWidget);
+    expect(find.text('시작하기'), findsOneWidget);
   });
 }
