@@ -10,3 +10,9 @@ const demoBuildingId = 'bldg-001';
 /// MockDirectionsRepository를 사용한다.
 const tmapAppKey = String.fromEnvironment('TMAP_APP_KEY');
 const tmapBaseUrl = 'https://apis.openapi.sk.com/tmap';
+
+/// VWorld(국토교통부) 배경지도 타일. https://www.vworld.kr/dev 에서 도메인 등록 후 발급.
+/// 키를 소스코드에 직접 적지 않고 실행 시점에 주입한다:
+///   flutter run --dart-define=VWORLD_API_KEY=발급받은키
+/// 값을 안 넘기면 빈 문자열이 되고, outdoor_map_screen.dart가 이 경우 OSM 타일로 대체한다.
+const vworldApiKey = String.fromEnvironment('VWORLD_API_KEY');

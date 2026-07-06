@@ -175,7 +175,11 @@ class _OutdoorMapScreenState extends State<OutdoorMapScreen> {
           options: MapOptions(initialCenter: center, initialZoom: 17),
           children: [
             TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              // VWorld는 키 발급(도메인 등록) 전제. 키가 없으면 OSM으로 대체해
+              // 로컬 개발·테스트 환경에서도 지도가 항상 뜨도록 한다.
+              urlTemplate: vworldApiKey.isEmpty
+                  ? 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
+                  : 'https://api.vworld.kr/req/wmts/1.0.0/$vworldApiKey/Base/{z}/{y}/{x}.png',
               userAgentPackageName: 'com.navigation.navigation_client',
             ),
             CircleLayer(
