@@ -91,8 +91,8 @@ class BuildingService:
             "id": node.id,
             "type": node.type,
             "name": node.name,
-            "x_m": node.x_m,
-            "y_m": node.y_m,
+            "x_m": node.position.x_m,
+            "y_m": node.position.y_m,
             "lat": node.lat,
             "lng": node.lng,
         }
@@ -114,7 +114,10 @@ class BuildingService:
             "id": store.id,
             "floor_id": store.floor_id,
             "name": store.name,
-            "centroid_local_m": {"x": store.centroid_x_m, "y": store.centroid_y_m},
+            "centroid_local_m": {
+                "x": store.centroid.x_m,
+                "y": store.centroid.y_m,
+            },
             "entrance_node_id": store.entrance_node_id,
             "polygon_local_m": store.polygon_local_m,
         }
@@ -125,6 +128,9 @@ class BuildingService:
             "id": poi.id,
             "type": poi.type,
             "name": poi.name,
-            "position_local_m": {"x": poi.x_m, "y": poi.y_m},
+            "position_local_m": {
+                "x": poi.position.x_m,
+                "y": poi.position.y_m,
+            },
             "linked_node_id": poi.linked_node_id,
         }

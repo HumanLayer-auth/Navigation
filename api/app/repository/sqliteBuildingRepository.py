@@ -5,7 +5,7 @@ BuildingRepository의 SQLite 구현체
 import json
 import sqlite3
 
-from app.domain.building import Building, Edge, Floor, Node, Poi, Store
+from app.domain.building import Building, Edge, Floor, LocalPoint, Node, Poi, Store
 
 class SqliteBuildingRepository:
     def __init__(self, conn: sqlite3.Connection):
@@ -55,7 +55,7 @@ class SqliteBuildingRepository:
             " WHERE floor_id = ?",
             (floor_id,),
         ).fetchall()
-        return [Node(**dict(r)) for r in rows]
+        return [self._to_node(r) for r in rows]
 
     def find_edges_by_floor(self, floor_id: str) -> list[Edge]:
         rows = self._conn.execute(
@@ -80,8 +80,9 @@ class SqliteBuildingRepository:
 
     def find_stores_by_floor(self, floor_id: str) -> list[Store]:
         rows = self._conn.execute(
-            "SELECT id, floor_id, name, centroid_x_m, centroid_y_m, entrance_node_id,"
-            " polygon FROM stores WHERE floor_id = ?",
+            "SELECT id, floor_id, name, centroid_x_m, centroid_y_m,"
+            " entrance_x_m, entrance_y_m, entrance_node_id, polygon"
+            " FROM stores WHERE floor_id = ?",
             (floor_id,),
         ).fetchall()
         return [self._to_store(r) for r in rows]
@@ -92,13 +93,13 @@ class SqliteBuildingRepository:
             " WHERE floor_id = ?",
             (floor_id,),
         ).fetchall()
-        return [Poi(**dict(r)) for r in rows]
+        return [self._to_poi(r) for r in rows]
 
     def search_stores(self, building_id: str, query: str) -> list[Store]:
         # 층을 거쳐 건물로 join — stores에는 building_id가 없기 때문
         rows = self._conn.execute(
             "SELECT s.id, s.floor_id, s.name, s.centroid_x_m, s.centroid_y_m,"
-            " s.entrance_node_id, s.polygon"
+            " s.entrance_x_m, s.entrance_y_m, s.entrance_node_id, s.polygon"
             " FROM stores s JOIN floors f ON s.floor_id = f.id"
             " WHERE f.building_id = ? AND s.name LIKE ?",
             (building_id, f"%{query}%"),  # LIKE 패턴도 값 바인딩으로
@@ -125,8 +126,52 @@ class SqliteBuildingRepository:
             id=row["id"],
             floor_id=row["floor_id"],
             name=row["name"],
-            centroid_x_m=row["centroid_x_m"],
-            centroid_y_m=row["centroid_y_m"],
+            centroid=LocalPoint(
+                x_m=row["centroid_x_m"],
+                y_m=row["centroid_y_m"],
+            ),
+            entrance=SqliteBuildingRepository._to_optional_local_point(
+                row,
+                "entrance_x_m",
+                "entrance_y_m",
+            ),
             entrance_node_id=row["entrance_node_id"],
             polygon_local_m=json.loads(row["polygon"]) if row["polygon"] else None,
         )
+
+    @staticmethod
+    def _to_node(row: sqlite3.Row) -> Node:
+        return Node(
+            id=row["id"],
+            floor_id=row["floor_id"],
+            type=row["type"],
+            name=row["name"],
+            position=LocalPoint(x_m=row["x_m"], y_m=row["y_m"]),
+            lat=row["lat"],
+            lng=row["lng"],
+        )
+
+    @staticmethod
+    def _to_poi(row: sqlite3.Row) -> Poi:
+        return Poi(
+            id=row["id"],
+            floor_id=row["floor_id"],
+            type=row["type"],
+            name=row["name"],
+            position=LocalPoint(x_m=row["x_m"], y_m=row["y_m"]),
+            linked_node_id=row["linked_node_id"],
+        )
+
+    @staticmethod
+    def _to_optional_local_point(
+        row: sqlite3.Row,
+        x_column: str,
+        y_column: str,
+    ) -> LocalPoint | None:
+        x_m = row[x_column]
+        y_m = row[y_column]
+        if x_m is None and y_m is None:
+            return None
+        if x_m is None or y_m is None:
+            raise ValueError(f"{x_column}, {y_column} 좌표 값이 불완전합니다.")
+        return LocalPoint(x_m=x_m, y_m=y_m)

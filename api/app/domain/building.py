@@ -20,13 +20,19 @@ class Floor:
     level: int
 
 @dataclass(frozen=True)
+class LocalPoint:
+    """실내 지도에서 사용하는 로컬 미터 좌표 값 객체."""
+
+    x_m: float
+    y_m: float
+
+@dataclass(frozen=True)
 class Node:
     id: str
     floor_id: str
     type: str # corridor | junction | store_entrance | escalator | elevator | dead_end
     name: str | None
-    x_m: float
-    y_m: float
+    position: LocalPoint
     lat: float | None  # WGS84 (provisional)
     lng: float | None
 
@@ -45,8 +51,8 @@ class Store:
     id: str
     floor_id: str
     name: str
-    centroid_x_m: float
-    centroid_y_m: float
+    centroid: LocalPoint
+    entrance: LocalPoint | None
     entrance_node_id: str | None
     polygon_local_m: list[dict] | None = None
 
@@ -56,6 +62,5 @@ class Poi:
     floor_id: str
     type: str  # elevator | escalator | toilet | exit | ...
     name: str | None
-    x_m: float
-    y_m: float
+    position: LocalPoint
     linked_node_id: str | None
