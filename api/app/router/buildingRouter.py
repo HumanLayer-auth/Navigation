@@ -71,6 +71,32 @@ def get_floor_map(
         raise HTTPException(status_code=404, detail="Floor not found")
     return result
 
+@router.get("/{building_id}/floors/{floor_name}/route")
+def get_shortest_route(
+    building_id: str,
+    floor_name: str,
+    start_node_id: str,
+    end_node_id: str,
+    service: BuildingService = Depends(get_building_service),
+):
+    try:
+        result = service.get_shortest_path(
+            building_id=building_id,
+            floor_name=floor_name,
+            start_node_id=start_node_id,
+            end_node_id=end_node_id,
+        )
+
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+    if result is None:
+        raise HTTPException(status_code=404, detail="Floor not found")
+
+    if not result["path_found"]:
+        raise HTTPException(status_code=404, detail="Route not found")
+
+    return result
 
 @router.get("/{building_id}/floors/{floor_name}/graph")
 def get_floor_graph(

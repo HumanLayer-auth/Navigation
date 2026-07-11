@@ -6,7 +6,7 @@ from typing import Any
 
 from app.domain.building import Building, Edge, Node, Poi, Store
 from app.repository.BuildingRepository import BuildingRepository
-
+from app.domain.dijkstra import find_shortest_path
 
 class BuildingService:
     def __init__(self, building_repository: BuildingRepository):
@@ -83,6 +83,46 @@ class BuildingService:
             self._to_store_dict(s)
             for s in self.building_repository.search_stores(building_id, query)
         ]
+
+    def get_shortest_path(
+        self,
+        building_id: str,
+        floor_name: str,
+        start_node_id: str,
+        end_node_id: str,
+    ) -> dict[str, Any] | None:
+        floor = self.building_repository.find_floor_by_name(
+            building_id,
+            floor_name,
+        )
+        if floor is None:
+            return None
+
+        nodes = self.building_repository.find_nodes_by_floor(floor.id)
+        edges = self.building_repository.find_edges_by_floor(floor.id)
+
+        path = find_shortest_path(
+            nodes=nodes,
+            edges=edges,
+            start_node_id=start_node_id,
+            end_node_id=end_node_id,
+        )
+
+        if path is None:
+            return {
+                "start_node_id": start_node_id,
+                "end_node_id": end_node_id,
+                "path_found": False,
+            }
+
+        return {
+            "start_node_id": start_node_id,
+            "end_node_id": end_node_id,
+            "path_found": True,
+            "node_ids": list(path.node_ids),
+            "edge_ids": list(path.edge_ids),
+            "total_distance_m": path.total_distance_m,
+        }
 
     # --- domain 객체 → API 응답 dict 변환 ---
     # 도메인 모델을 그대로 노출하지 않고 Flutter가 소비할 JSON 구조로 변환한다.
