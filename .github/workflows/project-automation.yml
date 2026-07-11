@@ -25,7 +25,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  PROJECT_OWNER: HumanLayer-auth
+  PROJECT_OWNER: Routex-labs
   PROJECT_NUMBER: "2"
   REPO_NAME: Navigation
 
