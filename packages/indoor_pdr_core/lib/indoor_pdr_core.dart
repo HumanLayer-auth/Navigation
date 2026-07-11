@@ -9,6 +9,11 @@ library;
 export 'src/domain/pdr_local_point.dart';
 export 'src/domain/angle_utils.dart';
 export 'src/domain/heading_sample.dart';
+export 'src/domain/heading_reference.dart';
 export 'src/domain/events.dart';
 export 'src/domain/quality.dart';
 export 'src/domain/snapshot.dart';
+
+// application (공개 API)
+export 'src/application/pdr_session.dart';
+export 'src/application/pdr_session_config.dart';
