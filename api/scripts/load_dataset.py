@@ -6,6 +6,7 @@
 실행방법
 python scripts/load_dataset.py
 python scripts/load_dataset.py --db data/navigation.db
+python scripts/load_dataset.py --vector-dir app/data/vector_maps
 
 """
 from __future__ import annotations
@@ -13,11 +14,13 @@ from __future__ import annotations
 import argparse
 import json
 import sqlite3
+from math import hypot
 from pathlib import Path
 
 # 스크립트를 어느 디렉토리에서 실행해도 같은 입력/출력 경로를 사용한다.
 API_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_JSON = API_ROOT / "app" / "data" / "navigation_1f.json"
+DEFAULT_VECTOR_DIR = API_ROOT / "app" / "data" / "vector_maps"
 DEFAULT_DB = API_ROOT / "data" / "navigation.db"
 
 # 개발용 데이터셋을 항상 같은 상태로 만들기 위해 DROP → CREATE를 한 번에 실행한다.
@@ -29,6 +32,8 @@ DROP TABLE IF EXISTS pois;
 DROP TABLE IF EXISTS stores;
 DROP TABLE IF EXISTS edges;
 DROP TABLE IF EXISTS nodes;
+DROP TABLE IF EXISTS map_features;
+DROP TABLE IF EXISTS floor_vector_maps;
 DROP TABLE IF EXISTS floors;
 DROP TABLE IF EXISTS buildings;
 
@@ -47,6 +52,27 @@ CREATE TABLE floors (
     level       INTEGER NOT NULL,       -- 정렬용 층 순번
     UNIQUE (building_id, name)
 );
+
+CREATE TABLE floor_vector_maps (
+    floor_id          TEXT PRIMARY KEY REFERENCES floors(id),
+    coordinate_system TEXT NOT NULL,    -- SVG viewBox 좌표계 메타데이터 JSON
+    source            TEXT NOT NULL     -- 원본 파일/형식 추적용 JSON
+);
+
+CREATE TABLE map_features (
+    id            TEXT NOT NULL,
+    floor_id      TEXT NOT NULL REFERENCES floor_vector_maps(floor_id),
+    kind          TEXT NOT NULL,        -- footprint|store|amenity|wall|gate
+    name          TEXT,
+    category      TEXT,
+    geometry_type TEXT NOT NULL,        -- Polygon|LineString
+    coordinates   TEXT NOT NULL,        -- [{"x":..,"y":..}, ...] JSON
+    centroid_x    REAL,
+    centroid_y    REAL,
+    PRIMARY KEY (floor_id, id)
+);
+CREATE INDEX idx_map_features_floor ON map_features(floor_id);
+CREATE INDEX idx_map_features_kind  ON map_features(kind);
 
 CREATE TABLE nodes (
     id       TEXT PRIMARY KEY,
@@ -104,8 +130,96 @@ CREATE INDEX idx_pois_floor ON pois(floor_id);
 CREATE INDEX idx_pois_type  ON pois(type);
 """
 
+
+def _node_row(node: dict, floor_id: str) -> tuple:
+    """SVG 변환 JSON의 노드를 SQLite 컬럼 순서로 펼친다."""
+    position = node["position"]
+    local_m = position["local_m"]
+    wgs84 = position.get("wgs84") or {}
+    source = position.get("source") or {}
+    return (
+        node["id"],
+        floor_id,
+        node["type"],
+        node.get("name"),
+        local_m["x"],
+        local_m["y"],
+        wgs84.get("lat"),
+        wgs84.get("lng"),
+        source.get("x"),
+        source.get("y"),
+    )
+
+
+def _edge_row(
+    edge: dict,
+    floor_id: str,
+    node_points: dict[str, dict[str, float]],
+) -> tuple:
+    """간선 geometry와 거리가 없으면 양 끝 노드의 local_m 좌표로 보완한다."""
+    geometry = edge.get("geometry_local_m") or [
+        dict(node_points[edge["from"]]),
+        dict(node_points[edge["to"]]),
+    ]
+    length_m = edge.get("length_m")
+    if length_m is None:
+        length_m = sum(
+            hypot(
+                current["x"] - previous["x"],
+                current["y"] - previous["y"],
+            )
+            for previous, current in zip(geometry, geometry[1:])
+        )
+
+    return (
+        edge["id"],
+        floor_id,
+        edge["from"],
+        edge["to"],
+        length_m,
+        1 if edge.get("bidirectional", True) else 0,
+        json.dumps(geometry, ensure_ascii=False),
+    )
+
+
+def _find_vector_dataset(
+    vector_path: Path,
+    *,
+    building_id: str,
+    floor_id: str,
+) -> dict:
+    """파일 또는 디렉터리에서 현재 건물/층에 해당하는 벡터 JSON 하나를 찾는다."""
+    vector_path = Path(vector_path)
+    if vector_path.is_file():
+        candidates = [vector_path]
+    elif vector_path.is_dir():
+        candidates = sorted(vector_path.rglob("*.json"))
+    else:
+        raise FileNotFoundError(f"벡터 데이터 경로가 없습니다: {vector_path}")
+
+    matches: list[tuple[Path, dict]] = []
+    for candidate in candidates:
+        with open(candidate, encoding="utf-8") as vector_file:
+            vector_data = json.load(vector_file)
+        if (
+            vector_data.get("building_id") == building_id
+            and vector_data.get("floor_id") == floor_id
+        ):
+            matches.append((candidate, vector_data))
+
+    if not matches:
+        raise FileNotFoundError(
+            f"{building_id}/{floor_id} 벡터 JSON을 {vector_path}에서 찾지 못했습니다."
+        )
+    if len(matches) > 1:
+        paths = ", ".join(str(path) for path, _ in matches)
+        raise ValueError(f"동일한 건물/층 벡터 JSON이 여러 개입니다: {paths}")
+    return matches[0][1]
+
 def load_navigation_db(
-    json_path : Path = DEFAULT_JSON, db_path: Path = DEFAULT_DB
+    json_path: Path = DEFAULT_JSON,
+    db_path: Path = DEFAULT_DB,
+    vector_path: Path | None = DEFAULT_VECTOR_DIR,
 ) -> dict[str, int]:
     """navigation JSON을 읽어 SQLite로 적재하고 테이블별 건수를 반환한다."""
     # 원본 JSON 전체를 Python dict/list 구조로 읽는다.
@@ -117,6 +231,10 @@ def load_navigation_db(
     floor = building["floor"]
     building_id = building["id"]
     floor_id = floor["id"]
+    node_points = {
+        node["id"]: node["position"]["local_m"]
+        for node in data["nodes"]
+    }
 
     # 출력 폴더가 아직 없어도 DB 파일을 생성할 수 있게 준비한다.
     db_path = Path(db_path)
@@ -150,37 +268,15 @@ def load_navigation_db(
         conn.executemany(
             "INSERT INTO nodes (id, floor_id, type, name, x_m, y_m, lat, lng, source_x, source_y)"
             " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            [
-                (
-                    n["id"],
-                    floor_id,
-                    n["type"],
-                    n.get("name"),          # name이 없는 노드도 있으므로 .get
-                    n["position"]["local_m"]["x"],
-                    n["position"]["local_m"]["y"],
-                    n["position"]["wgs84"]["lat"],
-                    n["position"]["wgs84"]["lng"],
-                    n["position"]["source"]["x"],
-                    n["position"]["source"]["y"],
-                )
-                for n in data["nodes"]
-            ],
+            [_node_row(node, floor_id) for node in data["nodes"]],
         )
         conn.executemany(
             # Edge는 Node ID를 참조하고 geometry는 JSON 문자열로 저장한다.
             "INSERT INTO edges (id, floor_id, from_node_id, to_node_id, length_m, bidirectional, geometry)"
             " VALUES (?, ?, ?, ?, ?, ?, ?)",
             [
-                (
-                    e["id"],
-                    floor_id,
-                    e["from"],
-                    e["to"],
-                    e["length_m"],
-                    1 if e["bidirectional"] else 0,  # SQLite에는 bool이 없어 0/1
-                    json.dumps(e["geometry_local_m"]),
-                )
-                for e in data["edges"]
+                _edge_row(edge, floor_id, node_points)
+                for edge in data["edges"]
             ],
         )
         conn.executemany(
@@ -221,13 +317,61 @@ def load_navigation_db(
                 for p in data["pois"]
             ],
         )
+
+        if vector_path is not None:
+            vector_data = _find_vector_dataset(
+                vector_path,
+                building_id=building_id,
+                floor_id=floor_id,
+            )
+
+            conn.execute(
+                "INSERT INTO floor_vector_maps (floor_id, coordinate_system, source)"
+                " VALUES (?, ?, ?)",
+                (
+                    floor_id,
+                    json.dumps(vector_data["coordinate_system"], ensure_ascii=False),
+                    json.dumps(vector_data["source"], ensure_ascii=False),
+                ),
+            )
+            conn.executemany(
+                "INSERT INTO map_features (id, floor_id, kind, name, category,"
+                " geometry_type, coordinates, centroid_x, centroid_y)"
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                [
+                    (
+                        feature["id"],
+                        floor_id,
+                        feature["kind"],
+                        feature.get("name"),
+                        feature.get("category"),
+                        feature["geometry"]["type"],
+                        json.dumps(
+                            feature["geometry"]["coordinates"],
+                            ensure_ascii=False,
+                        ),
+                        (feature.get("centroid") or {}).get("x"),
+                        (feature.get("centroid") or {}).get("y"),
+                    )
+                    for feature in vector_data["features"]
+                ],
+            )
         # 모든 테이블 INSERT가 성공한 경우에만 한 번에 영구 반영한다.
         conn.commit() # 자동으로 transaction 마무리
 
         # 적재 결과 요약은 CLI 출력과 테스트의 데이터 건수 검증에 함께 사용한다.
         counts = {
             table: conn.execute(f"select count(*) from {table}").fetchone()[0]
-            for table in ("buildings", "floors", "nodes", "edges", "stores", "pois")
+            for table in (
+                "buildings",
+                "floors",
+                "floor_vector_maps",
+                "map_features",
+                "nodes",
+                "edges",
+                "stores",
+                "pois",
+            )
         }
         return counts
     
@@ -239,10 +383,16 @@ if __name__ == "__main__":
     # 모듈 import 때는 실행하지 않고 직접 호출했을 때만 CLI 인자를 처리한다.
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--json", type=Path, default=DEFAULT_JSON)
+    parser.add_argument(
+        "--vector-dir",
+        type=Path,
+        default=DEFAULT_VECTOR_DIR,
+        help="건물/층별 벡터 JSON 디렉터리 또는 단일 JSON 파일",
+    )
     parser.add_argument("--db", type=Path, default=DEFAULT_DB)
     args = parser.parse_args()
 
-    result = load_navigation_db(args.json, args.db)
+    result = load_navigation_db(args.json, args.db, args.vector_dir)
     print(f"적재 완료 : {args.db}")
     for table, count in result.items():
         print(f" {table}: {count}")
