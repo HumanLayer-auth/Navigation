@@ -1,117 +1,93 @@
-"""
-API 통합 테스트.
+"""BuildingService 단위 테스트."""
 
-TestClient로 HTTP 왕복 전체(라우팅 → DI → service → SQLite → 직렬화)를 검증한다.
-데이터는 실데이터(navigation_1f.json)를 적재한 임시 SQLite.
-"""
+import pytest
 
+from app.service.buildingService import BuildingService
 from tests.conftest import BUILDING_ID, FLOOR_NAME
 
 
-# --- 서버 상태와 건물 HTTP API ---
-
-def test_헬스체크(api_client):
-    response = api_client.get("/health")
-
-    assert response.status_code == 200
-    assert response.json() == {"status": "ok"}
+@pytest.fixture
+def service(building_repository) -> BuildingService:
+    return BuildingService(building_repository)
 
 
-def test_건물_목록_조회(api_client):
-    response = api_client.get("/buildings")
+def test_건물_목록_조회(service):
+    buildings = service.get_all_buildings()
 
-    assert response.status_code == 200
-    buildings = response.json()
-    assert isinstance(buildings, list)
+    assert len(buildings) == 1
     assert buildings[0]["id"] == BUILDING_ID
     assert buildings[0]["floors"] == [FLOOR_NAME]
+    assert "footprint_local_m" not in buildings[0]
 
 
-def test_건물_단건_조회(api_client):
-    response = api_client.get(f"/buildings/{BUILDING_ID}")
+def test_건물_상세_조회(service):
+    building = service.get_building(BUILDING_ID)
 
-    assert response.status_code == 200
-    body = response.json()
-    assert body["id"] == BUILDING_ID
-    assert body["area_m2"] > 16000
-    assert len(body["footprint_local_m"]) >= 4
+    assert building["id"] == BUILDING_ID
+    assert building["area_m2"] == pytest.approx(16182.4, abs=1.0)
+    assert len(building["footprint_local_m"]) >= 4
 
 
-def test_없는_건물_404(api_client):
-    # Service의 None이 Router에서 HTTP 404로 변환되는지 확인한다.
-    response = api_client.get("/buildings/nonexistent")
-
-    assert response.status_code == 404
-    assert response.json()["detail"] == "Building not found"
+def test_없는_건물은_None(service):
+    assert service.get_building("nonexistent") is None
 
 
-# --- 층 지도/그래프 HTTP API ---
+def test_층_그래프_조회(service):
+    graph = service.get_floor_graph(BUILDING_ID, FLOOR_NAME)
 
-def test_층_지도_조회(api_client):
-    response = api_client.get(f"/buildings/{BUILDING_ID}/floors/{FLOOR_NAME}")
+    assert len(graph["nodes"]) == 234
+    assert len(graph["edges"]) == 282
 
-    assert response.status_code == 200
-    body = response.json()
-    assert body["floor"]["name"] == FLOOR_NAME
-    assert len(body["stores"]) == 61
-    assert len(body["pois"]) == 47
-
-
-def test_없는_층_404(api_client):
-    response = api_client.get(f"/buildings/{BUILDING_ID}/floors/99F")
-
-    assert response.status_code == 404
-    assert response.json()["detail"] == "Floor not found"
+    node_ids = {node["id"] for node in graph["nodes"]}
+    for edge in graph["edges"]:
+        assert edge["from"] in node_ids
+        assert edge["to"] in node_ids
+        assert edge["length_m"] >= 0
 
 
-def test_층_그래프_조회(api_client):
-    response = api_client.get(f"/buildings/{BUILDING_ID}/floors/{FLOOR_NAME}/graph")
+def test_층_지도_조회(service):
+    floor_map = service.get_floor_map(BUILDING_ID, FLOOR_NAME)
 
-    assert response.status_code == 200
-    body = response.json()
-    assert len(body["nodes"]) == 234
-    assert len(body["edges"]) == 282
-
-
-# --- 매장 검색 HTTP API ---
-
-def test_매장_검색(api_client):
-    response = api_client.get(f"/buildings/{BUILDING_ID}/stores", params={"q": "베네타"})
-
-    assert response.status_code == 200
-    stores = response.json()
-    assert len(stores) >= 1
-    assert any("베네타" in s["name"] for s in stores)
+    assert floor_map["floor"]["name"] == FLOOR_NAME
+    assert len(floor_map["footprint_local_m"]) >= 4
+    assert len(floor_map["stores"]) == 61
+    assert len(floor_map["pois"]) == 47
 
 
-def test_매장_검색_전체(api_client):
-    response = api_client.get(f"/buildings/{BUILDING_ID}/stores")
-
-    assert response.status_code == 200
-    assert len(response.json()) == 61
+def test_없는_층은_None(service):
+    assert service.get_floor_graph(BUILDING_ID, "99F") is None
+    assert service.get_floor_map(BUILDING_ID, "99F") is None
 
 
-# --- 아직 구현 전인 자연어 질의 API 계약 ---
+def test_매장_검색(service):
+    results = service.search_stores(BUILDING_ID, "베네타")
 
-def test_목적지_질의_스텁(api_client):
-    payload = {"text": "구찌 어디야", "building_id": BUILDING_ID}
-
-    response = api_client.post("/query/destination", json=payload)
-
-    body = response.json()
-    assert response.status_code == 200
-    assert body["status"] == "stub"
-    assert body["query"] == payload["text"]
-    assert body["result"] is None
+    assert len(results) >= 1
+    assert any("베네타" in store["name"] for store in results)
+    assert all(store["entrance_node_id"] for store in results)
 
 
-def test_정보_질의_스텁(api_client):
-    payload = {"text": "화장실 위치", "building_id": BUILDING_ID}
+def test_매장_검색_빈_질의는_전체(service):
+    assert len(service.search_stores(BUILDING_ID, "")) == 61
 
-    response = api_client.post("/query/info", json=payload)
 
-    body = response.json()
-    assert response.status_code == 200
-    assert body["status"] == "stub"
-    assert body["query"] == payload["text"]
-    assert body["result"] is None
+def test_없는_건물_매장_검색은_None(service):
+    assert service.search_stores("nonexistent", "베네타") is None
+
+
+def test_최단_경로_조회(service):
+    graph = service.get_floor_graph(BUILDING_ID, FLOOR_NAME)
+    edge = graph["edges"][0]
+
+    path = service.get_shortest_path(
+        BUILDING_ID,
+        FLOOR_NAME,
+        edge["from"],
+        edge["to"],
+    )
+
+    assert path["path_found"] is True
+    assert path["node_ids"][0] == edge["from"]
+    assert path["node_ids"][-1] == edge["to"]
+    assert len(path["edge_ids"]) >= 1
+    assert path["total_distance_m"] >= 0
