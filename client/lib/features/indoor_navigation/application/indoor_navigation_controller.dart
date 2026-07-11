@@ -1,0 +1,235 @@
+import 'dart:async';
+import 'dart:math' as math;
+
+import 'package:indoor_pdr_core/indoor_pdr_core.dart';
+
+import '../contract/indoor_navigation_contract.dart';
+import '../platform/native_pdr_event.dart';
+import '../platform/pdr_motion_source.dart';
+
+/// 앱 범위 실내 내비게이션 세션을 소유하는 headless 컨트롤러.
+///
+/// 계약([IndoorNavigationController])을 구현한다. 위젯을 만들지 않고, PdrSession(코어)과
+/// [PdrMotionSource]를 소유하며 native 이벤트를 코어로 흘린다. UI는 스트림을 관찰만 한다.
+///
+/// lifecycle 원칙(설계 v4 Phase 2):
+///   - anchor 확정 + startGuidance에서 세션 ON
+///   - 화면 전환(IndoorMap↔RouteGuide↔calibration)에는 세션 유지
+///   - 안내 종료·층 변경·명시 reset·background에서만 stop/pause
+class IndoorNavigationDriver implements IndoorNavigationController {
+  IndoorNavigationDriver({
+    required PdrMotionSource source,
+    PdrSessionConfig? config,
+    int Function()? nowMs,
+  })  : _source = source, // ignore: prefer_initializing_formals
+        _nowMs = nowMs ?? _defaultNowMs {
+    _session = PdrSession(config: config);
+    _sessionSub = _session.snapshots.listen(_onSnapshot);
+  }
+
+  static int _defaultNowMs() => DateTime.now().millisecondsSinceEpoch;
+
+  final PdrMotionSource _source;
+  final int Function() _nowMs;
+
+  late final PdrSession _session;
+  late final StreamSubscription<PdrSnapshot> _sessionSub;
+  StreamSubscription<NativePdrEvent>? _eventSub;
+
+  final _snapshots = StreamController<PdrSnapshot>.broadcast();
+  final _calibration = StreamController<CalibrationStatus>.broadcast();
+
+  PdrSnapshot? _current;
+  CalibrationStatus _calib = const CalibrationStatus.uncalibrated();
+  bool _guiding = false;
+  String? _floorId;
+
+  // 캘리브레이션 진행 중 임시 상태.
+  PdrLocalPoint? _pendingPinFloorM;
+  PdrLocalPoint? _pendingPinPdrM;
+
+  // ── IndoorNavigationView ──
+
+  @override
+  Stream<PdrSnapshot> get snapshots => _snapshots.stream;
+
+  @override
+  PdrSnapshot? get currentSnapshot => _current;
+
+  @override
+  Stream<CalibrationStatus> get calibration => _calibration.stream;
+
+  @override
+  CalibrationStatus get currentCalibration => _calib;
+
+  // ── IndoorNavigationIntents ──
+
+  @override
+  void startGuidance({required String floorId}) {
+    if (_guiding && _floorId == floorId) {
+      return;
+    }
+    _floorId = floorId;
+    _guiding = true;
+    _session.reset();
+    _eventSub ??= _source.events.listen(_onNativeEvent);
+    _source.start();
+    _updateCalibration(CalibrationPhase.awaitingPin);
+  }
+
+  @override
+  void stopGuidance() {
+    if (!_guiding) {
+      return;
+    }
+    _guiding = false;
+    _source.stop();
+    _pendingPinFloorM = null;
+    _pendingPinPdrM = null;
+    _updateCalibration(CalibrationPhase.uncalibrated);
+  }
+
+  @override
+  Future<void> confirmAnchorByPin({required PdrLocalPoint floorPointM}) async {
+    if (!_guiding) {
+      return;
+    }
+    _pendingPinFloorM = floorPointM;
+    _pendingPinPdrM = _session.position;
+    if (_session.headingReference == HeadingReference.magneticNorth) {
+      // 자북 기준: 서버 north_alignment 오프셋을 Phase 3에서 주입한다. 지금은 0.
+      _finalizeAnchor(rotationDeg: 0, source: AnchorSource.userPin);
+    } else {
+      // arbitrary corrected: 진행 방향 보정이 필수(§4).
+      _updateCalibration(CalibrationPhase.awaitingHeading);
+    }
+  }
+
+  @override
+  Future<void> confirmAnchorByHeading({
+    required double floorHeadingDeg,
+  }) async {
+    if (!_guiding || _pendingPinFloorM == null) {
+      return;
+    }
+    // PDR 보행 heading을 floor heading에 맞추는 회전.
+    final rotationDeg =
+        floorHeadingDeg - _session.walkingHeadingDeg;
+    _finalizeAnchor(
+      rotationDeg: rotationDeg,
+      source: AnchorSource.manualHeadingCal,
+    );
+  }
+
+  @override
+  void changeFloor({required String floorId}) {
+    _floorId = floorId;
+    _pendingPinFloorM = null;
+    _pendingPinPdrM = null;
+    _resetSessionForNewFloor();
+    _updateCalibration(CalibrationPhase.awaitingPin);
+  }
+
+  // ── 앱 lifecycle (앱 셸이 호출) ──
+
+  /// 앱이 background로 가면 tracking pause.
+  void onAppBackgrounded() {
+    if (_guiding) {
+      _session.pause(atMs: _session.lastMotionAtMs ?? _nowMs());
+    }
+  }
+
+  /// 앱이 foreground로 돌아오면 tracking resume.
+  void onAppForegrounded() {
+    if (_guiding) {
+      _session.resume(atMs: _session.lastMotionAtMs ?? _nowMs());
+    }
+  }
+
+  Future<void> dispose() async {
+    await _eventSub?.cancel();
+    await _sessionSub.cancel();
+    _session.dispose();
+    await _source.dispose();
+    await _snapshots.close();
+    await _calibration.close();
+  }
+
+  // ── 내부 ──
+
+  void _onNativeEvent(NativePdrEvent e) {
+    // 순서 유지: heading → accel peak → pedometer (연구 엔진과 동일).
+    final heading = e.heading;
+    if (heading != null) {
+      _session.onHeading(heading);
+    }
+    final accelPeak = e.accelPeak;
+    if (accelPeak != null) {
+      _session.onAccelPeak(accelPeak);
+    }
+    final pedometer = e.pedometer;
+    if (pedometer != null) {
+      _session.onPedometerBatch(pedometer);
+    }
+  }
+
+  void _onSnapshot(PdrSnapshot snapshot) {
+    _current = snapshot;
+    if (!_snapshots.isClosed) {
+      _snapshots.add(snapshot);
+    }
+  }
+
+  Future<void> _resetSessionForNewFloor() async {
+    final newSessionId = await _source.resetPedometer();
+    _session.reset(newStepSessionId: newSessionId);
+  }
+
+  void _finalizeAnchor({
+    required double rotationDeg,
+    required AnchorSource source,
+  }) {
+    final pinFloor = _pendingPinFloorM;
+    final pinPdr = _pendingPinPdrM;
+    if (pinFloor == null || pinPdr == null) {
+      return;
+    }
+    // anchorLocalM = pinFloor - R(rotationDeg)·pinPdr.
+    final theta = rotationDeg * math.pi / 180.0;
+    final cosT = math.cos(theta);
+    final sinT = math.sin(theta);
+    final rx = pinPdr.eastM * cosT - pinPdr.northM * sinT;
+    final ry = pinPdr.eastM * sinT + pinPdr.northM * cosT;
+    final anchorLocalM =
+        PdrLocalPoint(pinFloor.eastM - rx, pinFloor.northM - ry);
+
+    final reference = _session.headingReference;
+    final anchor = PdrAnchor(
+      floorId: _floorId ?? '',
+      anchorLocalM: anchorLocalM,
+      rotationDeg: rotationDeg,
+      headingReference: reference,
+      requiresManualRotationCalibration:
+          reference != HeadingReference.magneticNorth,
+      source: source,
+      confidence: 1,
+    );
+    _pendingPinFloorM = null;
+    _pendingPinPdrM = null;
+    _updateCalibration(CalibrationPhase.calibrated, anchor: anchor);
+  }
+
+  void _updateCalibration(CalibrationPhase phase, {PdrAnchor? anchor}) {
+    final reference = _session.headingReference;
+    _calib = CalibrationStatus(
+      phase: phase,
+      headingReference: reference,
+      requiresManualRotationCalibration:
+          reference != HeadingReference.magneticNorth,
+      anchor: anchor,
+    );
+    if (!_calibration.isClosed) {
+      _calibration.add(_calib);
+    }
+  }
+}
