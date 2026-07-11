@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
@@ -262,18 +263,18 @@ void main() {
     expect(find.textContaining('데모 건물'), findsOneWidget);
   });
 
-  testWidgets('indoor map renders the first floor plan with its POIs', (
+  testWidgets('indoor map renders the floor map image', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(const MaterialApp(home: IndoorMapScreen()));
     await tester.pumpAndSettle();
 
-    expect(find.text('데모 건물 · 1층'), findsOneWidget);
-    expect(find.text('강의실 101'), findsOneWidget);
+    expect(find.text('데모 건물 · 1F'), findsOneWidget);
+    expect(find.byType(SvgPicture), findsOneWidget);
     expect(find.byIcon(Icons.layers), findsOneWidget);
   });
 
-  testWidgets('indoor map switches floor plan via the floor switcher', (
+  testWidgets('indoor map switches floor label via the floor switcher', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(const MaterialApp(home: IndoorMapScreen()));
@@ -282,11 +283,11 @@ void main() {
     await tester.tap(find.byIcon(Icons.layers));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('2층').last);
+    await tester.tap(find.text('2F').last);
     await tester.pumpAndSettle();
 
-    expect(find.text('데모 건물 · 2층'), findsOneWidget);
-    expect(find.text('강의실 201'), findsOneWidget);
+    expect(find.text('데모 건물 · 2F'), findsOneWidget);
+    expect(find.byType(SvgPicture), findsOneWidget);
   });
 
   testWidgets('destination screen shows every POI by default', (
@@ -394,7 +395,7 @@ void main() {
   ) async {
     const destination = PoiSearchResult(
       name: '강의실 101',
-      floor: 1,
+      floor: '1F',
       point: LatLng(37.5665, 126.9780),
     );
 

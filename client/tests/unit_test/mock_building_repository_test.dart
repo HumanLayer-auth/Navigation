@@ -15,7 +15,7 @@ void main() {
 
     expect(buildings, hasLength(1));
     expect(buildings.first.id, 'bldg-001');
-    expect(buildings.first.floors, [1, 2]);
+    expect(buildings.first.floors, ['1F', '2F']);
   });
 
   test('returns the building by id', () async {
@@ -34,15 +34,23 @@ void main() {
   });
 
   test('returns floor geojson for a known floor', () async {
-    final geojson = await repository.getFloorGeoJson('bldg-001', 1);
+    final geojson = await repository.getFloorGeoJson('bldg-001', '1F');
 
     expect(geojson, isNotNull);
     expect(geojson!['type'], 'FeatureCollection');
   });
 
   test('returns null for an unknown floor', () async {
-    final geojson = await repository.getFloorGeoJson('bldg-001', 99);
+    final geojson = await repository.getFloorGeoJson('bldg-001', '99F');
 
     expect(geojson, isNull);
+  });
+
+  test('returns null route when the mock floor has no matching store entrance', () async {
+    // sample_building.json은 GeoJSON POI만 있고 매장/entranceNodeId가 없어서
+    // 항상 null이다 - 실제 그래프 기반 경로는 HttpBuildingRepository에서만 나온다.
+    final route = await repository.getShortestRoute('bldg-001', '1F', 'N1', 'N2');
+
+    expect(route, isNull);
   });
 }
