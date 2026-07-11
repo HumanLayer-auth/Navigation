@@ -3,7 +3,17 @@
 import json
 import sqlite3
 
-from app.domain.building import Building, Edge, Floor, LocalPoint, Node, Poi, Store
+from app.domain.building import (
+    Building,
+    Edge,
+    Floor,
+    FloorVectorMap,
+    LocalPoint,
+    MapFeature,
+    Node,
+    Poi,
+    Store,
+)
 
 class SqliteBuildingRepository:
     def __init__(self, conn: sqlite3.Connection):
@@ -51,6 +61,43 @@ class SqliteBuildingRepository:
         ).fetchone()
 
         return Floor(**dict(row)) if row else None
+
+    def find_vector_map_by_floor(self, floor_id: str) -> FloorVectorMap | None:
+        vector_map = self._conn.execute(
+            "SELECT floor_id, coordinate_system, source FROM floor_vector_maps"
+            " WHERE floor_id = ?",
+            (floor_id,),
+        ).fetchone()
+        if vector_map is None:
+            return None
+
+        rows = self._conn.execute(
+            "SELECT id, floor_id, kind, name, category, geometry_type,"
+            " coordinates, centroid_x, centroid_y FROM map_features"
+            " WHERE floor_id = ? ORDER BY rowid",
+            (floor_id,),
+        ).fetchall()
+        features = [
+            MapFeature(
+                id=row["id"],
+                floor_id=row["floor_id"],
+                kind=row["kind"],
+                name=row["name"],
+                category=row["category"],
+                geometry_type=row["geometry_type"],
+                coordinates=json.loads(row["coordinates"]),
+                centroid={"x": row["centroid_x"], "y": row["centroid_y"]}
+                if row["centroid_x"] is not None and row["centroid_y"] is not None
+                else None,
+            )
+            for row in rows
+        ]
+        return FloorVectorMap(
+            floor_id=vector_map["floor_id"],
+            coordinate_system=json.loads(vector_map["coordinate_system"]),
+            source=json.loads(vector_map["source"]),
+            features=features,
+        )
     
     # --- graph --- 
     def find_nodes_by_floor(self, floor_id: str) -> list[Node]:

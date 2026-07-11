@@ -4,9 +4,9 @@
 
 from typing import Any
 
-from app.domain.building import Building, Edge, Node, Poi, Store
+from app.domain.building import Building, Edge, FloorVectorMap, MapFeature, Node, Poi, Store
+from app.domain.dijkstra import ShortestPath, find_shortest_path
 from app.repository.BuildingRepository import BuildingRepository
-from app.domain.dijkstra import find_shortest_path
 
 class BuildingService:
     def __init__(self, building_repository: BuildingRepository):
@@ -41,10 +41,13 @@ class BuildingService:
         if floor is None:
             return None
         building = self.building_repository.find_building_by_id(building_id)
+        vector_map = self.building_repository.find_vector_map_by_floor(floor.id)
         # Flutter 지도 한 화면을 그리는 데 필요한 데이터를 한 응답으로 조합한다.
         return {
             "floor": {"id": floor.id, "name": floor.name, "level": floor.level},
+            "navigation_coordinate_system": "local_m",
             "footprint_local_m": building.footprint_local_m if building else [],
+            "vector_map": self._to_vector_map_dict(vector_map) if vector_map else None,
             "stores": [
                 self._to_store_dict(s)
                 for s in self.building_repository.find_stores_by_floor(floor.id)
@@ -121,8 +124,59 @@ class BuildingService:
             "path_found": True,
             "node_ids": list(path.node_ids),
             "edge_ids": list(path.edge_ids),
+            "coordinate_system": "local_m",
+            "path_points": self._build_path_points(path, nodes, edges),
             "total_distance_m": path.total_distance_m,
         }
+
+    @staticmethod
+    def _build_path_points(
+        path: ShortestPath,
+        nodes: list[Node],
+        edges: list[Edge],
+    ) -> list[dict[str, float]]:
+        """최단 경로의 간선 geometry를 진행 방향에 맞춰 하나의 선으로 합친다."""
+        nodes_by_id = {node.id: node for node in nodes}
+        edges_by_id = {edge.id: edge for edge in edges}
+
+        if not path.edge_ids:
+            node = nodes_by_id[path.node_ids[0]]
+            return [{"x": node.position.x_m, "y": node.position.y_m}]
+
+        path_points: list[dict[str, float]] = []
+
+        for index, edge_id in enumerate(path.edge_ids):
+            edge = edges_by_id[edge_id]
+            from_node_id = path.node_ids[index]
+            to_node_id = path.node_ids[index + 1]
+
+            geometry = [dict(point) for point in edge.geometry_local_m]
+            if not geometry:
+                from_node = nodes_by_id[from_node_id]
+                to_node = nodes_by_id[to_node_id]
+                geometry = [
+                    {"x": from_node.position.x_m, "y": from_node.position.y_m},
+                    {"x": to_node.position.x_m, "y": to_node.position.y_m},
+                ]
+            elif (
+                edge.from_node_id == to_node_id
+                and edge.to_node_id == from_node_id
+            ):
+                geometry.reverse()
+            elif not (
+                edge.from_node_id == from_node_id
+                and edge.to_node_id == to_node_id
+            ):
+                raise ValueError(
+                    f"간선 {edge.id}가 경로 노드 {from_node_id}, {to_node_id}와 연결되지 않습니다."
+                )
+
+            if path_points and path_points[-1] == geometry[0]:
+                path_points.extend(geometry[1:])
+            else:
+                path_points.extend(geometry)
+
+        return path_points
 
     # --- domain 객체 → API 응답 dict 변환 ---
     # 도메인 모델을 그대로 노출하지 않고 Flutter가 소비할 JSON 구조로 변환한다.
@@ -172,8 +226,39 @@ class BuildingService:
                 "x": store.centroid.x_m,
                 "y": store.centroid.y_m,
             },
+            "entrance_local_m": {
+                "x": store.entrance.x_m,
+                "y": store.entrance.y_m,
+            }
+            if store.entrance
+            else None,
             "entrance_node_id": store.entrance_node_id,
             "polygon_local_m": store.polygon_local_m,
+        }
+
+    @staticmethod
+    def _to_vector_map_dict(vector_map: FloorVectorMap) -> dict[str, Any]:
+        return {
+            "coordinate_system": vector_map.coordinate_system,
+            "source": vector_map.source,
+            "features": [
+                BuildingService._to_map_feature_dict(feature)
+                for feature in vector_map.features
+            ],
+        }
+
+    @staticmethod
+    def _to_map_feature_dict(feature: MapFeature) -> dict[str, Any]:
+        return {
+            "id": feature.id,
+            "kind": feature.kind,
+            "name": feature.name,
+            "category": feature.category,
+            "geometry": {
+                "type": feature.geometry_type,
+                "coordinates": feature.coordinates,
+            },
+            "centroid": feature.centroid,
         }
 
     @staticmethod

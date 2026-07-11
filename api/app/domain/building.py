@@ -81,3 +81,27 @@ class Poi:
     position: LocalPoint
     # 길찾기 그래프와 연결되는 경우 해당 Node ID를 가진다.
     linked_node_id: str | None
+
+
+@dataclass(frozen=True)
+class MapFeature:
+    """SVG viewBox 좌표계의 렌더링 feature."""
+
+    id: str
+    floor_id: str
+    kind: str
+    name: str | None
+    category: str | None
+    geometry_type: str
+    coordinates: list[dict]
+    centroid: dict | None
+
+
+@dataclass(frozen=True)
+class FloorVectorMap:
+    """한 층의 SVG 좌표계 메타데이터와 벡터 feature 묶음."""
+
+    floor_id: str
+    coordinate_system: dict
+    source: dict
+    features: list[MapFeature] = field(default_factory=list)

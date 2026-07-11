@@ -17,6 +17,8 @@ url 과 함수를 연결하고, service 가 None을 줄 경우 404
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.FastAPIConfig import get_building_service
+from app.schema.floor_map import FloorMapResponse
+from app.schema.route import RouteResponse
 from app.service.buildingService import BuildingService
 
 # prefix는 아래 모든 경로 앞에 /buildings를 붙이고 tags는 Swagger 그룹을 만든다.
@@ -58,7 +60,10 @@ def search_stores(
     return result
 
 
-@router.get("/{building_id}/floors/{floor_name}")
+@router.get(
+    "/{building_id}/floors/{floor_name}",
+    response_model=FloorMapResponse,
+)
 def get_floor_map(
     building_id: str,
     floor_name: str,
@@ -71,7 +76,10 @@ def get_floor_map(
         raise HTTPException(status_code=404, detail="Floor not found")
     return result
 
-@router.get("/{building_id}/floors/{floor_name}/route")
+@router.get(
+    "/{building_id}/floors/{floor_name}/route",
+    response_model=RouteResponse,
+)
 def get_shortest_route(
     building_id: str,
     floor_name: str,

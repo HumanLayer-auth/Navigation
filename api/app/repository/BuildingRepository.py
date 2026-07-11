@@ -2,7 +2,7 @@
 
 from typing import Protocol
 
-from app.domain.building import Building, Edge, Floor, Node, Poi, Store
+from app.domain.building import Building, Edge, Floor, FloorVectorMap, Node, Poi, Store
 
 
 class BuildingRepository(Protocol):
@@ -25,6 +25,10 @@ class BuildingRepository(Protocol):
 
     def find_floor_by_name(self, building_id: str, floor_name: str) -> Floor | None:
         """건물의 특정 층(예: '1F'). 없으면 None."""
+        ...
+
+    def find_vector_map_by_floor(self, floor_id: str) -> FloorVectorMap | None:
+        """층의 SVG viewBox 벡터 지도. 없으면 None."""
         ...
 
     # --- navigation graph ---
