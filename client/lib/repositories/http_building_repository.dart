@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import '../core/api_config.dart';
 import '../models/building.dart';
+import '../models/indoor_route.dart';
 import 'building_repository.dart';
 
 /// api/app/routers/buildings.py의 /buildings 엔드포인트를 그대로 호출한다.
@@ -18,6 +19,7 @@ class HttpBuildingRepository implements BuildingRepository {
   List<Building>? _allBuildingsCache;
   final Map<String, Building> _buildingCache = {};
   final Map<String, Map<String, dynamic>> _floorGeoJsonCache = {};
+  final Map<String, IndoorRoute> _routeCache = {};
 
   @override
   Future<List<Building>> getAllBuildings() async {
@@ -71,5 +73,32 @@ class HttpBuildingRepository implements BuildingRepository {
     final geojson = jsonDecode(response.body) as Map<String, dynamic>;
     _floorGeoJsonCache[cacheKey] = geojson;
     return geojson;
+  }
+
+  @override
+  Future<IndoorRoute?> getShortestRoute(
+    String buildingId,
+    String floor,
+    String startNodeId,
+    String endNodeId,
+  ) async {
+    final cacheKey = '$buildingId/$floor/$startNodeId/$endNodeId';
+    final cached = _routeCache[cacheKey];
+    if (cached != null) return cached;
+
+    final uri = Uri.parse(
+      '$apiBaseUrl/buildings/$buildingId/floors/$floor/route',
+    ).replace(
+      queryParameters: {'start_node_id': startNodeId, 'end_node_id': endNodeId},
+    );
+    final response = await _client.get(uri);
+    // 404(층/경로 없음)와 400(잘못된 노드 ID) 둘 다 "경로 없음"으로 단순화한다.
+    if (response.statusCode == 404 || response.statusCode == 400) return null;
+
+    final route = IndoorRoute.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+    _routeCache[cacheKey] = route;
+    return route;
   }
 }

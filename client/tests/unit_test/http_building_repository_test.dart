@@ -61,6 +61,57 @@ void main() {
     });
   });
 
+  group('getShortestRoute', () {
+    test('parses path points and caches per node pair', () async {
+      var requestCount = 0;
+      final client = MockClient((request) async {
+        requestCount++;
+        return http.Response(
+          jsonEncode({
+            'start_node_id': 'N1',
+            'end_node_id': 'N2',
+            'path_found': true,
+            'node_ids': ['N1', 'N2'],
+            'edge_ids': ['E1'],
+            'coordinate_system': 'local_m',
+            'path_points': [
+              {'x': 0.0, 'y': 0.0},
+              {'x': 5.0, 'y': 0.0},
+            ],
+            'total_distance_m': 5.0,
+          }),
+          200,
+          headers: {'content-type': 'application/json; charset=utf-8'},
+        );
+      });
+      final repository = HttpBuildingRepository(client: client);
+
+      final first = await repository.getShortestRoute('bldg-001', '1F', 'N1', 'N2');
+      final second = await repository.getShortestRoute('bldg-001', '1F', 'N1', 'N2');
+
+      expect(first?.distanceMeters, 5.0);
+      expect(first?.points.length, 2);
+      expect(second?.distanceMeters, 5.0);
+      expect(requestCount, 1);
+    });
+
+    test('returns null for 404 and 400 without caching', () async {
+      var requestCount = 0;
+      final statuses = [404, 400];
+      final client = MockClient((request) async {
+        return http.Response('', statuses[requestCount++]);
+      });
+      final repository = HttpBuildingRepository(client: client);
+
+      final notFound = await repository.getShortestRoute('bldg-001', '1F', 'N1', 'N2');
+      final badRequest = await repository.getShortestRoute('bldg-001', '1F', 'N1', 'N3');
+
+      expect(notFound, isNull);
+      expect(badRequest, isNull);
+      expect(requestCount, 2);
+    });
+  });
+
   group('getAllBuildings', () {
     test('caches the list and populates the per-id cache', () async {
       var requestCount = 0;
