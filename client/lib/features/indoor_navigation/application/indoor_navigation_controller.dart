@@ -21,8 +21,8 @@ class IndoorNavigationDriver implements IndoorNavigationController {
     required PdrMotionSource source,
     PdrSessionConfig? config,
     int Function()? nowMs,
-  })  : _source = source, // ignore: prefer_initializing_formals
-        _nowMs = nowMs ?? _defaultNowMs {
+  }) : _source = source, // ignore: prefer_initializing_formals
+       _nowMs = nowMs ?? _defaultNowMs {
     _session = PdrSession(config: config);
     _sessionSub = _session.snapshots.listen(_onSnapshot);
   }
@@ -38,9 +38,11 @@ class IndoorNavigationDriver implements IndoorNavigationController {
 
   final _snapshots = StreamController<PdrSnapshot>.broadcast();
   final _calibration = StreamController<CalibrationStatus>.broadcast();
+  final _runtimeStatuses = StreamController<PdrRuntimeStatus>.broadcast();
 
   PdrSnapshot? _current;
   CalibrationStatus _calib = const CalibrationStatus.uncalibrated();
+  PdrRuntimeStatus _runtimeStatus = const PdrRuntimeStatus.idle();
   bool _guiding = false;
   String? _floorId;
 
@@ -62,31 +64,50 @@ class IndoorNavigationDriver implements IndoorNavigationController {
   @override
   CalibrationStatus get currentCalibration => _calib;
 
+  @override
+  Stream<PdrRuntimeStatus> get runtimeStatuses => _runtimeStatuses.stream;
+
+  @override
+  PdrRuntimeStatus get currentRuntimeStatus => _runtimeStatus;
+
   // ── IndoorNavigationIntents ──
 
   @override
-  void startGuidance({required String floorId}) {
+  Future<void> startGuidance({required String floorId}) async {
     if (_guiding && _floorId == floorId) {
       return;
     }
     _floorId = floorId;
     _guiding = true;
     _session.reset();
-    _eventSub ??= _source.events.listen(_onNativeEvent);
-    _source.start();
+    _updateRuntime(PdrRuntimeState.starting);
+    _eventSub ??= _source.events.listen(
+      _onNativeEvent,
+      onError: _onSourceError,
+    );
+    try {
+      await _source.start();
+    } on Object {
+      _updateRuntime(
+        PdrRuntimeState.degraded,
+        warnings: const ['sensorStartFailed'],
+      );
+    }
     _updateCalibration(CalibrationPhase.awaitingPin);
   }
 
   @override
-  void stopGuidance() {
+  Future<void> stopGuidance() async {
     if (!_guiding) {
       return;
     }
     _guiding = false;
-    _source.stop();
+    _updateRuntime(PdrRuntimeState.stopping);
+    await _source.stop();
     _pendingPinFloorM = null;
     _pendingPinPdrM = null;
     _updateCalibration(CalibrationPhase.uncalibrated);
+    _updateRuntime(PdrRuntimeState.idle);
   }
 
   @override
@@ -106,15 +127,12 @@ class IndoorNavigationDriver implements IndoorNavigationController {
   }
 
   @override
-  Future<void> confirmAnchorByHeading({
-    required double floorHeadingDeg,
-  }) async {
+  Future<void> confirmAnchorByHeading({required double floorHeadingDeg}) async {
     if (!_guiding || _pendingPinFloorM == null) {
       return;
     }
     // PDR 보행 heading을 floor heading에 맞추는 회전.
-    final rotationDeg =
-        floorHeadingDeg - _session.walkingHeadingDeg;
+    final rotationDeg = floorHeadingDeg - _session.walkingHeadingDeg;
     _finalizeAnchor(
       rotationDeg: rotationDeg,
       source: AnchorSource.manualHeadingCal,
@@ -122,11 +140,19 @@ class IndoorNavigationDriver implements IndoorNavigationController {
   }
 
   @override
-  void changeFloor({required String floorId}) {
+  Future<void> changeFloor({required String floorId}) async {
     _floorId = floorId;
     _pendingPinFloorM = null;
     _pendingPinPdrM = null;
-    _resetSessionForNewFloor();
+    try {
+      await _resetSessionForNewFloor();
+    } on Object {
+      _session.reset();
+      _updateRuntime(
+        PdrRuntimeState.degraded,
+        warnings: const ['pedometerResetFailed'],
+      );
+    }
     _updateCalibration(CalibrationPhase.awaitingPin);
   }
 
@@ -153,11 +179,15 @@ class IndoorNavigationDriver implements IndoorNavigationController {
     await _source.dispose();
     await _snapshots.close();
     await _calibration.close();
+    await _runtimeStatuses.close();
   }
 
   // ── 내부 ──
 
   void _onNativeEvent(NativePdrEvent e) {
+    if (_runtimeStatus.state == PdrRuntimeState.starting) {
+      _updateRuntime(PdrRuntimeState.running);
+    }
     // 순서 유지: heading → accel peak → pedometer (연구 엔진과 동일).
     final heading = e.heading;
     if (heading != null) {
@@ -173,11 +203,43 @@ class IndoorNavigationDriver implements IndoorNavigationController {
     }
   }
 
+  void _onSourceError(Object error, [StackTrace? stackTrace]) {
+    _updateRuntime(
+      PdrRuntimeState.degraded,
+      warnings: const ['sensorStreamError'],
+    );
+  }
+
   void _onSnapshot(PdrSnapshot snapshot) {
-    _current = snapshot;
+    final output = _withRuntimeQuality(snapshot);
+    _current = output;
     if (!_snapshots.isClosed) {
-      _snapshots.add(snapshot);
+      _snapshots.add(output);
     }
+  }
+
+  PdrSnapshot _withRuntimeQuality(PdrSnapshot snapshot) {
+    if (_runtimeStatus.state != PdrRuntimeState.degraded) {
+      return snapshot;
+    }
+    final warnings = <String>{
+      ...snapshot.quality.warnings,
+      ..._runtimeStatus.warnings,
+    }.toList(growable: false);
+    return PdrSnapshot(
+      position: snapshot.position,
+      path: snapshot.path,
+      steps: snapshot.steps,
+      distanceM: snapshot.distanceM,
+      walkingHeadingDeg: snapshot.walkingHeadingDeg,
+      hasHeading: snapshot.hasHeading,
+      preview: snapshot.preview,
+      quality: PdrQuality(
+        state: PdrQualityState.degraded,
+        warnings: warnings,
+        features: snapshot.quality.features,
+      ),
+    );
   }
 
   Future<void> _resetSessionForNewFloor() async {
@@ -200,8 +262,10 @@ class IndoorNavigationDriver implements IndoorNavigationController {
     final sinT = math.sin(theta);
     final rx = pinPdr.eastM * cosT - pinPdr.northM * sinT;
     final ry = pinPdr.eastM * sinT + pinPdr.northM * cosT;
-    final anchorLocalM =
-        PdrLocalPoint(pinFloor.eastM - rx, pinFloor.northM - ry);
+    final anchorLocalM = PdrLocalPoint(
+      pinFloor.eastM - rx,
+      pinFloor.northM - ry,
+    );
 
     final reference = _session.headingReference;
     final anchor = PdrAnchor(
@@ -230,6 +294,19 @@ class IndoorNavigationDriver implements IndoorNavigationController {
     );
     if (!_calibration.isClosed) {
       _calibration.add(_calib);
+    }
+  }
+
+  void _updateRuntime(
+    PdrRuntimeState state, {
+    List<String> warnings = const [],
+  }) {
+    _runtimeStatus = PdrRuntimeStatus(
+      state: state,
+      warnings: List.unmodifiable(warnings),
+    );
+    if (!_runtimeStatuses.isClosed) {
+      _runtimeStatuses.add(_runtimeStatus);
     }
   }
 }

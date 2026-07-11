@@ -14,19 +14,29 @@ class FakePdrMotionSource implements PdrMotionSource {
   int stopCount = 0;
   int resetCount = 0;
   int _sessionId = 1;
+  Object? startError;
+  Object? stopError;
+  Object? resetError;
 
   @override
   Stream<NativePdrEvent> get events => _controller.stream;
 
   @override
-  Future<void> start() async => startCount++;
+  Future<void> start() async {
+    startCount++;
+    if (startError case final error?) throw error;
+  }
 
   @override
-  Future<void> stop() async => stopCount++;
+  Future<void> stop() async {
+    stopCount++;
+    if (stopError case final error?) throw error;
+  }
 
   @override
   Future<int?> resetPedometer() async {
     resetCount++;
+    if (resetError case final error?) throw error;
     return ++_sessionId;
   }
 
@@ -38,6 +48,8 @@ class FakePdrMotionSource implements PdrMotionSource {
     if (e == null) return;
     _controller.add(e);
   }
+
+  void emitError(Object error) => _controller.addError(error);
 }
 
 Map<String, Object?> motionEvent({
@@ -46,18 +58,17 @@ Map<String, Object?> motionEvent({
   String source = 'device_motion/xMagneticNorthZVertical',
   int? stepPeakCount,
   int? latestStepPeakMs,
-}) =>
-    {
-      'source': 'ios_core_motion',
-      'kind': 'motion',
-      'stepSessionId': 1,
-      'fusedHeadingDeg': heading,
-      'headingStable': true,
-      'headingSource': source,
-      'motionTimestamp': tMs.toDouble(),
-      'stepPeakCount': ?stepPeakCount,
-      'latestStepPeakMs': ?latestStepPeakMs?.toDouble(),
-    };
+}) => {
+  'source': 'ios_core_motion',
+  'kind': 'motion',
+  'stepSessionId': 1,
+  'fusedHeadingDeg': heading,
+  'headingStable': true,
+  'headingSource': source,
+  'motionTimestamp': tMs.toDouble(),
+  'stepPeakCount': ?stepPeakCount,
+  'latestStepPeakMs': ?latestStepPeakMs?.toDouble(),
+};
 
 Map<String, Object?> pedometerEvent({
   required int steps,
@@ -65,18 +76,17 @@ Map<String, Object?> pedometerEvent({
   required int endMs,
   required double distanceM,
   List<double>? peaks,
-}) =>
-    {
-      'source': 'ios_core_motion',
-      'kind': 'pedometer',
-      'stepSessionId': 1,
-      'steps': steps,
-      'pedometerSessionStartMs': sessionStartMs,
-      'pedometerTimestamp': endMs.toDouble(),
-      'pedometerDistance': distanceM,
-      'pedometerDistanceAvailable': true,
-      'stepPeakTimes': peaks,
-    };
+}) => {
+  'source': 'ios_core_motion',
+  'kind': 'pedometer',
+  'stepSessionId': 1,
+  'steps': steps,
+  'pedometerSessionStartMs': sessionStartMs,
+  'pedometerTimestamp': endMs.toDouble(),
+  'pedometerDistance': distanceM,
+  'pedometerDistanceAvailable': true,
+  'stepPeakTimes': peaks,
+};
 
 Future<void> settle() async {
   for (var i = 0; i < 5; i++) {
@@ -90,35 +100,63 @@ void main() {
 
   setUp(() {
     source = FakePdrMotionSource();
-    driver = IndoorNavigationDriver(
-      source: source,
-      nowMs: () => 0,
-    );
+    driver = IndoorNavigationDriver(source: source, nowMs: () => 0);
   });
 
   tearDown(() async {
     await driver.dispose();
   });
 
-  test('startGuidance는 소스를 켜고 awaitingPin으로 간다', () {
-    driver.startGuidance(floorId: 'F1');
+  test('startGuidance는 소스를 켜고 awaitingPin으로 간다', () async {
+    await driver.startGuidance(floorId: 'F1');
     expect(source.startCount, 1);
     expect(driver.currentCalibration.phase, CalibrationPhase.awaitingPin);
   });
 
+  test('start는 starting이고 첫 native 이벤트 뒤 running이다', () async {
+    await driver.startGuidance(floorId: 'F1');
+    expect(driver.currentRuntimeStatus.state, PdrRuntimeState.starting);
+
+    source.emitRaw(motionEvent(tMs: 1000));
+    await settle();
+
+    expect(driver.currentRuntimeStatus.state, PdrRuntimeState.running);
+  });
+
+  test('센서 시작 실패는 degraded warning으로 노출된다', () async {
+    source.startError = StateError('denied');
+
+    await driver.startGuidance(floorId: 'F1');
+
+    expect(driver.currentRuntimeStatus.state, PdrRuntimeState.degraded);
+    expect(driver.currentRuntimeStatus.warnings, contains('sensorStartFailed'));
+  });
+
+  test('센서 stream 오류는 처리되어 degraded가 된다', () async {
+    await driver.startGuidance(floorId: 'F1');
+
+    source.emitError(StateError('stream'));
+    await settle();
+
+    expect(driver.currentRuntimeStatus.state, PdrRuntimeState.degraded);
+    expect(driver.currentRuntimeStatus.warnings, contains('sensorStreamError'));
+  });
+
   test('heading+pedometer를 흘리면 confirmed 스냅샷이 방출된다', () async {
-    driver.startGuidance(floorId: 'F1');
+    await driver.startGuidance(floorId: 'F1');
     final seen = <PdrSnapshot>[];
     driver.snapshots.listen(seen.add);
 
     source.emitRaw(motionEvent(tMs: 1000, heading: 0));
-    source.emitRaw(pedometerEvent(
-      steps: 10,
-      sessionStartMs: 900,
-      endMs: 2000,
-      distanceM: 7.0,
-      peaks: [1100, 1300, 1500, 1700, 1900],
-    ));
+    source.emitRaw(
+      pedometerEvent(
+        steps: 10,
+        sessionStartMs: 900,
+        endMs: 2000,
+        distanceM: 7.0,
+        peaks: [1100, 1300, 1500, 1700, 1900],
+      ),
+    );
     await settle();
 
     expect(driver.currentSnapshot, isNotNull);
@@ -128,30 +166,28 @@ void main() {
   });
 
   test('자북 기준: pin 확정으로 바로 calibrated', () async {
-    driver.startGuidance(floorId: 'F1');
+    await driver.startGuidance(floorId: 'F1');
     source.emitRaw(motionEvent(tMs: 1000, heading: 0));
     await settle();
 
-    await driver.confirmAnchorByPin(
-      floorPointM: const PdrLocalPoint(10, 20),
-    );
+    await driver.confirmAnchorByPin(floorPointM: const PdrLocalPoint(10, 20));
     expect(driver.currentCalibration.phase, CalibrationPhase.calibrated);
     expect(driver.currentCalibration.canRenderPosition, isTrue);
     expect(driver.currentCalibration.anchor, isNotNull);
   });
 
   test('arbitrary 기준: pin 후 heading 보정까지 요구한다', () async {
-    driver.startGuidance(floorId: 'F1');
-    source.emitRaw(motionEvent(
-      tMs: 1000,
-      heading: 0,
-      source: 'device_motion/xArbitraryCorrectedZVertical',
-    ));
+    await driver.startGuidance(floorId: 'F1');
+    source.emitRaw(
+      motionEvent(
+        tMs: 1000,
+        heading: 0,
+        source: 'device_motion/xArbitraryCorrectedZVertical',
+      ),
+    );
     await settle();
 
-    await driver.confirmAnchorByPin(
-      floorPointM: const PdrLocalPoint(0, 0),
-    );
+    await driver.confirmAnchorByPin(floorPointM: const PdrLocalPoint(0, 0));
     expect(driver.currentCalibration.phase, CalibrationPhase.awaitingHeading);
     expect(driver.currentCalibration.requiresManualRotationCalibration, isTrue);
 
@@ -161,35 +197,62 @@ void main() {
   });
 
   test('background는 tracking을 pause해 이후 배치를 반영하지 않는다', () async {
-    driver.startGuidance(floorId: 'F1');
+    await driver.startGuidance(floorId: 'F1');
     source.emitRaw(motionEvent(tMs: 1000, heading: 0));
     await settle();
 
     driver.onAppBackgrounded();
-    source.emitRaw(pedometerEvent(
-      steps: 8,
-      sessionStartMs: 900,
-      endMs: 2000,
-      distanceM: 5.6,
-      peaks: [1200, 1600],
-    ));
+    source.emitRaw(
+      pedometerEvent(
+        steps: 8,
+        sessionStartMs: 900,
+        endMs: 2000,
+        distanceM: 5.6,
+        peaks: [1200, 1600],
+      ),
+    );
     await settle();
 
-    expect(driver.currentSnapshot?.steps ?? 0, 0,
-        reason: 'pause 중에는 confirmed가 늘지 않아야 한다');
+    expect(
+      driver.currentSnapshot?.steps ?? 0,
+      0,
+      reason: 'pause 중에는 confirmed가 늘지 않아야 한다',
+    );
   });
 
-  test('stopGuidance는 소스를 끄고 uncalibrated로 되돌린다', () {
-    driver.startGuidance(floorId: 'F1');
-    driver.stopGuidance();
+  test('runtime 오류 뒤 snapshot quality와 warning도 degraded로 합성된다', () async {
+    await driver.startGuidance(floorId: 'F1');
+    source.emitError(StateError('stream'));
+    source.emitRaw(motionEvent(tMs: 1000));
+    source.emitRaw(
+      pedometerEvent(
+        steps: 4,
+        sessionStartMs: 900,
+        endMs: 2000,
+        distanceM: 2.8,
+        peaks: [1200, 1600],
+      ),
+    );
+    await settle();
+
+    expect(driver.currentSnapshot, isNotNull);
+    expect(driver.currentSnapshot!.quality.state, PdrQualityState.degraded);
+    expect(
+      driver.currentSnapshot!.quality.warnings,
+      contains('sensorStreamError'),
+    );
+  });
+
+  test('stopGuidance는 소스를 끄고 uncalibrated로 되돌린다', () async {
+    await driver.startGuidance(floorId: 'F1');
+    await driver.stopGuidance();
     expect(source.stopCount, 1);
     expect(driver.currentCalibration.phase, CalibrationPhase.uncalibrated);
   });
 
   test('changeFloor는 pedometer를 reset하고 awaitingPin으로 간다', () async {
-    driver.startGuidance(floorId: 'F1');
-    driver.changeFloor(floorId: 'F2');
-    await settle();
+    await driver.startGuidance(floorId: 'F1');
+    await driver.changeFloor(floorId: 'F2');
     expect(source.resetCount, 1);
     expect(driver.currentCalibration.phase, CalibrationPhase.awaitingPin);
   });
