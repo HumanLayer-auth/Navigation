@@ -9,4 +9,5 @@ class AppRoutes {
   static const arrival = '/arrival';
   static const debugApiHealth = '/debug/api-health';
   static const debugFloorMapPreview = '/debug/floor-map-preview';
+  static const pdrSvgTest = '/debug/pdr-svg-test';
 }

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -36,10 +37,17 @@ final DirectionsRepository directionsRepository = tmapAppKey.isEmpty
     : TmapDirectionsRepository();
 
 Future<Map<Permission, PermissionStatus>> defaultRequestStartupPermissions() {
-  return [
-    Permission.locationWhenInUse,
-    Permission.activityRecognition,
-  ].request();
+  // `activityRecognition`은 Android 전용 권한이다. iOS에서 이를 요청하면
+  // permission_handler가 지원하지 않는 권한을 denied로 돌려주기 때문에 실제
+  // Motion & Fitness 시스템 다이얼로그가 한 번도 표시되지 않는다. iOS CoreMotion
+  // 권한은 `sensors`로 요청해야 한다.
+  final permissions = <Permission>[Permission.locationWhenInUse];
+  if (defaultTargetPlatform == TargetPlatform.iOS) {
+    permissions.add(Permission.sensors);
+  } else if (defaultTargetPlatform == TargetPlatform.android) {
+    permissions.add(Permission.activityRecognition);
+  }
+  return permissions.request();
 }
 
 /// 스플래시 화면의 시작 권한 요청. 플랫폼 채널이 없는 테스트 환경에서는

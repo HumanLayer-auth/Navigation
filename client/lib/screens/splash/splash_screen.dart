@@ -34,9 +34,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (anyDenied) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('일부 권한이 거부되어 위치·실내 이동 관련 기능이 제한될 수 있습니다'),
-        ),
+        const SnackBar(content: Text('일부 권한이 거부되어 위치·실내 이동 관련 기능이 제한될 수 있습니다')),
       );
     }
   }
@@ -68,25 +66,25 @@ class _SplashScreenState extends State<SplashScreen> {
                     const SizedBox(height: 8),
                     TextButton(
                       onPressed: () {
-                        Navigator.of(context).pushNamed(AppRoutes.debugApiHealth);
+                        Navigator.of(
+                          context,
+                        ).pushNamed(AppRoutes.debugApiHealth);
                       },
                       child: const Text('API 상태 확인 (dev)'),
                     ),
                     TextButton(
                       onPressed: () {
-                        Navigator.of(context).pushNamed(AppRoutes.debugFloorMapPreview);
+                        Navigator.of(
+                          context,
+                        ).pushNamed(AppRoutes.debugFloorMapPreview);
                       },
                       child: const Text('더현대 서울 평면도 미리보기 (dev)'),
                     ),
                     TextButton(
                       onPressed: () {
-                        // 실제 실내 지도는 야외 지도에서 GPS로 건물 입구를 감지해야
-                        // 들어갈 수 있는데, 데모 건물 입구가 고정 좌표(서울시청 부근)라
-                        // 그 자리에 있지 않으면 실기기에서 도달할 방법이 없다.
-                        // 목적지 검색/경로 안내까지 바로 테스트할 수 있게 지름길을 둔다.
-                        Navigator.of(context).pushNamed(AppRoutes.indoorMap);
+                        Navigator.of(context).pushNamed(AppRoutes.pdrSvgTest);
                       },
-                      child: const Text('실내 지도 바로 보기 (dev)'),
+                      child: const Text('서울창업허브 PDR 이동 테스트 (dev)'),
                     ),
                   ],
                 ),
