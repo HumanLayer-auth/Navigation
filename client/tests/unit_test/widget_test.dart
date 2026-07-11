@@ -268,7 +268,7 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: IndoorMapScreen()));
     await tester.pumpAndSettle();
 
-    expect(find.text('데모 건물 · 1층'), findsOneWidget);
+    expect(find.text('데모 건물 · 1F'), findsOneWidget);
     expect(find.text('강의실 101'), findsOneWidget);
     expect(find.byIcon(Icons.layers), findsOneWidget);
   });
@@ -282,10 +282,10 @@ void main() {
     await tester.tap(find.byIcon(Icons.layers));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('2층').last);
+    await tester.tap(find.text('2F').last);
     await tester.pumpAndSettle();
 
-    expect(find.text('데모 건물 · 2층'), findsOneWidget);
+    expect(find.text('데모 건물 · 2F'), findsOneWidget);
     expect(find.text('강의실 201'), findsOneWidget);
   });
 
@@ -394,7 +394,7 @@ void main() {
   ) async {
     const destination = PoiSearchResult(
       name: '강의실 101',
-      floor: 1,
+      floor: '1F',
       point: LatLng(37.5665, 126.9780),
     );
 

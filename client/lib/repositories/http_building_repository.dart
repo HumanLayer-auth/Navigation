@@ -57,7 +57,7 @@ class HttpBuildingRepository implements BuildingRepository {
   @override
   Future<Map<String, dynamic>?> getFloorGeoJson(
     String buildingId,
-    int floor,
+    String floor,
   ) async {
     final cacheKey = '$buildingId/$floor';
     final cached = _floorGeoJsonCache[cacheKey];

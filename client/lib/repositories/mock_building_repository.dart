@@ -40,12 +40,12 @@ class MockBuildingRepository implements BuildingRepository {
   @override
   Future<Map<String, dynamic>?> getFloorGeoJson(
     String buildingId,
-    int floor,
+    String floor,
   ) async {
     final data = await _load();
     if (data['id'] != buildingId) return null;
     final floorData = data['floor_data'] as Map<String, dynamic>;
-    final geojson = floorData[floor.toString()];
+    final geojson = floorData[floor];
     return geojson == null ? null : geojson as Map<String, dynamic>;
   }
 }

@@ -12,7 +12,7 @@ void main() {
       final client = MockClient((request) async {
         requestCount++;
         return http.Response(
-          jsonEncode({'id': 'bldg-001', 'name': '데모 건물', 'floors': [1, 2]}),
+          jsonEncode({'id': 'bldg-001', 'name': '데모 건물', 'floors': ['1F', '2F']}),
           200,
           headers: {'content-type': 'application/json; charset=utf-8'},
         );
@@ -53,9 +53,9 @@ void main() {
       });
       final repository = HttpBuildingRepository(client: client);
 
-      await repository.getFloorGeoJson('bldg-001', 1);
-      await repository.getFloorGeoJson('bldg-001', 1); // 같은 조합 → 캐시 재사용
-      await repository.getFloorGeoJson('bldg-001', 2); // 다른 층 → 새 요청
+      await repository.getFloorGeoJson('bldg-001', '1F');
+      await repository.getFloorGeoJson('bldg-001', '1F'); // 같은 조합 → 캐시 재사용
+      await repository.getFloorGeoJson('bldg-001', '2F'); // 다른 층 → 새 요청
 
       expect(requestCount, 2);
     });
@@ -68,7 +68,7 @@ void main() {
         requestCount++;
         return http.Response(
           jsonEncode([
-            {'id': 'bldg-001', 'name': '데모 건물', 'floors': [1, 2]},
+            {'id': 'bldg-001', 'name': '데모 건물', 'floors': ['1F', '2F']},
           ]),
           200,
           headers: {'content-type': 'application/json; charset=utf-8'},

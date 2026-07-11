@@ -15,7 +15,7 @@ void main() {
 
     expect(buildings, hasLength(1));
     expect(buildings.first.id, 'bldg-001');
-    expect(buildings.first.floors, [1, 2]);
+    expect(buildings.first.floors, ['1F', '2F']);
   });
 
   test('returns the building by id', () async {
@@ -34,14 +34,14 @@ void main() {
   });
 
   test('returns floor geojson for a known floor', () async {
-    final geojson = await repository.getFloorGeoJson('bldg-001', 1);
+    final geojson = await repository.getFloorGeoJson('bldg-001', '1F');
 
     expect(geojson, isNotNull);
     expect(geojson!['type'], 'FeatureCollection');
   });
 
   test('returns null for an unknown floor', () async {
-    final geojson = await repository.getFloorGeoJson('bldg-001', 99);
+    final geojson = await repository.getFloorGeoJson('bldg-001', '99F');
 
     expect(geojson, isNull);
   });

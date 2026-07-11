@@ -23,7 +23,7 @@ void main() {
 
     expect(results, hasLength(1));
     expect(results.single.name, '강의실 201');
-    expect(results.single.floor, 2);
+    expect(results.single.floor, '2F');
   });
 
   test('returns an empty list for an unknown building', () async {

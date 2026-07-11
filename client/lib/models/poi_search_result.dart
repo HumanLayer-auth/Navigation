@@ -8,6 +8,6 @@ class PoiSearchResult {
   });
 
   final String name;
-  final int floor;
+  final String floor;
   final LatLng point;
 }

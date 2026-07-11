@@ -5,5 +5,5 @@ abstract class BuildingRepository {
 
   Future<Building?> getBuilding(String buildingId);
 
-  Future<Map<String, dynamic>?> getFloorGeoJson(String buildingId, int floor);
+  Future<Map<String, dynamic>?> getFloorGeoJson(String buildingId, String floor);
 }

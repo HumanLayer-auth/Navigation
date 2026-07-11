@@ -50,7 +50,7 @@ class _RouteGuideScreenState extends State<RouteGuideScreen> {
     );
     if (!mounted) return;
     setState(() {
-      _floorPlan = geojson == null ? null : FloorPlan.fromGeoJson(geojson);
+      _floorPlan = geojson == null ? null : FloorPlan.fromJson(geojson);
       _loading = false;
     });
   }
@@ -136,7 +136,11 @@ class _RouteGuideScreenState extends State<RouteGuideScreen> {
     final current = _currentLocation();
 
     return FlutterMap(
-      options: MapOptions(initialCenter: destination.point, initialZoom: 19),
+      options: MapOptions(
+        crs: const CrsSimple(),
+        initialCenter: destination.point,
+        initialZoom: 19,
+      ),
       children: [
         PolylineLayer(
           polylines: [
