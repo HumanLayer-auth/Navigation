@@ -74,14 +74,14 @@
 </g>
 <g id="service-zones">
 <path style="fill:#ead8ea;stroke:#d2add2;stroke-width:1.1" d="M 51 789 L 51 912 L 114 912 L 114 789 Z"/>
-<text style="font-family:'NanumSquare','Noto Sans CJK KR','Apple SD Gothic Neo',sans-serif;text-anchor:middle;dominant-baseline:middle;fill:#4f5451;font-weight:650;letter-spacing:-.25px" font-size="15"><tspan x="82.5" y="841.9">발레</tspan><tspan x="82.5" dy="16.2">라운지</tspan></text>
+<text style="font-family:'NanumSquare','Noto Sans CJK KR','Apple SD Gothic Neo',sans-serif;text-anchor:middle;dominant-baseline:middle;fill:#4f5451;font-weight:600;letter-spacing:-.25px" font-size="15"><tspan x="82.5" y="841.9">발레</tspan><tspan x="82.5" dy="16.2">라운지</tspan></text>
 <path style="fill:#ead8ea;stroke:#d2add2;stroke-width:1.1" d="M 823 52 L 823 113 L 923 113 L 923 52 Z"/>
-<text style="font-family:'NanumSquare','Noto Sans CJK KR','Apple SD Gothic Neo',sans-serif;text-anchor:middle;dominant-baseline:middle;fill:#4f5451;font-weight:650;letter-spacing:-.25px" font-size="10"><tspan x="873.0" y="71.8">투어리스트</tspan><tspan x="873.0" dy="10.2">데스크 서비스 -</tspan><tspan x="873.0" dy="10.2">유모차 대여</tspan></text>
+<text style="font-family:'NanumSquare','Noto Sans CJK KR','Apple SD Gothic Neo',sans-serif;text-anchor:middle;dominant-baseline:middle;fill:#4f5451;font-weight:600;letter-spacing:-.25px" font-size="10"><tspan x="873.0" y="71.8">투어리스트</tspan><tspan x="873.0" dy="10.2">데스크 서비스 -</tspan><tspan x="873.0" dy="10.2">유모차 대여</tspan></text>
 <path style="fill:#ead8ea;stroke:#d2add2;stroke-width:1.1" d="M 823 117 L 823 173 L 923 173 L 923 117 Z"/>
-<text style="font-family:'NanumSquare','Noto Sans CJK KR','Apple SD Gothic Neo',sans-serif;text-anchor:middle;dominant-baseline:middle;fill:#4f5451;font-weight:650;letter-spacing:-.25px" font-size="9"><tspan x="873.0" y="130.0">투어리스트</tspan><tspan x="873.0" dy="10.0">데스크 서비스 -</tspan><tspan x="873.0" dy="10.0">캐리어</tspan><tspan x="873.0" dy="10.0">보관 서비스</tspan></text>
+<text style="font-family:'NanumSquare','Noto Sans CJK KR','Apple SD Gothic Neo',sans-serif;text-anchor:middle;dominant-baseline:middle;fill:#4f5451;font-weight:600;letter-spacing:-.25px" font-size="9"><tspan x="873.0" y="130.0">투어리스트</tspan><tspan x="873.0" dy="10.0">데스크 서비스 -</tspan><tspan x="873.0" dy="10.0">캐리어</tspan><tspan x="873.0" dy="10.0">보관 서비스</tspan></text>
 <path id="concierge-box" style="fill:#ead8ea;stroke:#d2add2;stroke-width:1.1" d="M 975 784 H 1056 V 853 H 975 Z"/>
 <use href="#icon-info" x="1002" y="788" width="27" height="27" style="color:#6c596d"/>
-<text style="font-family:'NanumSquare','Noto Sans CJK KR','Apple SD Gothic Neo',sans-serif;text-anchor:middle;dominant-baseline:middle;fill:#4f5451;font-weight:650;letter-spacing:-.25px" font-size="11"><tspan x="1015.5" y="824">컨시어지</tspan><tspan x="1015.5" dy="13">(안내데스크)</tspan></text>
+<text style="font-family:'NanumSquare','Noto Sans CJK KR','Apple SD Gothic Neo',sans-serif;text-anchor:middle;dominant-baseline:middle;fill:#4f5451;font-weight:600;letter-spacing:-.25px" font-size="11"><tspan x="1015.5" y="824">컨시어지</tspan><tspan x="1015.5" dy="13">(안내데스크)</tspan></text>
 </g>
 <g id="amenities">
 <path id="amenity-001" style="fill:#bde3b7;stroke:#76ae6d;stroke-width:1.3" d="M 1027 550 L 1027 741 L 1043 741 L 1043 666 L 1044 665 L 1046 667 L 1046 741 L 1062 741 L 1062 648 L 1061 647 L 1062 645 L 1062 550 L 1046 550 L 1046 631 L 1045 632 L 1043 631 L 1043 550 Z"/>
@@ -102,13 +102,13 @@
 <use href="#icon-escalator" x="1675.5" y="624" width="22" height="44" style="color:#537d51"/>
 <use href="#icon-restroom" x="1114" y="64" width="36" height="36" style="color:#537d51"/>
 <use href="#icon-wheelchair" x="1114" y="124" width="36" height="36" style="color:#537d51"/>
-<text style="font-family:'NanumSquare','Noto Sans CJK KR','Apple SD Gothic Neo',sans-serif;text-anchor:middle;dominant-baseline:middle;fill:#4f5451;font-weight:650;letter-spacing:-.25px" x="1131.5" y="194" font-size="13">정수기</text>
+<text style="font-family:'NanumSquare','Noto Sans CJK KR','Apple SD Gothic Neo',sans-serif;text-anchor:middle;dominant-baseline:middle;fill:#4f5451;font-weight:600;letter-spacing:-.25px" x="1131.5" y="194" font-size="13">정수기</text>
 <use href="#icon-elevator" x="334.5" y="241.5" width="30" height="30" style="color:#537d51"/>
 <use href="#icon-elevator" x="1620" y="250" width="30" height="30" style="color:#537d51"/>
 <use href="#icon-elevator" x="348" y="1133.5" width="30" height="30" style="color:#537d51"/>
 <use href="#icon-elevator" x="1237.5" y="1129.5" width="30" height="30" style="color:#537d51"/>
 <use href="#icon-elevator" x="1647.5" y="1139" width="30" height="30" style="color:#537d51"/>
-<text style="font-family:'NanumSquare','Noto Sans CJK KR','Apple SD Gothic Neo',sans-serif;text-anchor:middle;dominant-baseline:middle;fill:#4f5451;font-weight:650;letter-spacing:-.25px" font-size="12"><tspan x="1252.0" y="1189.0">유아차</tspan><tspan x="1252.0" dy="12.0">전용 E/V</tspan></text>
+<text style="font-family:'NanumSquare','Noto Sans CJK KR','Apple SD Gothic Neo',sans-serif;text-anchor:middle;dominant-baseline:middle;fill:#4f5451;font-weight:600;letter-spacing:-.25px" font-size="12"><tspan x="1252.0" y="1189.0">유아차</tspan><tspan x="1252.0" dy="12.0">전용 E/V</tspan></text>
 </g>
 <g id="store-labels">
 
@@ -193,8 +193,8 @@
 <text style="font-family:'NanumSquare','Noto Sans CJK KR','Apple SD Gothic Neo',sans-serif;text-anchor:middle;dominant-baseline:middle;fill:#444846;font-weight:700;letter-spacing:-.35px" x="786.0" y="801.0" font-size="13">설화수</text>
 <text style="font-family:'NanumSquare','Noto Sans CJK KR','Apple SD Gothic Neo',sans-serif;text-anchor:middle;dominant-baseline:middle;fill:#444846;font-weight:700;letter-spacing:-.35px" x="887.0" y="809.0" font-size="13">이솝</text>
 </g>
-<text style="font-family:'NanumSquare','Noto Sans CJK KR','Apple SD Gothic Neo',sans-serif;text-anchor:middle;dominant-baseline:middle;fill:#666b68;font-weight:650" font-size="15"><tspan x="735.0" y="882.5">박선기</tspan><tspan x="735.0" dy="15.0">작품</tspan></text>
-<text style="font-family:'NanumSquare','Noto Sans CJK KR','Apple SD Gothic Neo',sans-serif;text-anchor:middle;dominant-baseline:middle;fill:#515a57;font-weight:750;letter-spacing:.35px" x="1578" y="640" font-size="13"><tspan x="1578">WATERFALL</tspan><tspan x="1578" dy="15">GARDEN</tspan></text>
+<text style="font-family:'NanumSquare','Noto Sans CJK KR','Apple SD Gothic Neo',sans-serif;text-anchor:middle;dominant-baseline:middle;fill:#666b68;font-weight:600" font-size="15"><tspan x="735.0" y="882.5">박선기</tspan><tspan x="735.0" dy="15.0">작품</tspan></text>
+<text style="font-family:'NanumSquare','Noto Sans CJK KR','Apple SD Gothic Neo',sans-serif;text-anchor:middle;dominant-baseline:middle;fill:#515a57;font-weight:800;letter-spacing:.35px" x="1578" y="640" font-size="13"><tspan x="1578">WATERFALL</tspan><tspan x="1578" dy="15">GARDEN</tspan></text>
 <path style="fill:none;stroke:#a979d8;stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round" id="outer-wall" d="
 M 16 52 H 1003
 M 1051 52 H 2030 V 207 L 1994 245
