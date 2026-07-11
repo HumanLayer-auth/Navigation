@@ -316,14 +316,18 @@ UI팀이 코어 완성을 기다리지 않도록 계약을 먼저 못박는다. 
   `IndoorNavigationDriver`, service locator 단일 인스턴스, 앱 background/foreground 전달.
 - runtime 계약: `idle/starting/running/paused/stopping/degraded`와 센서 오류 warning을 UI 계약으로
   노출. runtime 오류 뒤 snapshot quality도 degraded로 합성한다.
-- 자동 검증: `indoor_pdr_core` 10 tests, client 26 tests 통과. PDR 변경 경로 `flutter analyze`
+- 자동 검증: `indoor_pdr_core` 10 tests, client 27 tests 통과. PDR 변경 경로 `flutter analyze`
   clean. `flutter build ios --simulator --debug` 통과.
 - 전체 client analyze의 19건은 기존 미추적 `health_check_test.dart`, `data/`, `features/map/`,
   `state/`의 `MyApp`/`dio`/`riverpod` baseline이며 Phase 2 변경 경로에는 신규 issue가 없다.
-- 실기기 하니스: `client/integration_test/pdr_device_smoke_test.dart`. 기본 실행에서는 skip하며
-  `--dart-define=PDR_DEVICE_SMOKE=true`일 때만 실제 센서를 검증한다.
-- **현재 상태: 실기기 acceptance 대기.** 연결된 iPhone에서 heading 수신 → 보행 snapshot 갱신 →
-  stop 후 이벤트 중단을 통과하기 전에는 Phase 2를 완료로 표시하지 않는다.
+- 실기기 하니스: host runner용 `client/integration_test/pdr_device_smoke_test.dart`와 무선 독립 실행용
+  `client/lib/pdr_device_harness_main.dart`. 후자는 profile 앱 화면과 sandbox receipt에 같은 판정
+  결과를 기록한다.
+- **실기기 acceptance 통과:** `아이폰십삼프로`(`00008110-001944D22E05801E`)에 profile 하니스를
+  무선 설치·실행하고 app data container의 `tmp/pdr-device-harness-result.json`을 회수했다.
+  2026-07-11 receipt는 `PASS`, 8걸음, 5.8071m, runtime `idle`, warning 0건이며 heading 수신 →
+  보행 snapshot/원점 이탈 → `stopGuidance` 후 이벤트 중단을 모두 통과했다.
+- **현재 상태: Phase 2 완료.** 제품 화면과 floor 좌표 정밀화는 각각 UI 트랙과 Phase 3 범위다.
 
 ### Phase 3 — 좌표계 로직 + local_m 파서 + anchor/캘리브레이션 상태기계 (렌더링 제외)
 UI팀이 그릴 렌더러·화면·캘리브레이션 제스처는 **범위 밖**. 우리는 그들이 소비할 로직·모델만 만든다.
