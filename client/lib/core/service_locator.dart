@@ -9,6 +9,15 @@ import '../repositories/mock_building_repository.dart';
 import '../repositories/mock_destination_repository.dart';
 import '../repositories/mock_directions_repository.dart';
 import '../repositories/tmap_directions_repository.dart';
+import '../features/indoor_navigation/application/indoor_navigation_controller.dart';
+import '../features/indoor_navigation/platform/ios_pdr_motion_source.dart';
+import '../features/indoor_navigation/platform/pdr_motion_source.dart';
+
+/// 앱 전체 실내 안내 흐름이 공유하는 단일 PDR 센서 소스와 세션 드라이버.
+final PdrMotionSource pdrMotionSource = IosPdrMotionSource();
+final IndoorNavigationDriver indoorNavigationDriver = IndoorNavigationDriver(
+  source: pdrMotionSource,
+);
 
 /// 백엔드가 준비되면 이 한 줄만 [HttpBuildingRepository]로 바꾼다.
 final BuildingRepository buildingRepository = MockBuildingRepository();
