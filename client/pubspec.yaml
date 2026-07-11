@@ -40,6 +40,10 @@ dependencies:
   latlong2: ^0.9.1
   geolocator: ^13.0.2
 
+  # 실내 PDR 순수 Dart 코어 (Phase 1에서 채워진다).
+  indoor_pdr_core:
+    path: ../packages/indoor_pdr_core
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -1,0 +1,18 @@
+name: indoor_pdr_core
+description: >-
+  실내 PDR(보행자 추측 항법) 순수 Dart 코어. Flutter/플랫폼 채널/지도/GPS/JSON
+  export 의존성 없이 typed 센서 이벤트만 받아 confirmed(초록)/preview(주황) 경로와
+  품질 신호를 계산한다.
+publish_to: 'none'
+version: 0.0.1
+
+environment:
+  sdk: ^3.12.2
+
+# 순수 Dart 코어: dart:math 외 런타임 의존성을 두지 않는다.
+# Flutter SDK, flutter/services, 지도, GPS, HTTP, JSON export에 의존하면 안 된다.
+dependencies:
+
+dev_dependencies:
+  lints: ^5.0.0
+  test: ^1.25.0
