@@ -11,6 +11,38 @@
 
 ---
 
+## 현재 이식 상태 (2026-07-11)
+
+| 단계 | 상태 | 근거 / 다음 조건 |
+|---|---|---|
+| Phase 0 — 패키지 분리 | 완료 | `indoor_pdr_core` pure Dart 패키지와 client path dependency |
+| Phase 1 — PDR 계산 코어 | 완료 | synthetic·session replay 검증 |
+| Phase 1.5 — UI 계약 | 완료 | snapshot·calibration·runtime 공개 계약 |
+| Phase 2 — iOS 센서·lifecycle | 완료 | iPhone 13 Pro 실기기 acceptance PASS |
+| Phase 3 — 지도 좌표·anchor | 착수 전 | 실제 node/local_m 좌표 계약으로 축·회전·origin 검증 필요 |
+| Phase 4 — 품질 판정 마감 | 대기 | Phase 3과 독립적으로 이후 진행 가능 |
+| Phase 5 — fusion 연구 | 대기 | 제품 코드 무수정 연구 단계 |
+| Phase 6 — Android | 대기 | iOS 제품 검증 이후 |
+
+**현재 제품 경계:** iOS PDR은 센서 → typed event → `PdrSession` → snapshot까지 앱 수명주기에
+연결돼 실기기로 검증됐다. 아직 실제 층 지도 위 위치 표시는 하지 않는다. 그 기능은 Phase 3의
+`local_m`/anchor 계약과 UI팀 렌더러가 함께 준비된 뒤에 붙인다.
+
+### Phase 3에 필요한 node 팀 입력
+
+실제 좌표 정합 완료에는 아래 데이터를 같은 floor 좌표계로 받아야 한다.
+
+- `floorId`, node id, 각 node의 `x`/`y` 값과 단위(`m`)
+- 원점 위치와 축 규약(예: `x=east`, `y=north`), 좌표 회전 방향
+- `north_alignment` 또는 PDR heading과 floor 축 사이의 회전값
+- 입구·현재 위치 후보처럼 anchor로 사용할 수 있는 기준 node
+
+edge/route geometry는 이후 route snapping·map matching에 필요하지만, 첫 지도 위치 표시는 위 node
+좌표만으로 시작할 수 있다. 우리 쪽은 실제 데이터가 오기 전에도 transform·상태기계·mock parser를
+구현할 수 있으나, 축·부호·회전값의 최종 검증은 node 데이터가 도착해야 한다.
+
+---
+
 ## 0. 확정 방향과 선결 결정
 
 ### 그대로 가는 3대 방향
@@ -331,6 +363,9 @@ UI팀이 코어 완성을 기다리지 않도록 계약을 먼저 못박는다. 
 
 ### Phase 3 — 좌표계 로직 + local_m 파서 + anchor/캘리브레이션 상태기계 (렌더링 제외)
 UI팀이 그릴 렌더러·화면·캘리브레이션 제스처는 **범위 밖**. 우리는 그들이 소비할 로직·모델만 만든다.
+- **착수 입력:** 위 "Phase 3에 필요한 node 팀 입력"의 좌표계 계약을 우선 확인한다. 좌표가 아직
+  없으면 mock fixture로 순수 transform·상태기계부터 진행하고, 실제 node 데이터 수신 후 축·부호·
+  `north_alignment`을 검증한다.
 - 생성: `FloorMapModel`(FloorMapResponse `local_m` 파서, 레거시 GeoJSON 파서 대체),
   `mapping/`의 `PdrAnchor`/`FloorCoordinateTransform`(순수), 캘리브레이션 **상태기계**
   (Phase 1.5의 `CalibrationState` 구현 — 미보정/핀대기/방향대기/확정 전이),
