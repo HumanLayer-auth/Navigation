@@ -134,9 +134,11 @@ def build_floor_tile_layers(
     않고 bbox 교차만 확인 — 실내 지도는 feature 수가 적어 이 정도로도
     타일이 과도하게 커지지 않는다).
 
-    building.geo_transform이 없으면(실좌표 앵커가 없는 건물, 예: test-center)
-    빈 리스트를 반환한다 — 호출자가 이를 "이 건물은 타일을 못 만든다"는
-    신호로 쓴다.
+    building.geo_transform이 없으면 빈 리스트를 반환한다 — 호출자가 이를
+    "이 건물은 타일을 못 만든다"는 신호로 쓴다. load_dataset.py가 실측 앵커가
+    없는 합성 건물(예: test-center)에도 임의 배치 변환을 채워주므로, 정상
+    적재된 건물이라면 이 분기를 타지 않는다 — DB에 building row 자체가
+    없거나 적재 과정을 거치지 않은 경우를 위한 방어 코드다.
     """
     transform = building.geo_transform
     if transform is None:

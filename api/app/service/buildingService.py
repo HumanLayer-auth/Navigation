@@ -80,9 +80,11 @@ class BuildingService:
     ) -> bytes | None:
         """층 지도를 MVT(Mapbox Vector Tile) 바이트로 렌더링한다.
 
-        건물에 실좌표 앵커(geo_transform)가 없으면(예: test-center) 빈 레이어만
-        담은 유효한 빈 타일을 돌려준다 — 404 대신 "표시할 게 없다"로 처리해
-        MapLibre 쪽에서 에러 없이 조용히 아무것도 그리지 않게 한다.
+        건물에 geo_transform이 없으면 빈 레이어만 담은 유효한 빈 타일을
+        돌려준다 — 404 대신 "표시할 게 없다"로 처리해 MapLibre 쪽에서 에러
+        없이 조용히 아무것도 그리지 않게 한다. load_dataset.py를 거쳐 정상
+        적재된 건물은 실측 앵커가 없어도(예: test-center) 임의 배치
+        변환이라도 채워지므로 이 분기를 타지 않는다.
         """
         floor = self.building_repository.find_floor_by_name(building_id, floor_name)
         if floor is None:
