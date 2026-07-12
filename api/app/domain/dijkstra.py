@@ -9,9 +9,10 @@ from __future__ import annotations
 import heapq
 from dataclasses import dataclass
 from math import inf
-from typing import Iterable
+from typing import TYPE_CHECKING, Iterable
 
-from app.domain.building import Edge, Node
+if TYPE_CHECKING:
+    from app.models import Edge, Node
 
 # 인접 리스트에 저장할 한 항목: (다음 노드 ID, 사용 간선 ID, 간선 거리)
 type Neighbor = tuple[str, str, float]

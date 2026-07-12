@@ -2,14 +2,14 @@
 
 import pytest
 
-from app.domain.building import Edge, LocalPoint, Node
 from app.domain.dijkstra import find_shortest_path
+from app.models import Edge, Node
 
 FLOOR_ID = "floor-1"
 
 
 def _node(node_id: str) -> Node:
-    return Node(node_id, FLOOR_ID, "corridor", None, LocalPoint(0, 0), None, None)
+    return Node(id=node_id, floor_id=FLOOR_ID, type="corridor", x_m=0.0, y_m=0.0)
 
 
 def _edge(
@@ -19,7 +19,14 @@ def _edge(
     length: float,
     bidirectional: bool = True,
 ) -> Edge:
-    return Edge(edge_id, FLOOR_ID, start, end, length, bidirectional)
+    return Edge(
+        id=edge_id,
+        floor_id=FLOOR_ID,
+        from_node_id=start,
+        to_node_id=end,
+        length_m=length,
+        bidirectional=bidirectional,
+    )
 
 
 # 직접 경로보다 거리 합이 작은 우회 경로를 선택하는지 검증한다.
