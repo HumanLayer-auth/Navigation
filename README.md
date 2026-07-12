@@ -34,6 +34,41 @@
 - 큰 병합이나 버전 변경은 `HISTORY.md`와 `VERSION.md`를 함께 갱신한다.
 - 마일스톤별 GitHub 이슈 초안과 설명은 `issues/issue.md`에 먼저 정리한다.
 
+## 실내 지도 API 백엔드 실행
+
+`api/data/navigation.db`(SQLite)는 저장소에 커밋하지 않는다(`.gitignore`의
+`api/data/`). 실내 지도(벡터 타일)를 서빙하는 API 서버는 이 DB 파일을 요청마다
+읽어서 그 자리에서 MVT를 만들기 때문에, 로컬에서 실행하려면 아래 순서로
+한 번 DB를 생성해야 한다. DB는 이미 저장소에 있는 `api/app/data/navigation_1f.json`
+하나만으로도 재생성할 수 있다.
+
+```bash
+cd api
+python -m venv .venv
+.venv\Scripts\activate        # macOS/Linux: source .venv/bin/activate
+pip install -r requirements.txt
+
+# 1) 필수: navigation_1f.json으로 DB 생성(건물/그래프/매장/POI 적재)
+python scripts/load_dataset.py
+
+# 2) 선택: 사람이 정리한 SVG 도면(저장소에는 없음, 별도 보관)이 있으면
+#    매장 폴리곤을 더 깔끔한 모양으로, 좌표 변환을 더 정확하게 보강한다.
+#    없어도 1)만으로 정상 동작한다.
+python scripts/georeference_svg_floor_map.py "<SVG 파일 경로>" \
+    --building-id thehyundai-seoul --floor-id FL-soem999bnha10599
+
+# 3) 서버 실행
+uvicorn app.main:app --reload
+```
+
+`navigation_1f.json`이나 SVG 원본을 고쳤다면, DB에 자동 반영되지 않으므로
+1)(과 필요하면 2))을 다시 실행해야 한다.
+
+클라이언트(`client/lib/core/api_config.dart`)는 위 서버(포트 8000)를 플랫폼별
+기본 주소(웹/데스크톱은 `localhost`, 안드로이드 에뮬레이터는 `10.0.2.2`)로
+자동으로 붙는다. 실기기나 다른 호스트에 붙일 땐
+`flutter run --dart-define=API_BASE_URL=http://<주소>:8000`으로 덮어쓴다.
+
 ## 더현대서울 지도 데이터셋 구축
 
 더현대서울 실내 내비게이션 데모용 원천 데이터를 추출한다.
