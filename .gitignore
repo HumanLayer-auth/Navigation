@@ -44,6 +44,7 @@ Thumbs.db
 design.md
 TODO*.md
 vector_tile_migration_prompt.md
+vector_tile_handoff.md
 
 # Generated SQLite database (api/scripts/load_dataset.py 로 재생성 가능)
 api/data/
