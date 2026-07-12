@@ -1,5 +1,5 @@
 {
-  "id": "thehyundai-seoul",
+  "id": "test-center",
   "name": "데모 건물",
   "floors": ["1F", "2F"],
   "entrance": { "lat": 37.5665, "lng": 126.9779 },

@@ -17,13 +17,11 @@ String get apiBaseUrl {
   return 'http://localhost:8000';
 }
 
-/// 데모 건물 ID. 백엔드(api/)에 실제로 적재된 건물과 맞춰야 실내 지도·목적지
-/// 검색·경로 안내가 전부 백엔드 다익스트라 그래프로 동작한다.
-/// 더현대 서울(thehyundai-seoul)은 실측 앵커·매장 61개·POI 47개·전체 경로
-/// 그래프(234노드/282엣지)까지 갖춘 실제 데이터라 메인 데모로 쓴다.
-/// test-center는 우편함·정보도서관 같은 목업용 테스트 시설로, 별도 건물이며
-/// 개발용 미리보기 화면(floor_map_preview_screen.dart)에서만 직접 참조한다.
-const demoBuildingId = 'thehyundai-seoul';
+/// 데모 건물 ID. 백엔드(api/)에 실제로 적재된 test-center 건물과 맞춰야
+/// 실내 지도·목적지 검색·경로 안내가 전부 백엔드 다익스트라 그래프로
+/// 동작한다. 더현대 서울(thehyundai-seoul)은 별도 건물로, 개발용 미리보기
+/// 화면(floor_map_preview_screen.dart)에서만 직접 참조한다.
+const demoBuildingId = 'test-center';
 
 /// TMAP(SK Open API) 보행자 경로 안내. https://openapi.sk.com 에서 앱 등록 후 발급.
 /// 키를 소스코드에 직접 적지 않고 실행 시점에 주입한다:
