@@ -2,6 +2,8 @@
 
 from dataclasses import dataclass, field
 
+from app.domain.georeference import GeoTransform
+
 # frozen=True는 조회된 도메인 값이 Service에서 실수로 변경되는 것을 막는다.
 
 @dataclass(frozen=True)
@@ -14,6 +16,11 @@ class Building:
     perimeter_m: float
     # SQLite TEXT에 JSON으로 저장된 건물 외곽 폴리곤을 복원한 값이다.
     footprint_local_m: list[dict] = field(default_factory=list)  # [{"x", "y"}, ...]
+    # local_m -> WGS84 변환. 실측 앵커가 없는 건물(test-center 등)은 None.
+    geo_transform: GeoTransform | None = None
+    # 사람이 정리한 SVG 도면의 외곽선을 실좌표로 옮긴 결과(georeference_svg_floor_map.py).
+    # 대응하는 SVG가 없으면 None — 이 경우 footprint_local_m을 geo_transform으로 근사한다.
+    footprint_wgs84_svg: list[dict] | None = None
 
 @dataclass(frozen=True)
 class Floor:
@@ -69,6 +76,13 @@ class Store:
     entrance: LocalPoint | None
     entrance_node_id: str | None
     polygon_local_m: list[dict] | None = None
+    # centroid의 실측 WGS84(provisional). 원본에 없으면 None — 이 경우
+    # 벡터 타일에서는 건물 전체 geo_transform으로만 근사한다.
+    centroid_lat: float | None = None
+    centroid_lng: float | None = None
+    # SVG 도면에서 이름이 매칭된 경우, 그 폴리곤을 실좌표로 옮긴 결과
+    # (georeference_svg_floor_map.py). 없으면 polygon_local_m을 근사해서 쓴다.
+    svg_polygon_wgs84: list[dict] | None = None
 
 @dataclass(frozen=True)
 class Poi:

@@ -144,6 +144,8 @@ class _FloorMapPreviewScreenState extends State<FloorMapPreviewScreen> {
     return Stack(
       children: [
         FloorPlanView(
+          buildingId: _buildingId,
+          floorName: _floorName,
           floorPlan: floorPlan,
           onStoreSelected: _selectStore,
           routePoints: routePoints,
@@ -223,7 +225,7 @@ class _FloorMapPreviewScreenState extends State<FloorMapPreviewScreen> {
     }
 
     final route = _route;
-    final distance = route?.distanceMeters ?? localDistanceMeters(start, selected.centroid);
+    final distance = route?.distanceMeters ?? wgs84DistanceMeters(start, selected.centroid);
     final minutes = (distance / _walkingSpeedMetersPerSecond / 60).ceil().clamp(1, 999);
 
     return Column(

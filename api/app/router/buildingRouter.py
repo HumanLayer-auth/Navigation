@@ -13,8 +13,9 @@ url 과 함수를 연결하고, service 가 None을 줄 경우 404
   GET /buildings/{id}/stores?q=검색어           → 매장 검색
   GET /buildings/{id}/floors/{floor}            → 층 지도 데이터 (매장+POI)
   GET /buildings/{id}/floors/{floor}/graph      → 길찾기 그래프 (nodes+edges)
+  GET /buildings/{id}/floors/{floor}/tiles/{z}/{x}/{y}.mvt → 벡터 타일(MVT)
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 
 from app.FastAPIConfig import get_building_service
 from app.schema.floor_map import FloorMapResponse
@@ -75,6 +76,27 @@ def get_floor_map(
     if result is None:
         raise HTTPException(status_code=404, detail="Floor not found")
     return result
+
+@router.get("/{building_id}/floors/{floor_name}/tiles/{z}/{x}/{y}.mvt")
+def get_floor_tile(
+    building_id: str,
+    floor_name: str,
+    z: int,
+    x: int,
+    y: int,
+    service: BuildingService = Depends(get_building_service),
+):
+    """층 지도 벡터 타일(MVT). MapLibre GL의 벡터 타일 소스가 z/x/y로 호출한다."""
+    try:
+        tile_bytes = service.get_floor_tile(building_id, floor_name, z, x, y)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+    if tile_bytes is None:
+        raise HTTPException(status_code=404, detail="Floor not found")
+
+    return Response(content=tile_bytes, media_type="application/vnd.mapbox-vector-tile")
+
 
 @router.get(
     "/{building_id}/floors/{floor_name}/route",

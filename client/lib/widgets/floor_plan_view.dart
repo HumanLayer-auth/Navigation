@@ -1,299 +1,361 @@
-import 'dart:math' as math;
+import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:latlong2/latlong.dart' as ll;
+import 'package:maplibre_gl/maplibre_gl.dart';
 
+import '../core/api_config.dart';
 import '../models/floor_plan.dart';
-import 'route_polyline.dart';
+
+const _tileSourceId = 'floor-tiles';
+const _routeSourceId = 'floor-route';
+const _markersSourceId = 'floor-markers';
+const _storesFillLayerId = 'floor-stores-fill';
+
+/// 지도 위에 얹을 현재 위치/목적지 점 마커. 종류에 따라 스타일이 달라진다
+/// (마커 색상은 [_markersGeoJson]의 circle-color data-driven 표현식이 결정).
+enum MapMarkerKind { current, destination }
 
 /// 매장 폴리곤을 탭할 수 있는 실내 평면도 뷰.
 ///
-/// 원본 SVG(예: 더현대 서울 실내 지도)의 매장 path + data-name/data-category를
-/// FloorPlan 데이터로 변환해 넘기면, flutter_map PolygonLayer 기반으로
-/// 같은 모양을 그리고 탭 시 [onStoreSelected] 콜백과 선택 하이라이트로
-/// "이벤트를 받는" 동작을 재현한다.
+/// 건물/층의 벡터 타일(MVT, `GET /buildings/{id}/floors/{floor}/tiles/{z}/{x}/{y}.mvt`)을
+/// MapLibre GL 벡터 소스로 얹어서 외곽선·매장·POI를 그린다. 매장 이름 라벨은
+/// MapLibre 심볼 레이어(`text-max-width` + 충돌 감지)가 자동 배치하므로,
+/// 예전처럼 폴리곤 픽셀 크기에 맞춰 폰트를 직접 계산하다가 텍스트가 박스를
+/// 벗어나는 문제가 생기지 않는다.
+///
+/// 경로선과 현재 위치/목적지 마커는 벡터 타일과 별개로 GeoJSON 소스에
+/// 얹는다 — 다익스트라 결과가 바뀔 때마다 소스 데이터만 교체한다.
 class FloorPlanView extends StatefulWidget {
   const FloorPlanView({
     super.key,
+    required this.buildingId,
+    required this.floorName,
     required this.floorPlan,
     this.onStoreSelected,
-    this.extraMarkers = const [],
+    this.currentLocation,
+    this.destination,
     this.routePoints = const [],
   });
 
+  final String buildingId;
+  final String floorName;
   final FloorPlan floorPlan;
   final ValueChanged<StorePolygon>? onStoreSelected;
 
-  /// 현재 위치 마커 등, 평면도 데이터에는 없는 마커를 추가로 겹쳐 그릴 때 사용.
-  final List<Marker> extraMarkers;
+  /// 현재 위치 마커. null이면 표시하지 않는다.
+  final ll.LatLng? currentLocation;
+
+  /// 목적지 마커. null이면 표시하지 않는다.
+  final ll.LatLng? destination;
 
   /// 시작점→목적지 경로선. 2개 미만이면 그리지 않는다.
-  final List<LatLng> routePoints;
+  final List<ll.LatLng> routePoints;
 
   @override
   State<FloorPlanView> createState() => _FloorPlanViewState();
 }
 
 class _FloorPlanViewState extends State<FloorPlanView> {
-  final LayerHitNotifier<int> _storeHitNotifier = ValueNotifier(null);
-  int? _selectedStoreIndex;
-
-  void _handleTap() {
-    final hit = _storeHitNotifier.value;
-    if (hit == null || hit.hitValues.isEmpty) return;
-
-    final index = hit.hitValues.first;
-    final store = widget.floorPlan.stores[index];
-    setState(() => _selectedStoreIndex = index);
-    widget.onStoreSelected?.call(store);
-  }
+  MapLibreMapController? _controller;
+  bool _styleReady = false;
 
   @override
   Widget build(BuildContext context) {
-    final floorPlan = widget.floorPlan;
-    final fallbackCenter = floorPlan.corridors.isNotEmpty &&
-            floorPlan.corridors.first.isNotEmpty
-        ? floorPlan.corridors.first.first
-        : floorPlan.stores.isNotEmpty
-            ? floorPlan.stores.first.centroid
-            : (floorPlan.pois.isNotEmpty
-                ? floorPlan.pois.first.point
-                : const LatLng(0, 0));
+    return MapLibreMap(
+      styleString: _initialStyle,
+      initialCameraPosition: CameraPosition(
+        target: _initialCenter(widget.floorPlan),
+        zoom: 18,
+      ),
+      onMapCreated: (controller) => _controller = controller,
+      onStyleLoadedCallback: _onStyleLoaded,
+      onMapClick: _handleMapClick,
+      compassEnabled: false,
+      myLocationEnabled: false,
+      logoEnabled: false,
+      attributionButtonPosition: AttributionButtonPosition.bottomRight,
+    );
+  }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final fit = _fitToViewport(floorPlan, constraints.biggest);
-        final pixelsPerUnit = fit?.pixelsPerUnit ?? 1.0;
+  @override
+  void didUpdateWidget(covariant FloorPlanView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!_styleReady) return;
+    if (oldWidget.buildingId != widget.buildingId ||
+        oldWidget.floorName != widget.floorName) {
+      // 건물/층이 바뀌면 위젯을 통째로 다시 만드는 편이 안전하므로
+      // (다른 key로 재생성됨) 여기서는 데이터만 갱신되는 경우만 다룬다.
+      return;
+    }
+    if (oldWidget.routePoints != widget.routePoints) {
+      _updateRouteSource();
+    }
+    if (oldWidget.currentLocation != widget.currentLocation ||
+        oldWidget.destination != widget.destination) {
+      _updateMarkersSource();
+    }
+  }
 
-        return FlutterMap(
-          options: MapOptions(
-            crs: const CrsSimple(),
-            initialCenter: fit?.center ?? fallbackCenter,
-            initialZoom: fit?.zoom ?? 19,
-          ),
-          children: [
-            if (floorPlan.footprint.isNotEmpty)
-              PolygonLayer(
-                polygons: [
-                  Polygon(
-                    points: floorPlan.footprint,
-                    color: Colors.transparent,
-                    borderColor: Colors.black54,
-                    borderStrokeWidth: 2,
-                  ),
-                ],
-              ),
-            if (floorPlan.stores.isNotEmpty)
-              GestureDetector(
-                onTap: _handleTap,
-                child: PolygonLayer<int>(
-                  hitNotifier: _storeHitNotifier,
-                  polygons: [
-                    // 폴리곤 없이 점 정보만 있는 매장(예: 백엔드 실데이터의 호텔 항목)은
-                    // 매장 영역을 그릴 수 없으니 건너뛴다.
-                    for (final (index, store) in floorPlan.stores.indexed)
-                      if (store.polygon.isNotEmpty)
-                        Polygon(
-                          points: store.polygon,
-                          color: index == _selectedStoreIndex
-                              ? _selectedFillColor
-                              : _storeFillColor(store.category),
-                          borderColor: index == _selectedStoreIndex
-                              ? _selectedBorderColor
-                              : _storeBorderColor,
-                          borderStrokeWidth: index == _selectedStoreIndex ? 2.2 : 1.35,
-                          hitValue: index,
-                        ),
-                  ],
-                ),
-              ),
-            PolylineLayer(
-              polylines: [
-                for (final corridor in floorPlan.corridors)
-                  Polyline(points: corridor, color: Colors.grey, strokeWidth: 6),
-                if (widget.routePoints.length >= 2)
-                  buildRoutePolyline(widget.routePoints),
-              ],
-            ),
-            MarkerLayer(
-              markers: [
-                for (final store in floorPlan.stores)
-                  // 폴리곤이 있으면 폴리곤 크기에 맞춘 라벨을, 점 정보만 있으면
-                  // (예: 백엔드 실데이터의 사무시설형 공간) POI와 같은 형태의
-                  // 아이콘+라벨 마커를 대신 그린다 — 폴리곤이 없다고 이름 자체가
-                  // 안 보이면 지도가 텅 비어 보인다.
-                  if (store.polygon.isEmpty)
-                    _pointStoreMarker(store)
-                  else
-                    ?_storeLabelMarker(store, pixelsPerUnit),
-                for (final poi in floorPlan.pois)
-                  Marker(
-                    point: poi.point,
-                    width: 80,
-                    height: 40,
-                    child: IgnorePointer(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(_iconForPoiType(poi.type), size: 16, color: Colors.black54),
-                          Text(
-                            poi.name,
-                            style: const TextStyle(fontSize: 10),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ...widget.extraMarkers,
-              ],
-            ),
-          ],
-        );
+  Future<void> _onStyleLoaded() async {
+    final controller = _controller;
+    if (controller == null) return;
+
+    final tileUrl =
+        '$apiBaseUrl/buildings/${widget.buildingId}/floors/${widget.floorName}/tiles/{z}/{x}/{y}.mvt';
+
+    await controller.addSource(
+      _tileSourceId,
+      VectorSourceProperties(tiles: [tileUrl]),
+    );
+
+    // 원본 SVG 디자인(hyundai_floor_map_corrected_v6.svg)의 색상을 그대로 옮긴다.
+    await controller.addFillLayer(
+      _tileSourceId,
+      'floor-footprint-fill',
+      const FillLayerProperties(
+        fillColor: '#FFFFFF',
+        fillOutlineColor: '#00000088',
+      ),
+      sourceLayer: 'footprint',
+      enableInteraction: false,
+    );
+    await controller.addFillLayer(
+      _tileSourceId,
+      _storesFillLayerId,
+      const FillLayerProperties(
+        fillColor: '#F3F1EF',
+        fillOutlineColor: '#D8D4D1',
+      ),
+      sourceLayer: 'stores',
+    );
+    // 매장명 라벨: 폴리곤 크기에 맞춰 폰트를 직접 계산하던 예전 로직 대신
+    // MapLibre의 자동 줄바꿈(text-max-width)과 충돌 감지에 맡긴다 —
+    // 이게 벡터 타일로 바꾼 핵심 이유(텍스트가 매장 박스를 벗어나는 문제)다.
+    await controller.addSymbolLayer(
+      _tileSourceId,
+      'floor-stores-label',
+      SymbolLayerProperties(
+        textField: ['get', 'name'],
+        textSize: [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          16,
+          9,
+          20,
+          14,
+        ],
+        textMaxWidth: 6,
+        textVariableAnchor: const ['center'],
+        textColor: '#444846',
+        textHaloColor: '#FFFFFF',
+        textHaloWidth: 1.2,
+        symbolAvoidEdges: true,
+        textAllowOverlap: false,
+      ),
+      sourceLayer: 'stores',
+      enableInteraction: false,
+    );
+
+    await controller.addCircleLayer(
+      _tileSourceId,
+      'floor-pois-circle',
+      const CircleLayerProperties(
+        circleRadius: 4,
+        circleColor: '#76AE6D',
+        circleStrokeColor: '#FFFFFF',
+        circleStrokeWidth: 1.2,
+      ),
+      sourceLayer: 'pois',
+      enableInteraction: false,
+    );
+    await controller.addSymbolLayer(
+      _tileSourceId,
+      'floor-pois-label',
+      const SymbolLayerProperties(
+        textField: ['get', 'name'],
+        textSize: 10,
+        textOffset: [0, 1.2],
+        textColor: '#4F5451',
+        textHaloColor: '#FFFFFF',
+        textHaloWidth: 1,
+      ),
+      sourceLayer: 'pois',
+      enableInteraction: false,
+    );
+
+    await controller.addGeoJsonSource(_routeSourceId, _emptyFeatureCollection);
+    await controller.addLineLayer(
+      _routeSourceId,
+      'floor-route-line',
+      const LineLayerProperties(
+        lineColor: '#1A73E8',
+        lineWidth: 5,
+        lineCap: 'round',
+        lineJoin: 'round',
+      ),
+      enableInteraction: false,
+    );
+
+    await controller.addGeoJsonSource(_markersSourceId, _emptyFeatureCollection);
+    await controller.addCircleLayer(
+      _markersSourceId,
+      'floor-markers-circle',
+      const CircleLayerProperties(
+        circleRadius: 8,
+        circleColor: [
+          'match',
+          ['get', 'kind'],
+          'destination',
+          '#E53935',
+          '#6C3FE0',
+        ],
+        circleStrokeColor: '#FFFFFF',
+        circleStrokeWidth: 2,
+      ),
+      enableInteraction: false,
+    );
+
+    _styleReady = true;
+    await _updateRouteSource();
+    await _updateMarkersSource();
+    await _fitToFootprint();
+  }
+
+  Future<void> _fitToFootprint() async {
+    final controller = _controller;
+    final footprint = widget.floorPlan.footprint;
+    if (controller == null || footprint.isEmpty) return;
+
+    var south = footprint.first.latitude;
+    var north = footprint.first.latitude;
+    var west = footprint.first.longitude;
+    var east = footprint.first.longitude;
+    for (final point in footprint) {
+      south = south < point.latitude ? south : point.latitude;
+      north = north > point.latitude ? north : point.latitude;
+      west = west < point.longitude ? west : point.longitude;
+      east = east > point.longitude ? east : point.longitude;
+    }
+
+    await controller.moveCamera(
+      CameraUpdate.newLatLngBounds(
+        LatLngBounds(
+          southwest: LatLng(south, west),
+          northeast: LatLng(north, east),
+        ),
+        left: 24,
+        top: 24,
+        right: 24,
+        bottom: 24,
+      ),
+    );
+  }
+
+  Future<void> _updateRouteSource() async {
+    final controller = _controller;
+    if (controller == null) return;
+    final points = widget.routePoints;
+    if (points.length < 2) {
+      await controller.setGeoJsonSource(_routeSourceId, _emptyFeatureCollection);
+      return;
+    }
+    await controller.setGeoJsonSource(_routeSourceId, {
+      'type': 'FeatureCollection',
+      'features': [
+        {
+          'type': 'Feature',
+          'properties': const <String, dynamic>{},
+          'geometry': {
+            'type': 'LineString',
+            'coordinates': [
+              for (final point in points) [point.longitude, point.latitude],
+            ],
+          },
+        },
+      ],
+    });
+  }
+
+  Future<void> _updateMarkersSource() async {
+    final controller = _controller;
+    if (controller == null) return;
+    final features = <Map<String, dynamic>>[];
+    final current = widget.currentLocation;
+    final destination = widget.destination;
+    if (current != null) {
+      features.add(_markerFeature(current, MapMarkerKind.current));
+    }
+    if (destination != null) {
+      features.add(_markerFeature(destination, MapMarkerKind.destination));
+    }
+    await controller.setGeoJsonSource(_markersSourceId, {
+      'type': 'FeatureCollection',
+      'features': features,
+    });
+  }
+
+  Map<String, dynamic> _markerFeature(ll.LatLng point, MapMarkerKind kind) {
+    return {
+      'type': 'Feature',
+      'properties': {'kind': kind.name},
+      'geometry': {
+        'type': 'Point',
+        'coordinates': [point.longitude, point.latitude],
       },
+    };
+  }
+
+  Future<void> _handleMapClick(Point<double> point, LatLng coordinates) async {
+    final controller = _controller;
+    final onStoreSelected = widget.onStoreSelected;
+    if (controller == null || onStoreSelected == null) return;
+
+    final features = await controller.queryRenderedFeatures(
+      point,
+      [_storesFillLayerId],
+      null,
     );
+    if (features.isEmpty) return;
+
+    final properties = (features.first as Map)['properties'] as Map?;
+    final id = properties?['id'] as String?;
+    if (id == null) return;
+
+    final store = widget.floorPlan.stores.where((s) => s.id == id).firstOrNull;
+    if (store != null) onStoreSelected(store);
   }
 
-  ({LatLng center, double zoom, double pixelsPerUnit})? _fitToViewport(
-    FloorPlan floorPlan,
-    Size viewportSize,
-  ) {
-    final points = [
-      ...floorPlan.footprint,
-      for (final store in floorPlan.stores) ...[store.centroid, ...store.polygon],
-      for (final corridor in floorPlan.corridors) ...corridor,
-      for (final poi in floorPlan.pois) poi.point,
-    ];
-    if (points.isEmpty || viewportSize.isEmpty) return null;
-
-    var minX = points.first.longitude;
-    var maxX = points.first.longitude;
-    var minY = points.first.latitude;
-    var maxY = points.first.latitude;
-    for (final point in points) {
-      minX = math.min(minX, point.longitude);
-      maxX = math.max(maxX, point.longitude);
-      minY = math.min(minY, point.latitude);
-      maxY = math.max(maxY, point.latitude);
+  LatLng _initialCenter(FloorPlan floorPlan) {
+    if (floorPlan.footprint.isNotEmpty) {
+      return _toMapLibreLatLng(floorPlan.footprint.first);
     }
-
-    const padding = 32.0;
-    final availableWidth = math.max(viewportSize.width - padding * 2, 1.0);
-    final availableHeight = math.max(viewportSize.height - padding * 2, 1.0);
-    // 평면도 폭/높이가 0에 가까우면(예: mock의 단일 지점) 과도한 줌을 막는다.
-    final spanX = math.max(maxX - minX, 1e-6);
-    final spanY = math.max(maxY - minY, 1e-6);
-
-    // CrsSimple 스케일 공식(Crs.scale)과 동일: scale(zoom) = 256 * 2^zoom.
-    final zoomForWidth = _log2(availableWidth / (256 * spanX));
-    final zoomForHeight = _log2(availableHeight / (256 * spanY));
-    final zoom = math.min(zoomForWidth, zoomForHeight);
-
-    return (
-      center: LatLng((minY + maxY) / 2, (minX + maxX) / 2),
-      zoom: zoom,
-      // 이 줌에서 좌표 1단위가 차지하는 화면 픽셀 수. 매장 라벨 폰트/박스 크기를
-      // 매장 폴리곤의 실제 화면 크기에 비례시키는 데 쓴다(안 그러면 작은 매장 위에
-      // 고정 크기 글자가 얹혀서 지도보다 텍스트가 더 커 보인다).
-      pixelsPerUnit: 256 * math.pow(2, zoom).toDouble(),
-    );
-  }
-
-  /// 매장 폴리곤의 화면 픽셀 크기에 맞춰 라벨을 그린다. 폴리곤이 너무 작게
-  /// 렌더링되면(예: 축소된 상태의 좁은 뷰티 카운터) 라벨을 아예 생략한다.
-  /// 폴리곤이 없는 매장(점 정보만 있음)도 라벨을 생략한다.
-  Marker? _storeLabelMarker(StorePolygon store, double pixelsPerUnit) {
-    if (store.polygon.isEmpty) return null;
-
-    var minX = store.polygon.first.longitude;
-    var maxX = store.polygon.first.longitude;
-    var minY = store.polygon.first.latitude;
-    var maxY = store.polygon.first.latitude;
-    for (final point in store.polygon) {
-      minX = math.min(minX, point.longitude);
-      maxX = math.max(maxX, point.longitude);
-      minY = math.min(minY, point.latitude);
-      maxY = math.max(maxY, point.latitude);
+    if (floorPlan.stores.isNotEmpty) {
+      return _toMapLibreLatLng(floorPlan.stores.first.centroid);
     }
-    final pxWidth = (maxX - minX) * pixelsPerUnit;
-    final pxHeight = (maxY - minY) * pixelsPerUnit;
-    if (pxWidth < 18 || pxHeight < 12) return null;
-
-    final fontSize = (pxWidth * 0.11).clamp(6.0, 13.0);
-    return Marker(
-      point: store.centroid,
-      width: pxWidth.clamp(20.0, 100.0),
-      height: math.min(pxHeight, 28.0),
-      child: IgnorePointer(
-        child: Text(
-          store.name,
-          style: TextStyle(fontSize: fontSize),
-          overflow: TextOverflow.ellipsis,
-          textAlign: TextAlign.center,
-        ),
-      ),
-    );
-  }
-
-  /// 폴리곤 없이 점 정보만 있는 매장(공간)용 마커. POI 마커와 같은 모양이다.
-  Marker _pointStoreMarker(StorePolygon store) {
-    return Marker(
-      point: store.centroid,
-      width: 80,
-      height: 40,
-      child: IgnorePointer(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.storefront, size: 16, color: Colors.black54),
-            Text(
-              store.name,
-              style: const TextStyle(fontSize: 10),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  static double _log2(double value) => math.log(value) / math.ln2;
-
-  IconData _iconForPoiType(String? type) {
-    switch (type) {
-      case 'elevator':
-        return Icons.elevator;
-      case 'escalator':
-        return Icons.escalator;
-      case 'toilet':
-        return Icons.wc;
-      case 'exit':
-        return Icons.exit_to_app;
-      case 'facility':
-        return Icons.info_outline;
-      default:
-        return Icons.place;
+    if (floorPlan.pois.isNotEmpty) {
+      return _toMapLibreLatLng(floorPlan.pois.first.point);
     }
+    return const LatLng(37.5665, 126.9780); // fallback: 서울시청
   }
 
-  // 원본 SVG의 .store-fashion/.store-beauty/.store-service 채우기 색을 그대로 옮겼다.
-  Color _storeFillColor(String? category) {
-    switch (category) {
-      case 'fashion':
-        return const Color(0xFFF3F1EF);
-      case 'beauty':
-        return const Color(0xFFF5F0F2);
-      case 'service':
-        return const Color(0xFFF1EEF3);
-      default:
-        return Colors.blueGrey.withValues(alpha: 0.15);
-    }
+  static LatLng _toMapLibreLatLng(ll.LatLng point) {
+    return LatLng(point.latitude, point.longitude);
   }
 }
 
-// 원본 SVG .store 테두리 색.
-const _storeBorderColor = Color(0xFFD8D4D1);
-// 원본 SVG .store.selected 채우기/테두리 색.
-const _selectedFillColor = Color(0xFFFFE8AD);
-const _selectedBorderColor = Color(0xFFDF8F0C);
+const _emptyFeatureCollection = {'type': 'FeatureCollection', 'features': <Map<String, dynamic>>[]};
+
+// 원본 SVG(hyundai_floor_map_corrected_v6.svg)의 배경색을 그대로 옮겼다.
+// 나머지 레이어(외곽선/매장/POI/경로)는 스타일 로드 후 벡터·GeoJSON
+// 소스로 추가한다.
+const _initialStyle = '''
+{
+  "version": 8,
+  "sources": {},
+  "layers": [
+    {"id": "background", "type": "background", "paint": {"background-color": "#EDF4E7"}}
+  ]
+}
+''';

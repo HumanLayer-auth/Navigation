@@ -17,11 +17,19 @@ from __future__ import annotations
 import argparse
 import json
 import sqlite3
+import sys
 from math import hypot
 from pathlib import Path
 
-# 스크립트를 어느 디렉토리에서 실행해도 같은 입력/출력 경로를 사용한다.
+# app.domain을 import하려면 api/ 루트가 sys.path에 있어야 한다
+# (이 스크립트를 scripts/ 디렉터리에서 직접 실행할 때는 기본적으로 없음).
 API_ROOT = Path(__file__).resolve().parents[1]
+if str(API_ROOT) not in sys.path:
+    sys.path.insert(0, str(API_ROOT))
+
+from app.domain.georeference import GeoTransform, PointPair, fit_wgs84_transform  # noqa: E402
+
+# 스크립트를 어느 디렉토리에서 실행해도 같은 입력/출력 경로를 사용한다.
 DEFAULT_JSON = API_ROOT / "app" / "data" / "navigation_1f.json"
 DEFAULT_VECTOR_DIR = API_ROOT / "app" / "data" / "vector_maps"
 DEFAULT_DB = API_ROOT / "data" / "navigation.db"
@@ -51,7 +59,24 @@ CREATE TABLE IF NOT EXISTS buildings (
     name              TEXT NOT NULL,
     area_m2           REAL,
     perimeter_m       REAL,
-    footprint_local_m TEXT              -- [{"x":..,"y":..}, ...] JSON
+    footprint_local_m TEXT,             -- [{"x":..,"y":..}, ...] JSON
+    -- local_m -> WGS84 affine 변환(축별 스케일이 다를 수 있음, 6-DOF).
+    -- geo_lng_scale은 경도(lng)에 곱해서 등방(isotropic) 공간으로 만드는
+    -- 보정값(=cos(기준위도)) — 위도/경도 1도의 실제 거리가 다르기 때문에
+    -- 필요하다. apply()에서: u,v = a*x+b*y+tx, c*x+d*y+ty; lng = u/geo_lng_scale; lat = v.
+    -- 노드/매장에 wgs84 대응점이 3개 미만이면(실측 앵커 없는 건물) 전부 NULL.
+    -- georeference_svg_floor_map.py가 대응하는 SVG 도면을 찾으면 이 값을
+    -- SVG 경유로 개선된 변환으로 덮어쓴다.
+    geo_a             REAL,
+    geo_b             REAL,
+    geo_c             REAL,
+    geo_d             REAL,
+    geo_tx            REAL,
+    geo_ty            REAL,
+    geo_lng_scale     REAL,
+    -- 사람이 정리한 SVG 도면의 건물 외곽선을 위 변환으로 옮긴 결과.
+    -- georeference_svg_floor_map.py가 채운다. 없으면 footprint_local_m을 쓴다.
+    footprint_wgs84_svg TEXT
 );
 
 CREATE TABLE IF NOT EXISTS floors (
@@ -118,10 +143,16 @@ CREATE TABLE IF NOT EXISTS stores (
     name             TEXT NOT NULL,
     centroid_x_m     REAL NOT NULL,
     centroid_y_m     REAL NOT NULL,
+    centroid_lat     REAL,              -- WGS84 (provisional, 원본에 있으면 보존)
+    centroid_lng     REAL,
     entrance_x_m     REAL,
     entrance_y_m     REAL,
     entrance_node_id TEXT REFERENCES nodes(id),
-    polygon          TEXT               -- local_m Polygon JSON
+    polygon          TEXT,              -- local_m Polygon JSON
+    -- 사람이 정리한 SVG 도면에서 이름이 매칭된 매장의 폴리곤을 실좌표로
+    -- 옮긴 결과. georeference_svg_floor_map.py가 채운다. 없으면(SVG에
+    -- 대응 매장이 없음) polygon(local_m)을 건물 geo_transform으로 근사한다.
+    svg_polygon_wgs84 TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_stores_floor ON stores(floor_id);
 CREATE INDEX IF NOT EXISTS idx_stores_name  ON stores(name);
@@ -191,6 +222,52 @@ def _edge_row(
     )
 
 
+def _collect_geo_pairs(data: dict) -> list[PointPair]:
+    """노드/매장 centroid 중 wgs84가 채워진 항목만 골라 대응점 목록을 만든다.
+
+    PointPair(u=lng, v=lat)로 만든다 — GeoTransform.apply()가 반환하는
+    (lat, lng) 순서와 헷갈리지 않도록 u/v는 항상 (lng, lat) 순서로 고정한다.
+    """
+    pairs: list[PointPair] = []
+
+    for node in data["nodes"]:
+        position = node["position"]
+        wgs84 = position.get("wgs84")
+        if not wgs84 or wgs84.get("lat") is None or wgs84.get("lng") is None:
+            continue
+        local_m = position["local_m"]
+        pairs.append(
+            PointPair(x=local_m["x"], y=local_m["y"], u=wgs84["lng"], v=wgs84["lat"])
+        )
+
+    for store in data["stores"]:
+        centroid = store["centroid"]
+        wgs84 = centroid.get("wgs84")
+        if not wgs84 or wgs84.get("lat") is None or wgs84.get("lng") is None:
+            continue
+        local_m = centroid["local_m"]
+        pairs.append(
+            PointPair(x=local_m["x"], y=local_m["y"], u=wgs84["lng"], v=wgs84["lat"])
+        )
+
+    return pairs
+
+
+def _fit_building_geo_transform(data: dict) -> GeoTransform | None:
+    """실측 wgs84 대응점이 3개 이상이면 건물의 local_m -> wgs84 변환을 피팅한다.
+
+    test-center처럼 실좌표 앵커가 없는 합성 건물은 대응점이 없어 None을 반환한다.
+    이 변환은 기본값이다 — thehyundai-seoul처럼 대응하는 SVG 도면이 있는
+    건물은 ``georeference_svg_floor_map.py``가 이 값을 SVG 경유로 개선된
+    변환으로 덮어쓴다(1차 구현 이후 발견된 문제 참고: 매장 centroid만 실측
+    보정하고 외곽선/POI는 이 변환 그대로 쓰면 서로 어긋나 보인다).
+    """
+    pairs = _collect_geo_pairs(data)
+    if len(pairs) < 3:
+        return None
+    return fit_wgs84_transform(pairs)
+
+
 def _find_vector_dataset(
     vector_path: Path,
     *,
@@ -246,6 +323,9 @@ def load_navigation_db(
         node["id"]: node["position"]["local_m"]
         for node in data["nodes"]
     }
+    # 이미 계산된 local_m<->wgs84 대응점(노드/매장 centroid)으로 건물 하나에
+    # 적용할 similarity 변환을 미리 피팅해둔다. 실좌표 대응점이 없으면 None.
+    geo_transform = _fit_building_geo_transform(data)
 
     # 출력 폴더가 아직 없어도 DB 파일을 생성할 수 있게 준비한다.
     db_path = Path(db_path)
@@ -261,15 +341,24 @@ def load_navigation_db(
 
         # --- 건물/층: 각각 한 건씩 INSERT ---
         conn.execute(
-            "INSERT INTO buildings (id, name, area_m2, perimeter_m, footprint_local_m)"
-            " VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO buildings"
+            " (id, name, area_m2, perimeter_m, footprint_local_m,"
+            " geo_a, geo_b, geo_c, geo_d, geo_tx, geo_ty, geo_lng_scale)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
-                building_id, 
-                building["name"], 
-                building["area_m2"], 
-                building["perimeter_m"], 
+                building_id,
+                building["name"],
+                building["area_m2"],
+                building["perimeter_m"],
                 # 폴리곤 리스트는 JSON 문자열로 직렬화해서 TEXT 칼럼에 저장합니다.
                 json.dumps(building["footprint_local_m"], ensure_ascii = False),
+                geo_transform.a if geo_transform else None,
+                geo_transform.b if geo_transform else None,
+                geo_transform.c if geo_transform else None,
+                geo_transform.d if geo_transform else None,
+                geo_transform.tx if geo_transform else None,
+                geo_transform.ty if geo_transform else None,
+                geo_transform.lng_scale if geo_transform else None,
             ),
         )
         conn.execute(
@@ -296,8 +385,8 @@ def load_navigation_db(
         conn.executemany(
             # Store 폴리곤과 선택적 입구 좌표를 평면 컬럼으로 적재한다.
             "INSERT INTO stores (id, floor_id, name, centroid_x_m, centroid_y_m,"
-            " entrance_x_m, entrance_y_m, entrance_node_id, polygon)"
-            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            " centroid_lat, centroid_lng, entrance_x_m, entrance_y_m, entrance_node_id, polygon)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             [
                 (
                     s["id"],
@@ -305,6 +394,10 @@ def load_navigation_db(
                     s["name"],
                     s["centroid"]["local_m"]["x"],
                     s["centroid"]["local_m"]["y"],
+                    # 원본에 이미 계산된 실측 wgs84가 있으면 버리지 않고 보존한다
+                    # (공식으로 다시 계산하면 건물 전체 평균 오차를 그대로 물려받음).
+                    (s["centroid"].get("wgs84") or {}).get("lat"),
+                    (s["centroid"].get("wgs84") or {}).get("lng"),
                     # entrance가 없는 매장 대비 — None이면 NULL로 들어간다
                     s["entrance_local_m"]["x"] if s["entrance_local_m"] else None,
                     s["entrance_local_m"]["y"] if s["entrance_local_m"] else None,

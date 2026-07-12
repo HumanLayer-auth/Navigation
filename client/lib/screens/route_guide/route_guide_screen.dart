@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../core/api_config.dart';
@@ -10,7 +9,6 @@ import '../../models/poi_search_result.dart';
 import '../../routing/app_routes.dart';
 import '../../widgets/eta_card.dart';
 import '../../widgets/floor_plan_view.dart';
-import '../../widgets/location_marker.dart';
 import '../../widgets/rag_chat_panel.dart';
 
 const _fallbackCenter = LatLng(37.5665, 126.9780);
@@ -88,7 +86,7 @@ class _RouteGuideScreenState extends State<RouteGuideScreen> {
     for (final store in floorPlan.stores) {
       final nodeId = store.entranceNodeId;
       if (nodeId == null || nodeId == excludingNodeId) continue;
-      final distance = localDistanceMeters(origin, store.centroid);
+      final distance = wgs84DistanceMeters(origin, store.centroid);
       if (nearestDistance == null || distance < nearestDistance) {
         nearestDistance = distance;
         nearest = store;
@@ -171,7 +169,7 @@ class _RouteGuideScreenState extends State<RouteGuideScreen> {
     final route = _route;
     final distance = route != null
         ? route.distanceMeters
-        : localDistanceMeters(_currentLocation(), destination.point);
+        : wgs84DistanceMeters(_currentLocation(), destination.point);
     final minutes = (distance / _walkingSpeedMetersPerSecond / 60)
         .ceil()
         .clamp(1, 999);
@@ -192,18 +190,12 @@ class _RouteGuideScreenState extends State<RouteGuideScreen> {
         : _currentLocation();
 
     return FloorPlanView(
+      buildingId: demoBuildingId,
+      floorName: destination.floor,
       floorPlan: floorPlan,
       routePoints: route?.points ?? [current, destination.point],
-      extraMarkers: [
-        Marker(
-          point: current,
-          child: const LocationMarker(mode: LocationMode.indoor),
-        ),
-        Marker(
-          point: destination.point,
-          child: const Icon(Icons.place, color: Colors.red),
-        ),
-      ],
+      currentLocation: current,
+      destination: destination.point,
     );
   }
 }

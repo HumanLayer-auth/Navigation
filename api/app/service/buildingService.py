@@ -4,8 +4,18 @@
 
 from typing import Any
 
+import mapbox_vector_tile
+
 from app.domain.building import Building, Edge, FloorVectorMap, MapFeature, Node, Poi, Store
 from app.domain.dijkstra import ShortestPath, find_shortest_path
+from app.domain.georeference import GeoTransform
+from app.domain.vectorTile import (
+    build_floor_tile_layers,
+    local_points_to_lnglat,
+    snap_points,
+    store_centroid_offset,
+    tile_bounds,
+)
 from app.repository.BuildingRepository import BuildingRepository
 
 class BuildingService:
@@ -42,21 +52,59 @@ class BuildingService:
             return None
         building = self.building_repository.find_building_by_id(building_id)
         vector_map = self.building_repository.find_vector_map_by_floor(floor.id)
+        transform = building.geo_transform if building else None
         # Flutter 지도 한 화면을 그리는 데 필요한 데이터를 한 응답으로 조합한다.
         return {
             "floor": {"id": floor.id, "name": floor.name, "level": floor.level},
             "navigation_coordinate_system": "local_m",
             "footprint_local_m": building.footprint_local_m if building else [],
+            "footprint_wgs84": self._footprint_wgs84(building, transform),
             "vector_map": self._to_vector_map_dict(vector_map) if vector_map else None,
             "stores": [
-                self._to_store_dict(s)
+                self._to_store_dict(s, transform)
                 for s in self.building_repository.find_stores_by_floor(floor.id)
             ],
             "pois": [
-                self._to_poi_dict(p)
+                self._to_poi_dict(p, transform)
                 for p in self.building_repository.find_pois_by_floor(floor.id)
             ],
         }
+
+    def get_floor_tile(
+        self,
+        building_id: str,
+        floor_name: str,
+        z: int,
+        x: int,
+        y: int,
+    ) -> bytes | None:
+        """층 지도를 MVT(Mapbox Vector Tile) 바이트로 렌더링한다.
+
+        건물에 실좌표 앵커(geo_transform)가 없으면(예: test-center) 빈 레이어만
+        담은 유효한 빈 타일을 돌려준다 — 404 대신 "표시할 게 없다"로 처리해
+        MapLibre 쪽에서 에러 없이 조용히 아무것도 그리지 않게 한다.
+        """
+        floor = self.building_repository.find_floor_by_name(building_id, floor_name)
+        if floor is None:
+            return None
+        building = self.building_repository.find_building_by_id(building_id)
+        if building is None:
+            return None
+
+        bounds = tile_bounds(z, x, y)
+        layers = build_floor_tile_layers(
+            building,
+            stores=self.building_repository.find_stores_by_floor(floor.id),
+            pois=self.building_repository.find_pois_by_floor(floor.id),
+            bounds=bounds,
+        )
+
+        return mapbox_vector_tile.encode(
+            layers,
+            default_options={
+                "quantize_bounds": (bounds.west, bounds.south, bounds.east, bounds.north),
+            },
+        )
 
     def get_floor_graph(self, building_id: str, floor_name: str) -> dict[str, Any] | None:
         """층 길찾기 그래프(nodes + edges). A*/Dijkstra 입력용."""
@@ -80,10 +128,12 @@ class BuildingService:
     def search_stores(self, building_id: str, query: str) -> list[dict[str, Any]] | None:
         """건물 내 매장 이름 검색. 건물이 없으면 None(→404), 결과 없으면 빈 리스트."""
         # "없는 건물"과 "검색 결과 없음"을 구분하기 위해 건물을 먼저 확인한다.
-        if self.building_repository.find_building_by_id(building_id) is None:
+        building = self.building_repository.find_building_by_id(building_id)
+        if building is None:
             return None
+        transform = building.geo_transform
         return [
-            self._to_store_dict(s)
+            self._to_store_dict(s, transform)
             for s in self.building_repository.search_stores(building_id, query)
         ]
 
@@ -101,6 +151,8 @@ class BuildingService:
         if floor is None:
             return None
 
+        building = self.building_repository.find_building_by_id(building_id)
+        transform = building.geo_transform if building else None
         nodes = self.building_repository.find_nodes_by_floor(floor.id)
         edges = self.building_repository.find_edges_by_floor(floor.id)
 
@@ -118,6 +170,7 @@ class BuildingService:
                 "path_found": False,
             }
 
+        path_points = self._build_path_points(path, nodes, edges)
         return {
             "start_node_id": start_node_id,
             "end_node_id": end_node_id,
@@ -125,7 +178,8 @@ class BuildingService:
             "node_ids": list(path.node_ids),
             "edge_ids": list(path.edge_ids),
             "coordinate_system": "local_m",
-            "path_points": self._build_path_points(path, nodes, edges),
+            "path_points": path_points,
+            "path_points_wgs84": self._points_wgs84(path_points, transform),
             "total_distance_m": round(path.total_distance_m, 3),
         }
 
@@ -216,7 +270,7 @@ class BuildingService:
         }
 
     @staticmethod
-    def _to_store_dict(store: Store) -> dict[str, Any]:
+    def _to_store_dict(store: Store, transform: GeoTransform | None) -> dict[str, Any]:
         # 매장 중심점을 Flutter가 바로 읽을 수 있는 중첩 JSON 좌표로 만든다.
         return {
             "id": store.id,
@@ -226,6 +280,8 @@ class BuildingService:
                 "x": store.centroid.x_m,
                 "y": store.centroid.y_m,
             },
+            "centroid_wgs84": BuildingService._store_centroid_wgs84(store, transform),
+            "polygon_wgs84": BuildingService._store_polygon_wgs84(store, transform),
             "entrance_local_m": {
                 "x": store.entrance.x_m,
                 "y": store.entrance.y_m,
@@ -235,6 +291,53 @@ class BuildingService:
             "entrance_node_id": store.entrance_node_id,
             "polygon_local_m": store.polygon_local_m,
         }
+
+    @staticmethod
+    def _store_centroid_wgs84(store: Store, transform: GeoTransform | None) -> dict[str, float] | None:
+        # 원본에 실측 wgs84가 이미 있으면 그 값을 그대로 쓴다(건물 단위 변환의
+        # 평균 오차보다 정확함). 없으면 건물 geo_transform으로 근사한다.
+        if store.centroid_lat is not None and store.centroid_lng is not None:
+            return {"lat": store.centroid_lat, "lng": store.centroid_lng}
+        if transform is None:
+            return None
+        lat, lng = transform.apply(store.centroid.x_m, store.centroid.y_m)
+        return {"lat": lat, "lng": lng}
+
+    @staticmethod
+    def _store_polygon_wgs84(store: Store, transform: GeoTransform | None) -> list[dict[str, float]] | None:
+        # SVG 도면에서 이름이 매칭된 매장은 그 폴리곤이 건물 변환 근사보다
+        # 정확하고 모양도 깔끔하므로 우선 쓴다.
+        if store.svg_polygon_wgs84:
+            return store.svg_polygon_wgs84
+        if transform is None or not store.polygon_local_m:
+            return None
+        points = local_points_to_lnglat(store.polygon_local_m, transform)
+        points = snap_points(points, store_centroid_offset(store, transform))
+        return [{"lat": lat, "lng": lng} for lng, lat in points]
+
+    @staticmethod
+    def _footprint_wgs84(
+        building: Building | None,
+        transform: GeoTransform | None,
+    ) -> list[dict[str, float]] | None:
+        if building is None:
+            return None
+        if building.footprint_wgs84_svg:
+            return building.footprint_wgs84_svg
+        if transform is None or not building.footprint_local_m:
+            return None
+        points = local_points_to_lnglat(building.footprint_local_m, transform)
+        return [{"lat": lat, "lng": lng} for lng, lat in points]
+
+    @staticmethod
+    def _points_wgs84(
+        points_local_m: list[dict[str, float]],
+        transform: GeoTransform | None,
+    ) -> list[dict[str, float]] | None:
+        if transform is None or not points_local_m:
+            return None
+        points = local_points_to_lnglat(points_local_m, transform)
+        return [{"lat": lat, "lng": lng} for lng, lat in points]
 
     @staticmethod
     def _to_vector_map_dict(vector_map: FloorVectorMap) -> dict[str, Any]:
@@ -262,8 +365,12 @@ class BuildingService:
         }
 
     @staticmethod
-    def _to_poi_dict(poi: Poi) -> dict[str, Any]:
+    def _to_poi_dict(poi: Poi, transform: GeoTransform | None) -> dict[str, Any]:
         # POI 위치도 매장과 동일한 {x, y} 좌표 규약으로 반환한다.
+        position_wgs84 = None
+        if transform is not None:
+            lat, lng = transform.apply(poi.position.x_m, poi.position.y_m)
+            position_wgs84 = {"lat": lat, "lng": lng}
         return {
             "id": poi.id,
             "type": poi.type,
@@ -272,5 +379,6 @@ class BuildingService:
                 "x": poi.position.x_m,
                 "y": poi.position.y_m,
             },
+            "position_wgs84": position_wgs84,
             "linked_node_id": poi.linked_node_id,
         }

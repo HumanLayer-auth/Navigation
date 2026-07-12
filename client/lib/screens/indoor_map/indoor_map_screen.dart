@@ -120,6 +120,9 @@ class _IndoorMapScreenState extends State<IndoorMapScreen> {
     }
 
     return FloorPlanView(
+      key: ValueKey('$demoBuildingId-$_selectedFloor'),
+      buildingId: demoBuildingId,
+      floorName: _selectedFloor!,
       floorPlan: floorPlan,
       onStoreSelected: (store) => setState(() => _selectedStore = store),
     );

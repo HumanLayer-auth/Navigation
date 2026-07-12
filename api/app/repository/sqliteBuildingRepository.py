@@ -14,6 +14,18 @@ from app.domain.building import (
     Poi,
     Store,
 )
+from app.domain.georeference import GeoTransform
+
+BUILDING_COLUMNS = (
+    "id, name, area_m2, perimeter_m, footprint_local_m,"
+    " geo_a, geo_b, geo_c, geo_d, geo_tx, geo_ty, geo_lng_scale, footprint_wgs84_svg"
+)
+
+STORE_COLUMNS = (
+    "id, floor_id, name, centroid_x_m, centroid_y_m,"
+    " centroid_lat, centroid_lng, svg_polygon_wgs84,"
+    " entrance_x_m, entrance_y_m, entrance_node_id, polygon"
+)
 
 class SqliteBuildingRepository:
     def __init__(self, conn: sqlite3.Connection):
@@ -25,14 +37,14 @@ class SqliteBuildingRepository:
     def find_all_buildings(self) -> list[Building]:
         # 목록 조회이므로 fetchall로 모든 건물을 가져온다.
         rows = self._conn.execute(
-            "select id, name, area_m2, perimeter_m, footprint_local_m from buildings"
+            f"select {BUILDING_COLUMNS} from buildings"
         ).fetchall()
         return [self._to_building(r) for r in rows]
-    
+
     def find_building_by_id(self, building_id: str) -> Building | None:
         # 사용자 입력을 SQL 문자열에 합치지 않고 ? 파라미터로 바인딩한다.
         row = self._conn.execute(
-            "select id, name, area_m2, perimeter_m, footprint_local_m from buildings"
+            f"select {BUILDING_COLUMNS} from buildings"
             " where id = ?",
             (building_id,),
             ).fetchone()
@@ -135,9 +147,7 @@ class SqliteBuildingRepository:
     def find_stores_by_floor(self, floor_id: str) -> list[Store]:
         # 지도 렌더링에 필요한 중심점, 입구, 폴리곤을 함께 조회한다.
         rows = self._conn.execute(
-            "SELECT id, floor_id, name, centroid_x_m, centroid_y_m,"
-            " entrance_x_m, entrance_y_m, entrance_node_id, polygon"
-            " FROM stores WHERE floor_id = ?",
+            f"SELECT {STORE_COLUMNS} FROM stores WHERE floor_id = ?",
             (floor_id,),
         ).fetchall()
         return [self._to_store(r) for r in rows]
@@ -153,9 +163,9 @@ class SqliteBuildingRepository:
 
     def search_stores(self, building_id: str, query: str) -> list[Store]:
         # 층을 거쳐 건물로 join — stores에는 building_id가 없기 때문
+        prefixed_columns = ", ".join(f"s.{column.strip()}" for column in STORE_COLUMNS.split(","))
         rows = self._conn.execute(
-            "SELECT s.id, s.floor_id, s.name, s.centroid_x_m, s.centroid_y_m,"
-            " s.entrance_x_m, s.entrance_y_m, s.entrance_node_id, s.polygon"
+            f"SELECT {prefixed_columns}"
             " FROM stores s JOIN floors f ON s.floor_id = f.id"
             " WHERE f.building_id = ? AND s.name LIKE ?",
             (building_id, f"%{query}%"),  # LIKE 패턴도 값 바인딩해 SQL injection 방지
@@ -167,6 +177,30 @@ class SqliteBuildingRepository:
     @staticmethod
     def _to_building(row: sqlite3.Row) -> Building:
         # TEXT 컬럼에 저장된 JSON 외곽선을 Python list로 역직렬화한다.
+        geo_columns = (
+            row["geo_a"],
+            row["geo_b"],
+            row["geo_c"],
+            row["geo_d"],
+            row["geo_tx"],
+            row["geo_ty"],
+        )
+        geo_transform = (
+            GeoTransform(
+                a=geo_columns[0],
+                b=geo_columns[1],
+                c=geo_columns[2],
+                d=geo_columns[3],
+                tx=geo_columns[4],
+                ty=geo_columns[5],
+                # 옛 데이터 호환: geo_lng_scale이 없으면(재적재 전 DB) 1.0으로
+                # 취급 — 다만 그 경우 apply()가 되돌리는 lng이 여전히 왜곡돼
+                # 있으므로 반드시 load_dataset.py를 다시 돌려야 한다.
+                lng_scale=row["geo_lng_scale"] if row["geo_lng_scale"] is not None else 1.0,
+            )
+            if all(value is not None for value in geo_columns)
+            else None
+        )
         return Building(
             id=row["id"],
             name=row["name"],
@@ -175,6 +209,10 @@ class SqliteBuildingRepository:
             footprint_local_m=json.loads(row["footprint_local_m"])
             if row["footprint_local_m"]
             else [],
+            geo_transform=geo_transform,
+            footprint_wgs84_svg=json.loads(row["footprint_wgs84_svg"])
+            if row["footprint_wgs84_svg"]
+            else None,
         )
 
     @staticmethod
@@ -195,6 +233,11 @@ class SqliteBuildingRepository:
             ),
             entrance_node_id=row["entrance_node_id"],
             polygon_local_m=json.loads(row["polygon"]) if row["polygon"] else None,
+            centroid_lat=row["centroid_lat"],
+            centroid_lng=row["centroid_lng"],
+            svg_polygon_wgs84=json.loads(row["svg_polygon_wgs84"])
+            if row["svg_polygon_wgs84"]
+            else None,
         )
 
     @staticmethod
