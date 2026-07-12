@@ -239,39 +239,102 @@ class _FloorPlanViewState extends State<FloorPlanView> {
     await _fitToFootprint();
   }
 
+  /// 화면(뷰포트) 크기에 맞춰 건물이 최대한 크게(=매장 라벨이 최대한 많이
+  /// 안 겹치고 보이게) 나오도록 카메라 bearing과 zoom을 같이 계산해서 적용한다.
+  ///
+  /// `newLatLngBounds`는 항상 지도를 정북 방향으로 맞춘 뒤 그 상태 기준으로
+  /// zoom을 정하기 때문에, 그 다음에 건물을 반듯하게 돌리는(bearing) 회전을
+  /// 더하면 회전된 모양이 뷰포트에 다시 안 맞아 여백이 생긴다(예: 가로로
+  /// 긴 건물을 세로로 긴 화면에 정북 기준으로 맞추면 좌우 폭에 걸려 축소된
+  /// 채로, 돌려도 그 축소율 그대로 남는다). 그래서 bearing 후보 두 개(건물
+  /// 외곽선에 맞춘 각도, 그리고 그걸 90도 돌린 각도) 각각에 대해 "그 각도로
+  /// 봤을 때 건물이 뷰포트에 얼마나 크게 들어가는지"를 직접 계산해서 더 크게
+  /// 보이는 쪽을 고른다.
   Future<void> _fitToFootprint() async {
     final controller = _controller;
     final footprint = widget.floorPlan.footprint;
     if (controller == null || footprint.isEmpty) return;
 
-    var south = footprint.first.latitude;
-    var north = footprint.first.latitude;
-    var west = footprint.first.longitude;
-    var east = footprint.first.longitude;
-    for (final point in footprint) {
-      south = south < point.latitude ? south : point.latitude;
-      north = north > point.latitude ? north : point.latitude;
-      west = west < point.longitude ? west : point.longitude;
-      east = east > point.longitude ? east : point.longitude;
-    }
+    final viewport = MediaQuery.sizeOf(context);
+    final fit = _fitBearingAndZoom(footprint, viewport);
 
-    // newLatLngBounds always resets bearing/tilt to 0, so the straightening
-    // rotation has to be re-applied after the bounds fit.
     await controller.moveCamera(
-      CameraUpdate.newLatLngBounds(
-        LatLngBounds(
-          southwest: LatLng(south, west),
-          northeast: LatLng(north, east),
+      CameraUpdate.newCameraPosition(
+        CameraPosition(
+          target: _toMapLibreLatLng(_centroid(footprint)),
+          zoom: fit.zoom,
+          bearing: fit.bearing,
         ),
-        left: 24,
-        top: 24,
-        right: 24,
-        bottom: 24,
       ),
     );
-    await controller.moveCamera(
-      CameraUpdate.bearingTo(_straighteningBearing(footprint)),
-    );
+  }
+
+  static ll.LatLng _centroid(List<ll.LatLng> footprint) {
+    final lat = footprint.map((p) => p.latitude).reduce((a, b) => a + b) / footprint.length;
+    final lng = footprint.map((p) => p.longitude).reduce((a, b) => a + b) / footprint.length;
+    return ll.LatLng(lat, lng);
+  }
+
+  static const _metersPerDegreeLat = 111320.0;
+  static const _fitPaddingPx = 24.0;
+  // 표준 Web Mercator 상수: 적도에서 zoom 0일 때 픽셀당 미터.
+  static const _metersPerPixelAtZoom0Equator = 156543.03392804097;
+
+  static ({double bearing, double zoom}) _fitBearingAndZoom(
+    List<ll.LatLng> footprint,
+    Size viewport,
+  ) {
+    final center = _centroid(footprint);
+    final cosLat = cos(center.latitude * pi / 180);
+
+    // 외곽선을 중심 기준 등방(=1 단위가 어느 축이든 같은 실제 거리) 평면
+    // 좌표(미터)로 바꾼다 — 회전/거리 계산을 위/경도 그대로 하면 위도에 따라
+    // 경도 1도의 실제 거리가 달라 왜곡되기 때문이다.
+    final localPoints = footprint.map((p) {
+      final dx = (p.longitude - center.longitude) * cosLat * _metersPerDegreeLat;
+      final dy = (p.latitude - center.latitude) * _metersPerDegreeLat;
+      return Offset(dx, dy);
+    }).toList();
+
+    final axisBearing = _straighteningBearing(footprint);
+    final availableWidth = max(1.0, viewport.width - _fitPaddingPx * 2);
+    final availableHeight = max(1.0, viewport.height - _fitPaddingPx * 2);
+
+    var bestBearing = 0.0;
+    var bestZoom = double.negativeInfinity;
+    for (final candidate in [axisBearing, axisBearing + 90]) {
+      final rad = candidate * pi / 180;
+      final cosB = cos(rad);
+      final sinB = sin(rad);
+
+      var minX = double.infinity, maxX = double.negativeInfinity;
+      var minY = double.infinity, maxY = double.negativeInfinity;
+      for (final p in localPoints) {
+        // 카메라 bearing이 candidate일 때 화면에 어떻게 투영되는지: 화면
+        // "위"는 나침반 방향 candidate, "오른쪽"은 candidate+90을 가리킨다.
+        final rx = p.dx * cosB - p.dy * sinB;
+        final ry = p.dx * sinB + p.dy * cosB;
+        minX = min(minX, rx);
+        maxX = max(maxX, rx);
+        minY = min(minY, ry);
+        maxY = max(maxY, ry);
+      }
+      final widthM = maxX - minX;
+      final heightM = maxY - minY;
+      if (widthM <= 0 || heightM <= 0) continue;
+
+      final metersPerPixelAtLat = _metersPerPixelAtZoom0Equator * cosLat;
+      final metersPerPixelNeeded = max(widthM / availableWidth, heightM / availableHeight);
+      final zoom = log(metersPerPixelAtLat / metersPerPixelNeeded) / log(2);
+
+      if (zoom > bestZoom) {
+        bestZoom = zoom;
+        bestBearing = candidate;
+      }
+    }
+
+    if (bestZoom.isFinite) return (bearing: bestBearing, zoom: bestZoom);
+    return (bearing: axisBearing, zoom: 18.0);
   }
 
   Future<void> _updateRouteSource() async {
