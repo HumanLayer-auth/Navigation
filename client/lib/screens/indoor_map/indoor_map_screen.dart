@@ -1,26 +1,42 @@
 import 'package:flutter/material.dart';
 
-import '../../core/api_config.dart';
 import '../../core/service_locator.dart';
 import '../../models/building.dart';
 import '../../models/floor_plan.dart';
-import '../../routing/app_routes.dart';
+import '../../models/indoor_route.dart';
+import '../../models/poi_search_result.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/eta_card.dart';
 import '../../widgets/floor_plan_view.dart';
 
-class IndoorMapScreen extends StatefulWidget {
-  const IndoorMapScreen({super.key});
+const _walkingSpeedMetersPerSecond = 1.2;
+
+/// 실내 지도 본문(층 평면도 + 경로/매장 오버레이). 검색창·길찾기·건물 전환 같은
+/// 공통 UI는 [MapShellScreen]이 상단/하단 바로 얹으므로 여기서는 다루지 않는다.
+class IndoorMapBody extends StatefulWidget {
+  const IndoorMapBody({
+    super.key,
+    required this.buildingId,
+    this.bottomOverlayHeight = 140,
+  });
+
+  final String buildingId;
+
+  /// 하단 공용 바가 차지하는 높이만큼 ETA/매장 카드를 그 위에 띄운다.
+  final double bottomOverlayHeight;
 
   @override
-  State<IndoorMapScreen> createState() => _IndoorMapScreenState();
+  State<IndoorMapBody> createState() => IndoorMapBodyState();
 }
 
-class _IndoorMapScreenState extends State<IndoorMapScreen> {
+class IndoorMapBodyState extends State<IndoorMapBody> {
   bool _loading = true;
   Building? _building;
   String? _selectedFloor;
   FloorPlan? _floorPlan;
   StorePolygon? _selectedStore;
+  IndoorRoute? _route;
+  PoiSearchResult? _routeDestination;
 
   /// 백엔드 연결 실패 시 사용자에게 보여줄 메시지. null이면 정상 상태.
   /// 이게 없으면 fetch 예외가 조용히 삼켜져 로딩 스피너가 영원히 멈추지 않는다.
@@ -32,13 +48,24 @@ class _IndoorMapScreenState extends State<IndoorMapScreen> {
     _loadBuilding();
   }
 
+  @override
+  void didUpdateWidget(covariant IndoorMapBody oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.buildingId != widget.buildingId) {
+      _selectedStore = null;
+      _route = null;
+      _routeDestination = null;
+      _loadBuilding();
+    }
+  }
+
   Future<void> _loadBuilding() async {
     setState(() {
       _loading = true;
       _error = null;
     });
     try {
-      final building = await buildingRepository.getBuilding(demoBuildingId);
+      final building = await buildingRepository.getBuilding(widget.buildingId);
       if (!mounted) return;
 
       final selectedFloor =
@@ -58,12 +85,9 @@ class _IndoorMapScreenState extends State<IndoorMapScreen> {
     }
   }
 
-  /// 목적지 검색·경로 안내 화면(route_guide_screen.dart)과 동일하게
-  /// buildingRepository를 통해 층 지도를 받아온다 — 데이터 소스를 하나로
-  /// 맞춰야 실내 지도에서 본 것과 경로 안내 화면의 지도가 어긋나지 않는다.
   Future<void> _loadFloorPlan(String floor) async {
     try {
-      final geojson = await buildingRepository.getFloorGeoJson(demoBuildingId, floor);
+      final geojson = await buildingRepository.getFloorGeoJson(widget.buildingId, floor);
       if (!mounted || geojson == null) return;
       setState(() => _floorPlan = FloorPlan.fromJson(geojson));
     } catch (_) {
@@ -77,37 +101,78 @@ class _IndoorMapScreenState extends State<IndoorMapScreen> {
       _selectedFloor = floor;
       _floorPlan = null;
       _selectedStore = null;
+      // 층을 바꾸면 이전 경로는 다른 층 지도 위에 남아 있어도 의미가 없다.
+      _route = null;
+      _routeDestination = null;
     });
     _loadFloorPlan(floor);
   }
 
+  /// 위치 보정 버튼. 실제 PDR 위치 연동 전까지는 별도로 보정할 상태가 없어
+  /// 재조회만 트리거하는 자리표시자다 — PDR이 붙으면 이 자리에서 재보정한다.
+  Future<void> recalibrate() async {
+    final floor = _selectedFloor;
+    if (floor != null) await _loadFloorPlan(floor);
+  }
+
+  /// 길찾기 시트에서 도착지를 고르면 호출된다. 목적지가 다른 층이면 그 층으로
+  /// 먼저 전환한 뒤 최단 경로(다익스트라)를 조회해 지도 위에 표시한다.
+  Future<void> showRouteTo(PoiSearchResult destination) async {
+    if (destination.floor != _selectedFloor) {
+      _selectFloor(destination.floor);
+      await _loadFloorPlan(destination.floor);
+    }
+    if (!mounted) return;
+    final floorPlan = _floorPlan;
+    if (floorPlan == null) return;
+    setState(() => _routeDestination = destination);
+
+    final endNodeId = destination.nodeId;
+    final startNodeId = _pickStartNodeId(floorPlan, excludingNodeId: endNodeId);
+    if (endNodeId == null || startNodeId == null) return;
+
+    final route = await buildingRepository.getShortestRoute(
+      widget.buildingId,
+      destination.floor,
+      startNodeId,
+      endNodeId,
+    );
+    if (!mounted) return;
+    setState(() => _route = route);
+  }
+
+  /// PDR이 아직 없어 "현재 위치"를 알 수 없다. 임시로 층 평면도 중심에서
+  /// 가장 가까운 매장 입구 노드를 출발점으로 쓴다.
+  String? _pickStartNodeId(FloorPlan floorPlan, {String? excludingNodeId}) {
+    final origin = floorPlan.approximateCurrentLocation();
+    if (origin == null) return null;
+    StorePolygon? nearest;
+    double? nearestDistance;
+    for (final store in floorPlan.stores) {
+      final nodeId = store.entranceNodeId;
+      if (nodeId == null || nodeId == excludingNodeId) continue;
+      final distance = wgs84DistanceMeters(origin, store.centroid);
+      if (nearestDistance == null || distance < nearestDistance) {
+        nearestDistance = distance;
+        nearest = store;
+      }
+    }
+    return nearest?.entranceNodeId;
+  }
+
+  void _clearRoute() {
+    setState(() {
+      _route = null;
+      _routeDestination = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final building = _building;
-    return Scaffold(
-      body: Column(
-        children: [
-          _TopBar(
-            building: building,
-            selectedFloor: _selectedFloor,
-            onSelectFloor: _selectFloor,
-          ),
-          Expanded(
-            child: _loading
-                ? const Center(child: CircularProgressIndicator())
-                : (_error != null ? _buildError(_error!) : _buildBody()),
-          ),
-          _BottomBar(
-            selectedStore: _selectedStore,
-            selectedFloor: _selectedFloor,
-            onClearStore: () => setState(() => _selectedStore = null),
-            onSearch: () {
-              Navigator.of(context).pushNamed(AppRoutes.destination);
-            },
-          ),
-        ],
-      ),
-    );
+    if (_loading) return const Center(child: CircularProgressIndicator());
+    final error = _error;
+    if (error != null) return _buildError(error);
+    return _buildBody();
   }
 
   Widget _buildError(String message) {
@@ -132,7 +197,8 @@ class _IndoorMapScreenState extends State<IndoorMapScreen> {
   }
 
   Widget _buildBody() {
-    if (_building == null) {
+    final building = _building;
+    if (building == null) {
       return const Center(child: Text('건물 정보를 찾을 수 없습니다'));
     }
     final floorPlan = _floorPlan;
@@ -140,68 +206,109 @@ class _IndoorMapScreenState extends State<IndoorMapScreen> {
       return const Center(child: CircularProgressIndicator());
     }
 
-    return FloorPlanView(
-      key: ValueKey('$demoBuildingId-$_selectedFloor'),
-      buildingId: demoBuildingId,
-      floorName: _selectedFloor!,
-      floorPlan: floorPlan,
-      // 실제 PDR 위치 연동 전까지, 실내 진입 시에도 "현재 위치" 아이콘이
-      // 화면에 보이도록 층 평면도 기준 근사 위치를 대신 쓴다.
-      currentLocation: floorPlan.approximateCurrentLocation(),
-      onStoreSelected: (store) => setState(() => _selectedStore = store),
+    final route = _route;
+    final routeDestination = _routeDestination;
+    final store = _selectedStore;
+    final current = (route != null && route.points.isNotEmpty)
+        ? route.points.first
+        : floorPlan.approximateCurrentLocation();
+
+    return Stack(
+      children: [
+        FloorPlanView(
+          key: ValueKey('${widget.buildingId}-$_selectedFloor'),
+          buildingId: widget.buildingId,
+          floorName: _selectedFloor!,
+          floorPlan: floorPlan,
+          currentLocation: current,
+          destination: routeDestination?.point,
+          routePoints: route?.points ?? const [],
+          onStoreSelected: (selected) => setState(() => _selectedStore = selected),
+        ),
+
+        Positioned(
+          top: 78,
+          left: 0,
+          right: 0,
+          child: _IndoorInfoBar(
+            building: building,
+            selectedFloor: _selectedFloor,
+            onSelectFloor: _selectFloor,
+          ),
+        ),
+
+        if (route != null && routeDestination != null)
+          Positioned(
+            left: 12,
+            right: 12,
+            bottom: widget.bottomOverlayHeight,
+            child: EtaCard(
+              distanceMeters: route.distanceMeters,
+              minutes: (route.distanceMeters / _walkingSpeedMetersPerSecond / 60)
+                  .ceil()
+                  .clamp(1, 999),
+              label: '${routeDestination.name}까지',
+              onClose: _clearRoute,
+            ),
+          )
+        else if (store != null)
+          Positioned(
+            left: 12,
+            right: 12,
+            bottom: widget.bottomOverlayHeight,
+            child: _StoreInfoCard(
+              store: store,
+              floor: _selectedFloor,
+              onClose: () => setState(() => _selectedStore = null),
+            ),
+          ),
+      ],
     );
   }
 }
 
-class _TopBar extends StatelessWidget {
-  const _TopBar({
+/// 건물명 + 현재 층 + (여러 층이면) 층 전환 칩을 묶은 오버레이 정보 바.
+/// 예전에는 이 내용이 전용 Scaffold 상단바였지만, 검색/길찾기/건물전환은
+/// 이제 [MapShellScreen]의 공용 상단바가 맡으므로 여기서는 "지금 보고
+/// 있는 건물/층이 어디인지"만 알려주는 보조 역할만 한다.
+class _IndoorInfoBar extends StatelessWidget {
+  const _IndoorInfoBar({
     required this.building,
     required this.selectedFloor,
     required this.onSelectFloor,
   });
 
-  final Building? building;
+  final Building building;
   final String? selectedFloor;
   final ValueChanged<String> onSelectFloor;
 
   @override
   Widget build(BuildContext context) {
-    final floors = building?.floors ?? const <String>[];
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(bottom: BorderSide(color: Color(0x11000000))),
-      ),
-      child: SafeArea(
-        bottom: false,
+    final floors = building.floors;
+    final selectedFloor = this.selectedFloor;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Material(
+        color: Colors.white.withValues(alpha: 0.94),
+        borderRadius: BorderRadius.circular(18),
+        elevation: 3,
+        shadowColor: Colors.black.withValues(alpha: 0.12),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(10, 8, 14, 6),
+              padding: const EdgeInsets.fromLTRB(14, 10, 10, 6),
               child: Row(
                 children: [
-                  IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.chevron_left, color: AppColors.primary),
-                    style: IconButton.styleFrom(
-                      backgroundColor: const Color(0xFFF3F4F6),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      minimumSize: const Size(34, 34),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          building?.name ?? '실내 지도',
+                          building.name,
                           style: const TextStyle(
-                            fontSize: 15,
+                            fontSize: 14,
                             fontWeight: FontWeight.w800,
                             color: AppColors.text,
                             letterSpacing: -0.3,
@@ -222,7 +329,7 @@ class _TopBar extends StatelessWidget {
                   ),
                   if (selectedFloor != null)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
                         color: AppColors.indoor,
                         borderRadius: BorderRadius.circular(12),
@@ -230,12 +337,12 @@ class _TopBar extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.layers, size: 14, color: Colors.white),
-                          const SizedBox(width: 6),
+                          const Icon(Icons.layers, size: 13, color: Colors.white),
+                          const SizedBox(width: 5),
                           Text(
-                            selectedFloor!,
+                            selectedFloor,
                             style: const TextStyle(
-                              fontSize: 13.5,
+                              fontSize: 12.5,
                               fontWeight: FontWeight.w700,
                               color: Colors.white,
                             ),
@@ -248,18 +355,17 @@ class _TopBar extends StatelessWidget {
             ),
             if (floors.length > 1)
               SizedBox(
-                height: 40,
+                height: 38,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
+                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
                   itemCount: floors.length,
                   separatorBuilder: (_, _) => const SizedBox(width: 6),
                   itemBuilder: (context, index) {
                     final floor = floors[index];
-                    final isActive = floor == selectedFloor;
                     return _FloorChip(
                       label: floor,
-                      active: isActive,
+                      active: floor == selectedFloor,
                       onTap: () => onSelectFloor(floor),
                     );
                   },
@@ -294,15 +400,15 @@ class _FloorChip extends StatelessWidget {
             color: active ? AppColors.indoor : const Color(0x14000000),
             width: 1.5,
           ),
-          boxShadow: active
-              ? [
-                  BoxShadow(
-                    color: AppColors.indoor.withValues(alpha: 0.38),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
+          boxShadow: [
+            BoxShadow(
+              color: active
+                  ? AppColors.indoor.withValues(alpha: 0.38)
+                  : Colors.black.withValues(alpha: 0.08),
+              blurRadius: active ? 10 : 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Text(
           label,
@@ -317,101 +423,54 @@ class _FloorChip extends StatelessWidget {
   }
 }
 
-class _BottomBar extends StatelessWidget {
-  const _BottomBar({
-    required this.selectedStore,
-    required this.selectedFloor,
-    required this.onClearStore,
-    required this.onSearch,
-  });
+class _StoreInfoCard extends StatelessWidget {
+  const _StoreInfoCard({required this.store, required this.floor, required this.onClose});
 
-  final StorePolygon? selectedStore;
-  final String? selectedFloor;
-  final VoidCallback onClearStore;
-  final VoidCallback onSearch;
+  final StorePolygon store;
+  final String? floor;
+  final VoidCallback onClose;
 
   @override
   Widget build(BuildContext context) {
-    final store = selectedStore;
-    return SafeArea(
-      top: false,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (store != null)
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+        child: Row(
+          children: [
             Container(
-              padding: const EdgeInsets.fromLTRB(14, 12, 10, 0),
-              child: Row(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: const Color(0xFFEEF3FF),
+                borderRadius: BorderRadius.circular(11),
+              ),
+              alignment: Alignment.center,
+              child: const Icon(Icons.storefront, color: AppColors.primary, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEEF3FF),
-                      borderRadius: BorderRadius.circular(11),
-                    ),
-                    alignment: Alignment.center,
-                    child: const Icon(Icons.storefront, color: AppColors.primary, size: 20),
+                  Text(
+                    store.name,
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          store.name,
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          '${store.category ?? '-'} · ${selectedFloor ?? ''}',
-                          style: const TextStyle(fontSize: 11.5, color: AppColors.muted),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: onClearStore,
-                    icon: const Icon(Icons.close, size: 16, color: AppColors.muted),
-                    style: IconButton.styleFrom(
-                      backgroundColor: const Color(0xFFF3F4F6),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      minimumSize: const Size(32, 32),
-                    ),
+                  Text(
+                    '${store.category ?? '-'} · ${floor ?? ''}',
+                    style: const TextStyle(fontSize: 11.5, color: AppColors.muted),
                   ),
                 ],
               ),
             ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
-            child: Material(
-              color: const Color(0xFFF3F4F6),
-              borderRadius: BorderRadius.circular(26),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(26),
-                onTap: onSearch,
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  child: Row(
-                    children: [
-                      Icon(Icons.search, size: 17, color: AppColors.muted),
-                      SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          '매장, 편의시설 검색',
-                          style: TextStyle(fontSize: 14, color: AppColors.muted),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+            IconButton(
+              onPressed: onClose,
+              icon: const Icon(Icons.close, size: 18, color: AppColors.muted),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

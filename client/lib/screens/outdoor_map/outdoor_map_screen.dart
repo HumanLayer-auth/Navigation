@@ -9,7 +9,6 @@ import '../../core/api_config.dart';
 import '../../core/service_locator.dart';
 import '../../models/building.dart';
 import '../../models/directions_route.dart';
-import '../../routing/app_routes.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/eta_card.dart';
 import '../../widgets/location_marker.dart';
@@ -33,14 +32,28 @@ const _buildingEntryThresholdMeters = 20.0;
 const _degradedAccuracyFloorMeters = 15.0;
 const _accuracyWorsenedRatio = 1.3;
 
-class OutdoorMapScreen extends StatefulWidget {
-  const OutdoorMapScreen({super.key});
+/// 야외 지도 본문(지도 + 위치/경로 오버레이). 검색창·길찾기·건물 전환 같은
+/// 공통 UI는 [MapShellScreen]이 상단/하단 바로 얹으므로 여기서는 다루지 않는다.
+class OutdoorMapBody extends StatefulWidget {
+  const OutdoorMapBody({
+    super.key,
+    required this.onEnterBuilding,
+    this.bottomOverlayHeight = 140,
+  });
+
+  /// GPS로 건물 입구 진입이 감지됐을 때 호출된다. 상위(MapShellScreen)가
+  /// 이 콜백으로 하단 바 모드를 "실내"로 전환한다.
+  final VoidCallback onEnterBuilding;
+
+  /// 하단 공용 바(위치 보정 버튼 + 홈/실내 세그먼트)가 차지하는 높이만큼,
+  /// ETA 카드가 그 위에 가려지지 않도록 띄운다.
+  final double bottomOverlayHeight;
 
   @override
-  State<OutdoorMapScreen> createState() => _OutdoorMapScreenState();
+  State<OutdoorMapBody> createState() => OutdoorMapBodyState();
 }
 
-class _OutdoorMapScreenState extends State<OutdoorMapScreen> {
+class OutdoorMapBodyState extends State<OutdoorMapBody> {
   bool _loading = true;
   bool _autoNavigated = false;
   Position? _position;
@@ -48,6 +61,12 @@ class _OutdoorMapScreenState extends State<OutdoorMapScreen> {
   DirectionsRoute? _route;
   double? _previousAccuracy;
   StreamSubscription<Position>? _positionSubscription;
+  final MapController _mapController = MapController();
+
+  /// 길찾기 시트에서 사용자가 직접 고른 목적지. null이면 건물 입구까지의
+  /// 경로를 대신 보여준다(기존 "자동 안내" 동작).
+  LatLng? _userDestination;
+  String? _userDestinationLabel;
 
   @override
   void initState() {
@@ -112,30 +131,66 @@ class _OutdoorMapScreenState extends State<OutdoorMapScreen> {
     if (!isNear || !accuracyWorsened) return;
 
     _autoNavigated = true;
-    _positionSubscription?.cancel();
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('건물 감지 중...')));
-    Navigator.of(context).pushNamed(AppRoutes.indoorMap);
+    widget.onEnterBuilding();
   }
 
   Future<void> _updateRoute(Position position) async {
-    final entrance = _entrance;
-    if (entrance == null) return;
+    final target = _userDestination ?? _entrance;
+    if (target == null) return;
 
     final route = await directionsRepository.getWalkingRoute(
       origin: LatLng(position.latitude, position.longitude),
-      destination: entrance,
+      destination: target,
     );
     if (!mounted) return;
     setState(() => _route = route);
   }
 
+  /// 위치 보정 버튼: 즉시 새 GPS 위치를 한 번 더 조회해 마커·지도 중심을 갱신한다.
+  Future<void> recalibrate() async {
+    try {
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.best),
+      );
+      _handlePosition(position);
+      _mapController.move(
+        LatLng(position.latitude, position.longitude),
+        _mapController.camera.zoom,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('위치를 다시 확인하지 못했습니다')),
+      );
+    }
+  }
+
+  /// 길찾기 시트에서 도착지를 고르면 호출된다. 현재 위치에서 [destination]까지의
+  /// 보행 경로를 계산해 지도 위에 표시한다.
+  Future<void> showRouteTo(LatLng destination, {required String label}) async {
+    setState(() {
+      _userDestination = destination;
+      _userDestinationLabel = label;
+    });
+    final position = _position;
+    if (position == null) return;
+    await _updateRoute(position);
+  }
+
+  void _clearUserDestination() {
+    setState(() {
+      _userDestination = null;
+      _userDestinationLabel = null;
+      _route = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: _loading ? const Center(child: CircularProgressIndicator()) : _buildBody(),
-    );
+    return _loading ? const Center(child: CircularProgressIndicator()) : _buildBody();
   }
 
   Widget _buildBody() {
@@ -147,11 +202,13 @@ class _OutdoorMapScreenState extends State<OutdoorMapScreen> {
     final lowAccuracy = position == null || accuracy > _lowAccuracyThresholdMeters;
     final markerColor = lowAccuracy ? AppColors.warning : AppColors.primary;
     final entrance = _entrance;
+    final userDestination = _userDestination;
     final route = _route;
 
     return Stack(
       children: [
         FlutterMap(
+          mapController: _mapController,
           options: MapOptions(initialCenter: center, initialZoom: 17),
           children: [
             TileLayer(
@@ -186,7 +243,12 @@ class _OutdoorMapScreenState extends State<OutdoorMapScreen> {
                     colorOverride: markerColor,
                   ),
                 ),
-                if (entrance != null)
+                if (userDestination != null)
+                  Marker(
+                    point: userDestination,
+                    child: const Icon(Icons.place, color: AppColors.dest),
+                  )
+                else if (entrance != null)
                   Marker(
                     point: entrance,
                     child: const Icon(Icons.place, color: AppColors.dest),
@@ -196,53 +258,9 @@ class _OutdoorMapScreenState extends State<OutdoorMapScreen> {
           ],
         ),
 
-        // 상단 오버레이 바
-        Positioned(
-          top: 0,
-          left: 0,
-          right: 0,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.86),
-              border: const Border(
-                bottom: BorderSide(color: Color(0x11000000)),
-              ),
-            ),
-            child: SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      '야외 — GPS 모드',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.text,
-                      ),
-                    ),
-                    const SizedBox(height: 1),
-                    Text(
-                      lowAccuracy ? '위치 정확도 낮음 · 신호를 찾는 중...' : '정확도 ±${accuracy.round()}m',
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        color: lowAccuracy ? AppColors.warning : AppColors.muted,
-                        fontWeight: lowAccuracy ? FontWeight.w600 : FontWeight.w400,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-
         if (lowAccuracy)
           Positioned(
-            top: 66,
+            top: 76,
             left: 12,
             child: StatusBadge(
               label: 'GPS 신호 약함',
@@ -251,79 +269,21 @@ class _OutdoorMapScreenState extends State<OutdoorMapScreen> {
             ),
           ),
 
-        // 하단: ETA 카드 + (임시) 진입 버튼 + 검색 바
-        Positioned(
-          left: 12,
-          right: 12,
-          bottom: 0,
-          child: SafeArea(
-            top: false,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (route != null)
-                  EtaCard(
-                    distanceMeters: route.distanceMeters,
-                    minutes: (route.durationSeconds / 60).ceil().clamp(1, 999),
-                  ),
-                if (route != null) const SizedBox(height: 8),
-                // 건물 입구 좌표를 모를 때만 수동 진입 버튼을 남겨둔다.
-                // 좌표를 아는 경우엔 design.md 원칙대로 자동 감지만으로 전환한다.
-                if (!_loading && entrance == null) ...[
-                  FilledButton(
-                    onPressed: () {
-                      Navigator.of(context).pushNamed(AppRoutes.indoorMap);
-                    },
-                    child: const Text('건물 진입 감지 (임시)'),
-                  ),
-                  const SizedBox(height: 8),
-                ],
-                _DestinationSearchBar(
-                  onTap: () {
-                    Navigator.of(context).pushNamed(AppRoutes.destination);
-                  },
-                ),
-                const SizedBox(height: 12),
-              ],
+        if (route != null)
+          Positioned(
+            left: 12,
+            right: 12,
+            bottom: widget.bottomOverlayHeight,
+            child: EtaCard(
+              distanceMeters: route.distanceMeters,
+              minutes: (route.durationSeconds / 60).ceil().clamp(1, 999),
+              label: userDestination != null
+                  ? (_userDestinationLabel ?? '목적지까지')
+                  : '건물 입구까지',
+              onClose: userDestination != null ? _clearUserDestination : null,
             ),
           ),
-        ),
       ],
-    );
-  }
-}
-
-class _DestinationSearchBar extends StatelessWidget {
-  const _DestinationSearchBar({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(28),
-      elevation: 6,
-      shadowColor: Colors.black.withValues(alpha: 0.15),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(28),
-        onTap: onTap,
-        child: const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-          child: Row(
-            children: [
-              Icon(Icons.search, size: 18, color: AppColors.muted),
-              SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  '목적지를 입력하세요',
-                  style: TextStyle(fontSize: 14, color: AppColors.muted),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
