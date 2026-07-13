@@ -22,6 +22,7 @@ bool get _isMapSupportedOnThisPlatform =>
 const _tileSourceId = 'floor-tiles';
 const _routeSourceId = 'floor-route';
 const _markersSourceId = 'floor-markers';
+const _highlightSourceId = 'floor-highlight';
 const _storesFillLayerId = 'floor-stores-fill';
 
 /// 지도 위에 얹을 현재 위치/목적지 점 마커. 종류에 따라 스타일이 달라진다
@@ -49,12 +50,16 @@ class FloorPlanView extends StatefulWidget {
     this.destination,
     this.routePoints = const [],
     this.interactive = true,
+    this.highlightedStoreId,
   });
 
   final String buildingId;
   final String floorName;
   final FloorPlan floorPlan;
   final ValueChanged<StorePolygon>? onStoreSelected;
+
+  /// 선택된(또는 포커스된) 매장의 [StorePolygon.id]. null이면 강조 표시가 없다.
+  final String? highlightedStoreId;
 
   /// 현재 위치 마커. null이면 표시하지 않는다.
   final ll.LatLng? currentLocation;
@@ -94,6 +99,12 @@ class _FloorPlanViewState extends State<FloorPlanView> {
       onMapCreated: (controller) => _controller = controller,
       onStyleLoadedCallback: _onStyleLoaded,
       onMapClick: _handleMapClick,
+      // 웹에서는 기본값(false)이면 매장 폴리곤처럼 상호작용 가능한 레이어를
+      // 탭했을 때 onMapClick이 아예 안 불려서(대신 별도 feature-tap 이벤트만
+      // 발생) 매장을 눌러도 아무 반응이 없었다. onMapClick 하나로 매장 탭
+      // 여부까지 직접 판별하는 _handleMapClick 구조를 그대로 쓰려면 이 값을
+      // true로 켜서 매장을 눌렀을 때도 onMapClick이 항상 같이 불리게 해야 한다.
+      featureTapsTriggersMapClick: true,
       compassEnabled: false,
       myLocationEnabled: false,
       logoEnabled: false,
@@ -129,6 +140,9 @@ class _FloorPlanViewState extends State<FloorPlanView> {
     if (oldWidget.currentLocation != widget.currentLocation ||
         oldWidget.destination != widget.destination) {
       _updateMarkersSource();
+    }
+    if (oldWidget.highlightedStoreId != widget.highlightedStoreId) {
+      _updateHighlightSource();
     }
   }
 
@@ -321,14 +335,74 @@ class _FloorPlanViewState extends State<FloorPlanView> {
       enableInteraction: false,
     );
 
+    await controller.addGeoJsonSource(_highlightSourceId, _emptyFeatureCollection);
+    // 선택된 매장을 옅게 채우고 테두리 선 색을 진하게 바꿔서 "포커스"가
+    // 어디 있는지 보여준다. 매장 탭/검색으로 고른 매장이 바뀔 때마다
+    // _updateHighlightSource가 이 소스의 폴리곤만 바꿔치기한다.
+    await controller.addFillLayer(
+      _highlightSourceId,
+      'floor-highlight-fill',
+      const FillLayerProperties(fillColor: '#1A73E8', fillOpacity: 0.16),
+      enableInteraction: false,
+    );
+    await controller.addLineLayer(
+      _highlightSourceId,
+      'floor-highlight-line',
+      const LineLayerProperties(
+        lineColor: '#1A73E8',
+        lineWidth: 3,
+        lineJoin: 'round',
+      ),
+      enableInteraction: false,
+    );
+
     _styleReady = true;
     await _updateRouteSource();
     await _updateMarkersSource();
+    await _updateHighlightSource();
     if (widget.routePoints.length >= 2) {
       await _fitToRouteBounds(widget.routePoints);
     } else {
       await _fitToFootprint();
     }
+  }
+
+  /// 선택된 매장(있으면)의 폴리곤을 강조 표시용 GeoJSON 소스에 채운다.
+  /// 선택이 없으면 빈 FeatureCollection으로 비워서 강조를 지운다.
+  Future<void> _updateHighlightSource() async {
+    final controller = _controller;
+    if (controller == null) return;
+
+    final storeId = widget.highlightedStoreId;
+    final store = storeId == null
+        ? null
+        : widget.floorPlan.stores.where((s) => s.id == storeId).firstOrNull;
+    if (store == null || store.polygon.length < 3) {
+      await controller.setGeoJsonSource(_highlightSourceId, _emptyFeatureCollection);
+      return;
+    }
+
+    final ring = [
+      for (final point in store.polygon) [point.longitude, point.latitude],
+    ];
+    // GeoJSON Polygon 링은 닫혀 있어야 한다(첫 점 == 마지막 점).
+    if (ring.first[0] != ring.last[0] || ring.first[1] != ring.last[1]) {
+      ring.add(ring.first);
+    }
+
+    await controller.setGeoJsonSource(_highlightSourceId, {
+      'type': 'FeatureCollection',
+      'features': [
+        {
+          'type': 'Feature',
+          'properties': const <String, dynamic>{},
+          'geometry': {
+            'type': 'Polygon',
+            'coordinates': [ring],
+          },
+        },
+      ],
+    });
   }
 
   /// 경로 전체(출발점~도착점)가 화면 안에 들어오도록 카메라를 맞춘다.
@@ -521,6 +595,12 @@ class _FloorPlanViewState extends State<FloorPlanView> {
   }
 
   Future<void> _handleMapClick(Point<double> point, LatLng coordinates) async {
+    // 매장 정보/길찾기 시트가 열려 있는 동안(widget.interactive == false)은
+    // 무시한다. 웹에서는 시트 안 버튼(예: "도착지로 설정")을 누른 클릭이
+    // 그 아래 실제 DOM 캔버스(MapLibre)까지 새어나가, 마침 그 자리에 다른
+    // 매장 폴리곤이 있으면 그 매장 정보 시트가 겹쳐 열리는 문제가 있었다.
+    if (!widget.interactive) return;
+
     final controller = _controller;
     final onStoreSelected = widget.onStoreSelected;
     if (controller == null || onStoreSelected == null) return;

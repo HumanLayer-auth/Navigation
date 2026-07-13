@@ -17,19 +17,19 @@ class IndoorMapBody extends StatefulWidget {
   const IndoorMapBody({
     super.key,
     required this.buildingId,
-    this.bottomOverlayHeight = 140,
     this.onRouteVisibleChanged,
+    this.onStoreTap,
   });
 
   final String buildingId;
 
-  /// 하단 공용 바가 차지하는 높이만큼 매장 카드를 그 위에 띄운다.
-  /// (ETA 카드는 화면 최하단에 직접 붙으므로 이 값을 쓰지 않는다.)
-  final double bottomOverlayHeight;
-
   /// ETA 카드가 화면 최하단에 새로 나타나거나 사라질 때 호출된다.
   /// 상위(MapShellScreen)가 이 값으로 하단 공용 바를 그 위로 띄운다.
   final ValueChanged<bool>? onRouteVisibleChanged;
+
+  /// 지도 위 매장 폴리곤을 탭하면 호출된다. 상위(MapShellScreen)가 검색
+  /// 결과를 탭했을 때와 똑같이 매장 정보 시트를 띄운다.
+  final ValueChanged<PoiSearchResult>? onStoreTap;
 
   @override
   State<IndoorMapBody> createState() => IndoorMapBodyState();
@@ -40,16 +40,23 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
   Building? _building;
   String? _selectedFloor;
   FloorPlan? _floorPlan;
-  StorePolygon? _selectedStore;
   IndoorRoute? _route;
   PoiSearchResult? _routeDestination;
   bool _interactive = true;
+  String? _highlightedStoreId;
 
   /// 검색·길찾기 시트가 지도 위에 떠 있는 동안 지도 제스처를 꺼서, 시트를
   /// 마우스 휠로 스크롤할 때 그 아래 지도까지 같이 움직이지 않게 한다.
   void setInteractive(bool value) {
     if (_interactive == value) return;
     setState(() => _interactive = value);
+  }
+
+  /// 매장 정보 시트가 닫히면 상위(MapShellScreen)가 호출해서 지도 위
+  /// 강조 표시도 같이 지운다.
+  void clearHighlight() {
+    if (_highlightedStoreId == null) return;
+    setState(() => _highlightedStoreId = null);
   }
 
   /// 백엔드 연결 실패 시 사용자에게 보여줄 메시지. null이면 정상 상태.
@@ -66,9 +73,9 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
   void didUpdateWidget(covariant IndoorMapBody oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.buildingId != widget.buildingId) {
-      _selectedStore = null;
       _route = null;
       _routeDestination = null;
+      _highlightedStoreId = null;
       _loadBuilding();
     }
   }
@@ -123,10 +130,10 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
     setState(() {
       _selectedFloor = floor;
       _floorPlan = null;
-      _selectedStore = null;
       // 층을 바꾸면 이전 경로는 다른 층 지도 위에 남아 있어도 의미가 없다.
       _route = null;
       _routeDestination = null;
+      _highlightedStoreId = null;
     });
     if (hadRoute) widget.onRouteVisibleChanged?.call(false);
     _loadFloorPlan(floor);
@@ -243,7 +250,6 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
 
     final route = _route;
     final routeDestination = _routeDestination;
-    final store = _selectedStore;
     final current = (route != null && route.points.isNotEmpty)
         ? route.points.first
         : floorPlan.approximateCurrentLocation();
@@ -258,8 +264,19 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
           currentLocation: current,
           destination: routeDestination?.point,
           routePoints: route?.points ?? const [],
-          onStoreSelected: (selected) => setState(() => _selectedStore = selected),
+          onStoreSelected: (selected) {
+            setState(() => _highlightedStoreId = selected.id);
+            widget.onStoreTap?.call(
+              PoiSearchResult(
+                name: selected.name,
+                floor: _selectedFloor!,
+                point: selected.centroid,
+                nodeId: selected.entranceNodeId,
+              ),
+            );
+          },
           interactive: _interactive,
+          highlightedStoreId: _highlightedStoreId,
         ),
 
         Positioned(
@@ -291,17 +308,6 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
                   onClose: _clearRoute,
                 ),
               ),
-            ),
-          )
-        else if (store != null)
-          Positioned(
-            left: 12,
-            right: 12,
-            bottom: widget.bottomOverlayHeight,
-            child: _StoreInfoCard(
-              store: store,
-              floor: _selectedFloor,
-              onClose: () => setState(() => _selectedStore = null),
             ),
           ),
       ],
@@ -459,59 +465,6 @@ class _FloorChip extends StatelessWidget {
             fontWeight: FontWeight.w700,
             color: active ? Colors.white : AppColors.muted,
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _StoreInfoCard extends StatelessWidget {
-  const _StoreInfoCard({required this.store, required this.floor, required this.onClose});
-
-  final StorePolygon store;
-  final String? floor;
-  final VoidCallback onClose;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFFEEF3FF),
-                borderRadius: BorderRadius.circular(11),
-              ),
-              alignment: Alignment.center,
-              child: const Icon(Icons.storefront, color: AppColors.primary, size: 20),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    store.name,
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
-                    '${store.category ?? '-'} · ${floor ?? ''}',
-                    style: const TextStyle(fontSize: 11.5, color: AppColors.muted),
-                  ),
-                ],
-              ),
-            ),
-            IconButton(
-              onPressed: onClose,
-              icon: const Icon(Icons.close, size: 18, color: AppColors.muted),
-            ),
-          ],
         ),
       ),
     );

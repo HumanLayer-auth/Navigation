@@ -38,17 +38,12 @@ class OutdoorMapBody extends StatefulWidget {
   const OutdoorMapBody({
     super.key,
     required this.onEnterBuilding,
-    this.bottomOverlayHeight = 140,
     this.onRouteVisibleChanged,
   });
 
   /// GPS로 건물 입구 진입이 감지됐을 때 호출된다. 상위(MapShellScreen)가
   /// 이 콜백으로 하단 바 모드를 "실내"로 전환한다.
   final VoidCallback onEnterBuilding;
-
-  /// 하단 공용 바(위치 보정 버튼 + 홈/실내 세그먼트)가 차지하는 높이만큼,
-  /// ETA 카드가 그 위에 가려지지 않도록 띄운다.
-  final double bottomOverlayHeight;
 
   /// ETA 카드가 화면 최하단에 새로 나타나거나 사라질 때 호출된다.
   /// 상위(MapShellScreen)가 이 값으로 하단 공용 바를 그 위로 띄운다.

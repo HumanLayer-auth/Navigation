@@ -98,6 +98,7 @@ class _DirectionsSheetState extends State<DirectionsSheet> {
   final _destinationFocusNode = FocusNode();
 
   DirectionsCandidate? _selectedOrigin;
+  DirectionsCandidate? _selectedDestination;
   _ActiveField _activeField = _ActiveField.destination;
   List<DirectionsCandidate> _results = [];
   bool _loading = false;
@@ -106,6 +107,7 @@ class _DirectionsSheetState extends State<DirectionsSheet> {
   void initState() {
     super.initState();
     _selectedOrigin = widget.initialOrigin;
+    _selectedDestination = widget.initialDestination;
     _search(_destinationController.text);
   }
 
@@ -156,8 +158,7 @@ class _DirectionsSheetState extends State<DirectionsSheet> {
       _originController.text = widget.originLabel;
       _activeField = _ActiveField.destination;
     });
-    _destinationFocusNode.requestFocus();
-    _search(_destinationController.text);
+    _afterOriginPicked();
   }
 
   void _selectCandidate(DirectionsCandidate candidate) {
@@ -167,13 +168,29 @@ class _DirectionsSheetState extends State<DirectionsSheet> {
         _originController.text = candidate.title;
         _activeField = _ActiveField.destination;
       });
-      _destinationFocusNode.requestFocus();
-      _search(_destinationController.text);
+      _afterOriginPicked();
       return;
     }
+    _selectedDestination = candidate;
     Navigator.of(
       context,
     ).pop(DirectionsResult(origin: _selectedOrigin, destination: candidate));
+  }
+
+  /// 출발지를 고른 뒤 호출한다. 도착지가 이미 정해져 있으면(예: "도착지로
+  /// 설정"에서 넘어와 미리 채워진 경우) 다시 도착지를 고르게 하지 않고
+  /// 바로 시트를 닫아 길찾기 경로를 보여준다. 아직 도착지가 없으면 기존처럼
+  /// 도착지 입력으로 포커스만 넘긴다.
+  void _afterOriginPicked() {
+    final destination = _selectedDestination;
+    if (destination != null) {
+      Navigator.of(
+        context,
+      ).pop(DirectionsResult(origin: _selectedOrigin, destination: destination));
+      return;
+    }
+    _destinationFocusNode.requestFocus();
+    _search(_destinationController.text);
   }
 
   @override

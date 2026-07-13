@@ -25,10 +25,6 @@ class MapShellScreen extends StatefulWidget {
   State<MapShellScreen> createState() => _MapShellScreenState();
 }
 
-/// 하단 공용 바(위치 보정 버튼 + 홈/실내 세그먼트)의 대략적인 높이. 지도
-/// 본문의 매장 카드가 그 위에 가려지지 않도록 이 값만큼 띄운다.
-const _bottomBarReservedHeight = 150.0;
-
 /// 경로가 표시되면 ETA 카드가 화면 최하단에 직접 도킹하므로, 하단 공용 바를
 /// 그 위로 띄워야 하는 높이. EtaCard 실제 높이(패딩 포함)에 여유를 더한 값.
 const _etaBarLiftHeight = 92.0;
@@ -126,12 +122,20 @@ class _MapShellScreenState extends State<MapShellScreen> {
       return;
     }
 
-    // 실내 검색 결과는 길찾기 시트와 같은 형태의 매장 정보 시트로 보여주고,
-    // 여기서 바로 출발지/도착지로 지정해 길찾기 시트로 넘어갈 수 있게 한다.
+    await _showStoreInfo(match);
+  }
+
+  /// 매장 정보 시트를 띄운다. 검색 결과를 탭했을 때와 지도 위 매장 폴리곤을
+  /// 직접 탭했을 때 모두 이 메서드를 거쳐 같은 시트가 뜨고, 출발지/도착지로
+  /// 지정하면 그 매장을 채운 채로 길찾기 시트로 넘어간다.
+  Future<void> _showStoreInfo(PoiSearchResult match) async {
     final action = await _withMapsLocked(
       () => StoreInfoSheet.show(context, title: match.name, subtitle: match.floor),
     );
-    if (!mounted || action == null) return;
+    if (!mounted) return;
+    // 시트가 어떻게 닫혔든(선택 없이 닫힘 포함) 지도 위 강조 표시도 같이 지운다.
+    _indoorKey.currentState?.clearHighlight();
+    if (action == null) return;
 
     final candidate = DirectionsCandidate(
       title: match.name,
@@ -260,16 +264,15 @@ class _MapShellScreenState extends State<MapShellScreen> {
               OutdoorMapBody(
                 key: _outdoorKey,
                 onEnterBuilding: _onEnterBuilding,
-                bottomOverlayHeight: _bottomBarReservedHeight,
                 onRouteVisibleChanged: (visible) =>
                     setState(() => _outdoorRouteVisible = visible),
               ),
               IndoorMapBody(
                 key: _indoorKey,
                 buildingId: _buildingId,
-                bottomOverlayHeight: _bottomBarReservedHeight,
                 onRouteVisibleChanged: (visible) =>
                     setState(() => _indoorRouteVisible = visible),
+                onStoreTap: _showStoreInfo,
               ),
             ],
           ),
