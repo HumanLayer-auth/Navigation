@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'core/service_locator.dart';
+import 'core/theme/app_theme.dart';
 import 'routing/app_routes.dart';
 import 'screens/arrival/arrival_screen.dart';
 import 'screens/debug/api_health_check_screen.dart';
@@ -69,9 +70,7 @@ class _NavigationAppState extends State<NavigationApp>
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Navigation Client',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
+      theme: buildAppTheme(),
       initialRoute: AppRoutes.splash,
       routes: {
         AppRoutes.splash: (context) => const SplashScreen(),

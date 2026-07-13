@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../core/theme/app_theme.dart';
 import '../models/floor_plan.dart';
 import 'route_polyline.dart';
 
@@ -71,16 +72,21 @@ class _FloorPlanViewState extends State<FloorPlanView> {
             crs: const CrsSimple(),
             initialCenter: fit?.center ?? fallbackCenter,
             initialZoom: fit?.zoom ?? 19,
+            // 평면도 밖 영역이 flutter_map 기본 회색으로 보이지 않도록
+            // 앱 배경색과 맞춘다 (design.md 7.1 렌더링 우선순위 1: 앱 배경).
+            backgroundColor: AppColors.background,
           ),
           children: [
             if (floorPlan.footprint.isNotEmpty)
               PolygonLayer(
                 polygons: [
+                  // design.md 7.2/7.3: 이동 가능 공간은 밝게, 외벽은 진한 회색
+                  // 1.8px 선으로. 검정선은 쓰지 않는다.
                   Polygon(
                     points: floorPlan.footprint,
-                    color: Colors.transparent,
-                    borderColor: Colors.black54,
-                    borderStrokeWidth: 2,
+                    color: AppColors.mapFloor,
+                    borderColor: AppColors.mapWallStrong,
+                    borderStrokeWidth: 1.8,
                   ),
                 ],
               ),
@@ -102,7 +108,7 @@ class _FloorPlanViewState extends State<FloorPlanView> {
                           borderColor: index == _selectedStoreIndex
                               ? _selectedBorderColor
                               : _storeBorderColor,
-                          borderStrokeWidth: index == _selectedStoreIndex ? 2.2 : 1.35,
+                          borderStrokeWidth: index == _selectedStoreIndex ? 2.0 : 1.2,
                           hitValue: index,
                         ),
                   ],
@@ -110,8 +116,15 @@ class _FloorPlanViewState extends State<FloorPlanView> {
               ),
             PolylineLayer(
               polylines: [
+                // 복도(이동 가능 공간)는 매장 블록보다 밝게 (design.md 7.3).
                 for (final corridor in floorPlan.corridors)
-                  Polyline(points: corridor, color: Colors.grey, strokeWidth: 6),
+                  Polyline(
+                    points: corridor,
+                    color: AppColors.mapFloor,
+                    strokeWidth: 9,
+                    strokeCap: StrokeCap.round,
+                    strokeJoin: StrokeJoin.round,
+                  ),
                 if (widget.routePoints.length >= 2)
                   buildRoutePolyline(widget.routePoints),
               ],
@@ -127,25 +140,46 @@ class _FloorPlanViewState extends State<FloorPlanView> {
                     _pointStoreMarker(store)
                   else
                     ?_storeLabelMarker(store, pixelsPerUnit),
+                // design.md 7.4: 지도 라벨은 5–7개 이내가 기본. POI가 그보다
+                // 많으면(백화점 실데이터 등) 이름 라벨을 생략하고 아이콘만 그려
+                // 라벨끼리 겹치는 것을 막는다.
                 for (final poi in floorPlan.pois)
-                  Marker(
-                    point: poi.point,
-                    width: 80,
-                    height: 40,
-                    child: IgnorePointer(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(_iconForPoiType(poi.type), size: 16, color: Colors.black54),
-                          Text(
-                            poi.name,
-                            style: const TextStyle(fontSize: 10),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
+                  if (floorPlan.pois.length <= 7)
+                    Marker(
+                      point: poi.point,
+                      width: 80,
+                      height: 40,
+                      child: IgnorePointer(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _iconForPoiType(poi.type),
+                              size: 16,
+                              color: AppColors.iconDefault,
+                            ),
+                            Text(
+                              poi.name,
+                              style: AppTextStyles.micro,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  else
+                    Marker(
+                      point: poi.point,
+                      width: 20,
+                      height: 20,
+                      child: IgnorePointer(
+                        child: Icon(
+                          _iconForPoiType(poi.type),
+                          size: 15,
+                          color: AppColors.iconDefault,
+                        ),
                       ),
                     ),
-                  ),
                 ...widget.extraMarkers,
               ],
             ),
@@ -228,7 +262,11 @@ class _FloorPlanViewState extends State<FloorPlanView> {
       child: IgnorePointer(
         child: Text(
           store.name,
-          style: TextStyle(fontSize: fontSize),
+          style: TextStyle(
+            fontSize: fontSize,
+            fontWeight: FontWeight.w500,
+            color: AppColors.textSecondary,
+          ),
           overflow: TextOverflow.ellipsis,
           textAlign: TextAlign.center,
         ),
@@ -246,10 +284,10 @@ class _FloorPlanViewState extends State<FloorPlanView> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.storefront, size: 16, color: Colors.black54),
+            const Icon(Icons.storefront, size: 16, color: AppColors.iconDefault),
             Text(
               store.name,
-              style: const TextStyle(fontSize: 10),
+              style: AppTextStyles.micro,
               overflow: TextOverflow.ellipsis,
             ),
           ],
@@ -277,23 +315,24 @@ class _FloorPlanViewState extends State<FloorPlanView> {
     }
   }
 
-  // 원본 SVG의 .store-fashion/.store-beauty/.store-service 채우기 색을 그대로 옮겼다.
+  // design.md 7.3: 매장은 mapBlock 단일 톤. 카테고리별 고채도 구분 없이
+  // 명도만 아주 약하게 달리해 공간 구조가 먼저 읽히게 한다.
   Color _storeFillColor(String? category) {
     switch (category) {
       case 'fashion':
-        return const Color(0xFFF3F1EF);
+        return const Color(0xFFEFEEE9);
       case 'beauty':
-        return const Color(0xFFF5F0F2);
+        return const Color(0xFFF0EEEA);
       case 'service':
-        return const Color(0xFFF1EEF3);
+        return const Color(0xFFECEBE6);
       default:
-        return Colors.blueGrey.withValues(alpha: 0.15);
+        return AppColors.mapBlock;
     }
   }
 }
 
-// 원본 SVG .store 테두리 색.
-const _storeBorderColor = Color(0xFFD8D4D1);
-// 원본 SVG .store.selected 채우기/테두리 색.
-const _selectedFillColor = Color(0xFFFFE8AD);
-const _selectedBorderColor = Color(0xFFDF8F0C);
+// design.md 7.2: 일반 내부 벽 색.
+const _storeBorderColor = AppColors.mapWall;
+// 선택 상태는 One Primary Accent 원칙대로 Deep Teal 계열만 쓴다.
+const _selectedFillColor = AppColors.primarySoft;
+const _selectedBorderColor = AppColors.primary;

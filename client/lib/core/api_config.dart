@@ -7,11 +7,14 @@ const apiBaseUrl = String.fromEnvironment(
   defaultValue: 'http://10.0.2.2:8001',
 );
 
-/// 데모 건물 ID. 백엔드(api/)에 실제로 적재된 test-center 건물과 맞춰야
-/// 실내 지도·목적지 검색·경로 안내가 전부 백엔드 다익스트라 그래프로
-/// 동작한다. 더현대 서울(thehyundai-seoul)은 별도 건물로, 개발용 미리보기
-/// 화면(floor_map_preview_screen.dart)에서만 직접 참조한다.
-const demoBuildingId = 'test-center';
+/// 데모 건물 ID. 백엔드(api/)에 실제로 적재된 건물과 맞춰야 실내 지도·목적지
+/// 검색·경로 안내가 전부 백엔드 다익스트라 그래프로 동작한다. 백엔드에 다른
+/// 건물(예: thehyundai-seoul)만 적재돼 있으면 실행 시점에 덮어쓴다:
+///   flutter run --dart-define=DEMO_BUILDING_ID=thehyundai-seoul
+const demoBuildingId = String.fromEnvironment(
+  'DEMO_BUILDING_ID',
+  defaultValue: 'test-center',
+);
 
 /// TMAP(SK Open API) 보행자 경로 안내. https://openapi.sk.com 에서 앱 등록 후 발급.
 /// 키를 소스코드에 직접 적지 않고 실행 시점에 주입한다:

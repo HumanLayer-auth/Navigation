@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:navigation_client/core/theme/app_theme.dart';
 import 'package:navigation_client/widgets/eta_card.dart';
 import 'package:navigation_client/widgets/location_marker.dart';
 import 'package:navigation_client/widgets/rag_chat_panel.dart';
@@ -9,7 +10,7 @@ import 'package:navigation_client/widgets/status_badge.dart';
 import 'package:navigation_client/widgets/uncertainty_circle.dart';
 
 void main() {
-  testWidgets('LocationMarker uses the outdoor mode color by default', (
+  testWidgets('LocationMarker uses the primary (Deep Teal) color by default', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
@@ -20,7 +21,10 @@ void main() {
 
     final icon = tester.widget<Icon>(find.byType(Icon));
     expect(icon.icon, Icons.navigation);
-    expect(icon.color, Colors.blue);
+
+    final container = tester.widget<Container>(find.byType(Container));
+    final decoration = container.decoration! as BoxDecoration;
+    expect(decoration.color, AppColors.primary);
   });
 
   testWidgets('LocationMarker colorOverride wins over the mode color', (
@@ -35,8 +39,9 @@ void main() {
       ),
     );
 
-    final icon = tester.widget<Icon>(find.byType(Icon));
-    expect(icon.color, Colors.amber);
+    final container = tester.widget<Container>(find.byType(Container));
+    final decoration = container.decoration! as BoxDecoration;
+    expect(decoration.color, Colors.amber);
   });
 
   testWidgets('UncertaintyCircle renders with the requested diameter', (
@@ -74,7 +79,8 @@ void main() {
       ),
     );
 
-    expect(find.text('목적지까지 약 2분 / 150m'), findsOneWidget);
+    expect(find.text('2분'), findsOneWidget);
+    expect(find.text('150m'), findsOneWidget);
   });
 
   testWidgets('RagChatPanel shows the hardcoded sample exchanges', (
@@ -94,6 +100,6 @@ void main() {
     final polyline = buildRoutePolyline(points);
 
     expect(polyline.points, points);
-    expect(polyline.color, const Color(0xFF1A73E8));
+    expect(polyline.color, AppColors.primary);
   });
 }

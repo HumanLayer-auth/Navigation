@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 
 import '../../core/api_config.dart';
 import '../../core/service_locator.dart';
+import '../../core/theme/app_theme.dart';
 import '../../models/building.dart';
 import '../../models/directions_route.dart';
 import '../../routing/app_routes.dart';
@@ -165,7 +166,7 @@ class _OutdoorMapScreenState extends State<OutdoorMapScreen> {
         : LatLng(position.latitude, position.longitude);
     final accuracy = position?.accuracy ?? 0;
     final lowAccuracy = position == null || accuracy > _lowAccuracyThresholdMeters;
-    final markerColor = lowAccuracy ? Colors.amber : Colors.blue;
+    final markerColor = lowAccuracy ? AppColors.warning : AppColors.primary;
     final entrance = _entrance;
     final route = _route;
 
@@ -208,7 +209,15 @@ class _OutdoorMapScreenState extends State<OutdoorMapScreen> {
                 if (entrance != null)
                   Marker(
                     point: entrance,
-                    child: const Icon(Icons.place, color: Colors.red),
+                    width: 34,
+                    height: 34,
+                    alignment: Alignment.topCenter,
+                    child: const Icon(
+                      Icons.location_on,
+                      color: AppColors.destination,
+                      size: 34,
+                      shadows: [Shadow(color: Color(0x33000000), blurRadius: 4)],
+                    ),
                   ),
               ],
             ),

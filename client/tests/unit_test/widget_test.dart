@@ -382,7 +382,7 @@ void main() {
       ),
     );
 
-    expect(find.text('도착했습니다!'), findsOneWidget);
+    expect(find.text('목적지에 도착했어요'), findsOneWidget);
 
     await tester.tap(find.text('새 목적지 탐색'));
     await tester.pumpAndSettle();
@@ -413,7 +413,8 @@ void main() {
       ),
     );
 
-    expect(find.text('강의실 101에 도착했습니다!'), findsOneWidget);
+    expect(find.text('목적지에 도착했어요'), findsOneWidget);
+    expect(find.text('강의실 101 1F'), findsOneWidget);
 
     // 자동 종료 타이머가 만료될 때까지 시간을 진행시킨다.
     await tester.pump(const Duration(seconds: 2));

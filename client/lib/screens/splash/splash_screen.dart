@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../core/service_locator.dart';
+import '../../core/theme/app_theme.dart';
 import '../../routing/app_routes.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -45,54 +46,125 @@ class _SplashScreenState extends State<SplashScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            if (_requestingPermissions) const LinearProgressIndicator(),
+            if (_requestingPermissions)
+              const LinearProgressIndicator(
+                backgroundColor: AppColors.primarySoft,
+                minHeight: 2,
+              ),
             Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text('Navigation', style: TextStyle(fontSize: 28)),
-                    const SizedBox(height: 32),
-                    FilledButton(
-                      onPressed: () {
-                        Navigator.of(context).pushNamed(AppRoutes.outdoorMap);
-                      },
-                      child: const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                        child: Text('시작하기'),
+              // 화면이 아주 낮을 때(가로 모드·작은 창)도 오버플로 없이
+              // 스크롤로 내려볼 수 있게 한다.
+              child: LayoutBuilder(
+                builder: (context, constraints) => SingleChildScrollView(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
+                    child: IntrinsicHeight(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.screen,
+                        ),
+                        child: Column(
+                          children: [
+                            const Spacer(flex: 3),
+                            Container(
+                              width: 72,
+                              height: 72,
+                              decoration: BoxDecoration(
+                                color: AppColors.primary,
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.sheet,
+                                ),
+                              ),
+                              child: const Icon(
+                                Icons.navigation_rounded,
+                                color: Colors.white,
+                                size: 34,
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.lg),
+                            const Text(
+                              'Navigation',
+                              style: AppTextStyles.heading1,
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+                            Text(
+                              '실내에서도 길을 잃지 않게',
+                              style: AppTextStyles.body.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                            const Spacer(flex: 4),
+                            SizedBox(
+                              width: double.infinity,
+                              child: FilledButton(
+                                onPressed: () {
+                                  Navigator.of(
+                                    context,
+                                  ).pushNamed(AppRoutes.outdoorMap);
+                                },
+                                child: const Text('시작하기'),
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                            Wrap(
+                              alignment: WrapAlignment.center,
+                              children: [
+                                _DevLink(
+                                  label: 'API 상태 확인',
+                                  onTap: () => Navigator.of(
+                                    context,
+                                  ).pushNamed(AppRoutes.debugApiHealth),
+                                ),
+                                _DevLink(
+                                  label: '더현대 평면도',
+                                  onTap: () => Navigator.of(
+                                    context,
+                                  ).pushNamed(AppRoutes.debugFloorMapPreview),
+                                ),
+                                _DevLink(
+                                  label: 'PDR 테스트',
+                                  onTap: () => Navigator.of(
+                                    context,
+                                  ).pushNamed(AppRoutes.pdrSvgTest),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+                          ],
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(
-                          context,
-                        ).pushNamed(AppRoutes.debugApiHealth);
-                      },
-                      child: const Text('API 상태 확인 (dev)'),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(
-                          context,
-                        ).pushNamed(AppRoutes.debugFloorMapPreview);
-                      },
-                      child: const Text('더현대 서울 평면도 미리보기 (dev)'),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(context).pushNamed(AppRoutes.pdrSvgTest);
-                      },
-                      child: const Text('서울창업허브 PDR 이동 테스트 (dev)'),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// 개발용 진입점 링크. 실제 사용자 플로우가 아니므로 tertiary 톤으로 낮춘다.
+class _DevLink extends StatelessWidget {
+  const _DevLink({required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      onPressed: onTap,
+      style: TextButton.styleFrom(
+        foregroundColor: AppColors.textTertiary,
+        textStyle: AppTextStyles.caption,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+        minimumSize: const Size(0, 36),
+      ),
+      child: Text(label),
     );
   }
 }
