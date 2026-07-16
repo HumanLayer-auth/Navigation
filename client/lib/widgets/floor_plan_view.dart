@@ -351,19 +351,55 @@ class _FloorPlanViewState extends State<FloorPlanView> {
 
     await controller.addGeoJsonSource(_markersSourceId, _emptyFeatureCollection);
 
-    // 목적지는 "도착" 텍스트가 들어간 빨간 핀 아이콘으로 표시한다. 아이콘
-    // 바닥(tip)이 실제 좌표에 오도록 iconAnchor를 bottom으로 잡는다. 현재
-    // 위치는 이 소스에 함께 들어와 있어도 filter가 걸러내고, 화살표는 별도
-    // _directionSourceId 레이어가 그린다.
+    // 목적지는 빨간 물방울 핀(_destinationPinImageName)에 "도착" 텍스트를
+    // 얹어서 표시한다. 텍스트는 아이콘에 미리 굽지 않고 MapLibre의 textField로
+    // 얹는데, 이는 Flutter 웹 CanvasKit에서 오프스크린 캔버스로 렌더링한
+    // 이미지에는 한글 글리프가 있는 폰트가 자동으로 딸려오지 않아 "도착"이
+    // 두부(tofu) 박스로 뭉개지기 때문이다(반면 MapLibre의 심볼 텍스트는
+    // 매장명 라벨과 동일한 경로를 타서 한글이 정상적으로 나온다).
+    //
+    // 아이콘 바닥(tip)이 실제 좌표에 오도록 iconAnchor는 bottom, 텍스트는
+    // 핀의 흰 원 안쪽 중앙에 오도록 textAnchor를 center로 잡고 textOffset
+    // y를 -3.7 em 만큼 올려 얹는다(핀 원본 이미지에서 흰 원 중앙이 밑변에서
+    // 위로 112px, iconSize/textSize 비율을 0.033으로 고정하면 offset은
+    // 112 × 0.033 ≈ 3.7 em이 되어 zoom과 무관하게 같은 위치를 유지한다).
+    // iconSize/textSize는 zoom 16↔20 구간에서 같이 커지는 interpolate 식으로
+    // 걸어, 축소했을 때 핀이 지도를 다 가리는 문제를 피한다.
+    //
+    // 현재 위치는 이 소스에 함께 들어와 있어도 filter가 걸러내고, 화살표는
+    // 별도 _directionSourceId 레이어가 그린다.
     await controller.addSymbolLayer(
       _markersSourceId,
       'floor-markers-destination-pin',
       const SymbolLayerProperties(
         iconImage: _destinationPinImageName,
-        iconSize: 0.4,
+        iconSize: [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          16,
+          0.23,
+          20,
+          0.5,
+        ],
         iconAnchor: 'bottom',
         iconAllowOverlap: true,
         iconIgnorePlacement: true,
+        textField: '도착',
+        textSize: [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          16,
+          7,
+          20,
+          15,
+        ],
+        textColor: '#1E2033',
+        textAnchor: 'center',
+        textOffset: [0, -3.7],
+        textAllowOverlap: true,
+        textIgnorePlacement: true,
       ),
       filter: ['==', ['get', 'kind'], 'destination'],
       enableInteraction: false,
@@ -575,11 +611,17 @@ class _FloorPlanViewState extends State<FloorPlanView> {
     return byteData!.buffer.asUint8List();
   }
 
-  /// 목적지 마커용 "도착" 핀 아이콘을 오프스크린 렌더링해 PNG 바이트로
+  /// 목적지 마커의 빨간 물방울 핀 이미지를 오프스크린 렌더링해 PNG 바이트로
   /// 돌려준다. 위쪽 원 + 아래쪽 삼각 꼬리를 같은 빨간색으로 합쳐 물방울
-  /// 모양을 만들고, 그 안에 흰 원과 "도착" 텍스트를 얹는다. 삼각 꼬리의
-  /// 두 밑변은 원의 접선에 정확히 맞물리도록 tangentAngle(중심-끝점 축과
-  /// 접점 사이의 각도, acos(r/d))로 계산해서 원과 이음매가 매끄럽게 이어진다.
+  /// 모양을 만들고, 그 안에 흰 원을 얹는다. 삼각 꼬리의 두 밑변은 원의
+  /// 접선에 정확히 맞물리도록 tangentAngle(중심-끝점 축과 접점 사이의 각도,
+  /// acos(r/d))로 계산해서 원과 이음매가 매끄럽게 이어진다.
+  ///
+  /// "도착" 텍스트는 이 이미지에 굽지 않고 MapLibre 심볼 레이어의 textField로
+  /// 얹는다(자세한 이유는 심볼 레이어 등록부의 주석 참고). 흰 원 중심은
+  /// 이미지 밑변에서 위로 112px(= canvasHeight − tipPadding − headCenterY,
+  /// 즉 172 − 6 − 60) 위치에 있고, 이 값이 심볼 레이어 textOffset 계산의
+  /// 근거가 된다.
   static Future<Uint8List> _renderDestinationPinIcon() async {
     const canvasWidth = 128.0;
     const canvasHeight = 172.0;
@@ -613,27 +655,6 @@ class _FloorPlanViewState extends State<FloorPlanView> {
       const Offset(cx, headCenterY),
       innerRadius,
       Paint()..color = Colors.white,
-    );
-
-    final textPainter = TextPainter(
-      textDirection: TextDirection.ltr,
-      text: const TextSpan(
-        text: '도착',
-        style: TextStyle(
-          fontSize: 30,
-          fontWeight: FontWeight.w700,
-          color: Color(0xFF1E2033),
-          letterSpacing: -0.5,
-          height: 1.0,
-        ),
-      ),
-    )..layout();
-    textPainter.paint(
-      canvas,
-      Offset(
-        cx - textPainter.width / 2,
-        headCenterY - textPainter.height / 2,
-      ),
     );
 
     final image = await recorder.endRecording().toImage(
