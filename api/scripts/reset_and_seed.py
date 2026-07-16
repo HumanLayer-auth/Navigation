@@ -34,12 +34,6 @@ if __name__ == "__main__":
         help="적재할 legacy navigation JSON (여러 번 지정 가능, 미지정 시 기본 데이터셋 전체)",
     )
     parser.add_argument("--vector-dir", type=Path, default=DEFAULT_VECTOR_DIR)
-    parser.add_argument(
-        "--studio-floor",
-        nargs="*",
-        default=["1f"],
-        help="Studio로 시드할 thehyundai-seoul 층 목록(빈 리스트면 Studio 시드를 건너뜀)",
-    )
     args = parser.parse_args()
 
     datasets = args.json or DEFAULT_DATASETS
@@ -48,7 +42,6 @@ if __name__ == "__main__":
     for json_path in datasets:
         seed_navigation(json_path, args.vector_dir)
         print(f"적재 완료: {json_path}")
-    if args.studio_floor:
-        studio_adapter.seed_studio(args.studio_floor, vector_path=args.vector_dir)
-        print(f"적재 완료: studio/thehyundai-seoul {args.studio_floor}")
+    studio_adapter.seed_studio(vector_path=args.vector_dir)
+    print("적재 완료: studio/thehyundai-seoul 1F")
     print("개발 DB 초기화 및 지도 데이터 적재 완료")
