@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../core/api_config.dart';
+import '../domain/floor_router.dart';
 import '../models/building.dart';
+import '../models/floor_graph.dart';
 import '../models/indoor_route.dart';
 import 'building_repository.dart';
 
@@ -20,6 +22,7 @@ class HttpBuildingRepository implements BuildingRepository {
   List<Building>? _allBuildingsCache;
   final Map<String, Building> _buildingCache = {};
   final Map<String, Map<String, dynamic>> _floorGeoJsonCache = {};
+  final Map<String, FloorGraph> _floorGraphCache = {};
   final Map<String, IndoorRoute> _routeCache = {};
 
   @override
@@ -98,6 +101,25 @@ class HttpBuildingRepository implements BuildingRepository {
         .toList();
   }
 
+  /// 층 길찾기 그래프(nodes+edges). 서버 /route 왕복 없이 클라이언트에서
+  /// 직접 다익스트라를 돌리기 위한 원본 데이터라 건물/층당 한 번만 받는다.
+  Future<FloorGraph?> _getFloorGraph(String buildingId, String floor) async {
+    final cacheKey = '$buildingId/$floor';
+    final cached = _floorGraphCache[cacheKey];
+    if (cached != null) return cached;
+
+    final response = await _client.get(
+      Uri.parse('$apiBaseUrl/buildings/$buildingId/floors/$floor/graph'),
+    );
+    if (response.statusCode == 404) return null;
+
+    final graph = FloorGraph.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+    _floorGraphCache[cacheKey] = graph;
+    return graph;
+  }
+
   @override
   Future<IndoorRoute?> getShortestRoute(
     String buildingId,
@@ -109,22 +131,19 @@ class HttpBuildingRepository implements BuildingRepository {
     final cached = _routeCache[cacheKey];
     if (cached != null) return cached;
 
-    final uri =
-        Uri.parse(
-          '$apiBaseUrl/buildings/$buildingId/floors/$floor/route',
-        ).replace(
-          queryParameters: {
-            'start_node_id': startNodeId,
-            'end_node_id': endNodeId,
-          },
-        );
-    final response = await _client.get(uri);
-    // 404(층/경로 없음)와 400(잘못된 노드 ID) 둘 다 "경로 없음"으로 단순화한다.
-    if (response.statusCode == 404 || response.statusCode == 400) return null;
+    final graph = await _getFloorGraph(buildingId, floor);
+    if (graph == null) return null;
 
-    final route = IndoorRoute.fromJson(
-      jsonDecode(response.body) as Map<String, dynamic>,
-    );
+    // 다익스트라는 그래프에 없는 노드 ID를 ArgumentError로 거부한다(백엔드가
+    // 이 경우를 400으로 응답하던 것과 동일하게 "경로 없음"으로 단순화한다).
+    IndoorRoute? route;
+    try {
+      route = computeShortestRoute(graph, startNodeId, endNodeId);
+    } on ArgumentError {
+      return null;
+    }
+    if (route == null) return null;
+
     _routeCache[cacheKey] = route;
     return route;
   }
