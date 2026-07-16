@@ -81,6 +81,7 @@ def get_floor_map(
         "footprint_local_m": (building.footprint_local_m or []) if building else [],
         "footprint_wgs84": _footprint_wgs84(building, transform),
         "vector_map": _to_vector_map_dict(session, vector_map) if vector_map else None,
+        "navigation_graph": _to_floor_graph_dict(session, floor),
         "stores": [_to_store_dict(store, transform) for store in stores],
         "pois": [_to_poi_dict(poi, transform) for poi in pois],
     }
