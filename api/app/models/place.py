@@ -1,4 +1,4 @@
-"""매장·POI·벡터 지도 ORM 엔티티."""
+"""매장·POI ORM 엔티티."""
 
 from __future__ import annotations
 
@@ -58,38 +58,3 @@ class Poi(Base):
     )
 
 
-class FloorVectorMap(Base):
-    __tablename__ = "floor_vector_maps"
-
-    floor_id: Mapped[str] = mapped_column(
-        ForeignKey("floors.id"),
-        primary_key=True,
-    )
-    coordinate_system: Mapped[dict] = mapped_column(JSON, nullable=False)
-    source: Mapped[dict] = mapped_column(JSON, nullable=False)
-
-    floor: Mapped["Floor"] = relationship(back_populates="vector_map")
-    features: Mapped[list["MapFeature"]] = relationship(back_populates="vector_map")
-
-
-class MapFeature(Base):
-    __tablename__ = "map_features"
-    __table_args__ = (
-        Index("idx_map_features_floor", "floor_id"),
-        Index("idx_map_features_kind", "kind"),
-    )
-
-    id: Mapped[str] = mapped_column(String, primary_key=True)
-    floor_id: Mapped[str] = mapped_column(
-        ForeignKey("floor_vector_maps.floor_id"),
-        primary_key=True,
-    )
-    kind: Mapped[str] = mapped_column(String, nullable=False)
-    name: Mapped[str | None] = mapped_column(String)
-    category: Mapped[str | None] = mapped_column(String)
-    geometry_type: Mapped[str] = mapped_column(String, nullable=False)
-    coordinates: Mapped[list | dict] = mapped_column(JSON, nullable=False)
-    centroid_x: Mapped[float | None] = mapped_column(Float)
-    centroid_y: Mapped[float | None] = mapped_column(Float)
-
-    vector_map: Mapped["FloorVectorMap"] = relationship(back_populates="features")

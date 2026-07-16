@@ -33,7 +33,8 @@ def test_층_지도는_기존_JSON_구조를_유지한다(db_session):
     assert result["floor"]["name"] == FLOOR_NAME
     assert result["navigation_coordinate_system"] == "local_m"
     assert result["stores"] and result["pois"]
-    assert result["vector_map"]["features"]
+    assert len(result["navigation_graph"]["nodes"]) == 167
+    assert sum(store["polygon_local_m"] is not None for store in result["stores"]) == 57
 
 
 # 층 그래프 간선이 from/to 짧은 키로 노출되는지 검증한다.

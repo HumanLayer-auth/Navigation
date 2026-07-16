@@ -30,7 +30,7 @@ const _storesFillLayerId = 'floor-stores-fill';
 
 /// POI `type` 속성(백엔드 실데이터 값)을 지도 위 아이콘에 매핑한다. 건물마다
 /// 명명이 조금씩 달라(더현대는 elevator/escalator/toilet/exit, 데모 건물인
-/// test-center는 vertical-connection/core-entrance를 쓴다) 여러 값을 같은
+/// 데이터셋마다 vertical-connection/core-entrance 등을 쓸 수 있어 여러 값을 같은
 /// 아이콘으로 묶는다. 매핑에 없는 값(facility/poi 등)은 [_defaultPoiIcon]으로
 /// 그린다.
 const _poiIconByType = <String, IconData>{

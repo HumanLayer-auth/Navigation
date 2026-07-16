@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from app.domain.georeference import GeoTransform, PointPair, fit_wgs84_transform
 from app.models import Floor, Node
 
-# test-center처럼 실측 wgs84 앵커가 전혀 없는 합성 건물을 임의로 배치할 기준점
+# 실측 wgs84 앵커가 전혀 없는 합성 데이터셋을 임의로 배치할 기준점
 # (서울시청 — client의 GPS 실패 fallback 위치와 맞춰서, 데모 앱에서 우연히라도
 # 같은 동네에 보이게 한다). 실측 좌표가 아니라 "지도에 뭔가 보이게" 하기 위한
 # 자리끼움일 뿐이다.

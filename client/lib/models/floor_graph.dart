@@ -30,7 +30,7 @@ class GraphNode {
   final double xM;
   final double yM;
 
-  /// 건물에 실측 wgs84 앵커가 없으면(예: test-center) null.
+  /// 건물에 실측 wgs84 앵커가 없으면 null.
   final double? lat;
   final double? lng;
 

@@ -11,7 +11,7 @@ from app.models.base import Base
 
 if TYPE_CHECKING:
     from app.models.navigation import Edge, Node
-    from app.models.place import FloorVectorMap, Poi, Store
+    from app.models.place import Poi, Store
 
 
 class Building(Base):
@@ -46,7 +46,3 @@ class Floor(Base):
     edges: Mapped[list["Edge"]] = relationship(back_populates="floor")
     stores: Mapped[list["Store"]] = relationship(back_populates="floor")
     pois: Mapped[list["Poi"]] = relationship(back_populates="floor")
-    vector_map: Mapped["FloorVectorMap | None"] = relationship(
-        back_populates="floor",
-        uselist=False,
-    )

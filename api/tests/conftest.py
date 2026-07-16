@@ -15,7 +15,7 @@ import app.models  # noqa: F401  # 모든 모델을 Base.metadata에 등록
 from app.core.database import get_db
 from app.main import create_app
 from app.models.base import Base
-from scripts.seed_navigation import seed_navigation
+from scripts.studio_adapter import seed_studio
 
 # 여러 테스트가 같은 실데이터 식별자를 사용하도록 상수로 공유한다.
 BUILDING_ID = "thehyundai-seoul"
@@ -34,7 +34,7 @@ def db_engine(tmp_path_factory):
     Base.metadata.create_all(engine)
     session = sessionmaker(bind=engine)()
     try:
-        seed_navigation(session=session)
+        seed_studio(session=session)
         session.commit()
     except Exception:
         session.rollback()

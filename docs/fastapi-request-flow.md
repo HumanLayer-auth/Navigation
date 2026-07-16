@@ -41,9 +41,6 @@ erDiagram
     FLOORS ||--o{ EDGES : contains
     FLOORS ||--o{ STORES : contains
     FLOORS ||--o{ POIS : contains
-    FLOORS ||--o| FLOOR_VECTOR_MAPS : has
-    FLOOR_VECTOR_MAPS ||--o{ MAP_FEATURES : has
-
     NODES ||--o{ EDGES : from_node
     NODES ||--o{ EDGES : to_node
     NODES o|--o{ STORES : entrance_node
@@ -54,7 +51,7 @@ erDiagram
 |---|---|---|
 | `models/building.py` | `Building`, `Floor` | `Building 1:N Floor` 양방향 (`back_populates`) |
 | `models/navigation.py` | `Node`, `Edge` | `Edge → Node` 단방향 2개 (`foreign_keys` 명시) |
-| `models/place.py` | `Store`, `Poi`, `FloorVectorMap`, `MapFeature` | Floor 기준 컬렉션 + 선택적 Node FK |
+| `models/place.py` | `Store`, `Poi` | Floor 기준 컬렉션 + 선택적 Node FK |
 
 관계 설계 규칙:
 

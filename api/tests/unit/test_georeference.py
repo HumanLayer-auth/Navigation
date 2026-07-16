@@ -99,7 +99,7 @@ def test_fit_wgs84_transform은_원래_변환을_복원한다():
         assert actual == pytest.approx(expected, abs=1e-7)
 
 
-# 핵심 회귀 테스트: 실제 데이터(navigation_1f.json)로 확인된 버그 두 가지를
+# 핵심 회귀 테스트: 실제 실내 좌표 데이터로 확인된 버그 두 가지를
 # 함께 재현/검증한다.
 # 1) (lng, lat)에 비등방 보정 없이 피팅하면 넓이가 왜곡된다.
 # 2) 애초에 4-DOF similarity(균일 스케일)로 피팅하면, 데이터가 진짜 affine

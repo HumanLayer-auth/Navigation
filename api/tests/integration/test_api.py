@@ -22,15 +22,15 @@ def test_건물_목록을_조회한다(api_client):
     assert buildings[0]["floors"] == [FLOOR_NAME]
 
 
-# 건물 상세 API가 면적과 외곽선을 포함하는지 검증한다.
+# Studio 건물 상세 API가 현재 제공하는 메타데이터를 검증한다.
 def test_건물_상세를_조회한다(api_client):
     response = api_client.get(f"/buildings/{BUILDING_ID}")
 
     assert response.status_code == 200
     body = response.json()
     assert body["id"] == BUILDING_ID
-    assert body["area_m2"] > 16000
-    assert len(body["footprint_local_m"]) >= 4
+    assert body["area_m2"] is None
+    assert body["footprint_local_m"] == []
 
 
 # 존재하지 않는 건물 요청이 찾을 수 없음 응답으로 변환되는지 검증한다.

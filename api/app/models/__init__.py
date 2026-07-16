@@ -2,7 +2,7 @@
 
 from app.models.building import Building, Floor
 from app.models.navigation import Edge, Node
-from app.models.place import FloorVectorMap, MapFeature, Poi, Store
+from app.models.place import Poi, Store
 
 __all__ = [
     "Building",
@@ -11,6 +11,4 @@ __all__ = [
     "Edge",
     "Store",
     "Poi",
-    "FloorVectorMap",
-    "MapFeature",
 ]

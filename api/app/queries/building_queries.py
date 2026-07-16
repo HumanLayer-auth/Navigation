@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.domain.georeference import GeoTransform
 from app.domain.tiling import local_points_to_lnglat
-from app.models import Building, Edge, Floor, FloorVectorMap, MapFeature, Node, Poi, Store
+from app.models import Building, Edge, Floor, Node, Poi, Store
 from app.queries.geo_transform import fit_building_geo_transform
 
 
@@ -69,7 +69,6 @@ def get_floor_map(
     if floor is None:
         return None
     building = session.get(Building, building_id)
-    vector_map = session.get(FloorVectorMap, floor.id)
     stores = session.scalars(
         select(Store).where(Store.floor_id == floor.id)
     ).all()
@@ -80,7 +79,6 @@ def get_floor_map(
         "navigation_coordinate_system": "local_m",
         "footprint_local_m": (building.footprint_local_m or []) if building else [],
         "footprint_wgs84": _footprint_wgs84(building, transform),
-        "vector_map": _to_vector_map_dict(session, vector_map) if vector_map else None,
         # Flutter는 최초 층 지도 응답에서 이 그래프를 캐시해 클라이언트 다익스트라를 실행한다.
         "navigation_graph": _to_floor_graph_dict(session, floor),
         "stores": [_to_store_dict(store, transform) for store in stores],
@@ -211,36 +209,6 @@ def _footprint_wgs84(
         return None
     points = local_points_to_lnglat(building.footprint_local_m, transform)
     return [{"lng": lng, "lat": lat} for lng, lat in points]
-
-
-def _to_vector_map_dict(
-    session: Session,
-    vector_map: FloorVectorMap,
-) -> dict[str, Any]:
-    features = session.scalars(
-        select(MapFeature).where(MapFeature.floor_id == vector_map.floor_id)
-    ).all()
-    return {
-        "coordinate_system": vector_map.coordinate_system,
-        "source": vector_map.source,
-        "features": [_to_map_feature_dict(feature) for feature in features],
-    }
-
-
-def _to_map_feature_dict(feature: MapFeature) -> dict[str, Any]:
-    return {
-        "id": feature.id,
-        "kind": feature.kind,
-        "name": feature.name,
-        "category": feature.category,
-        "geometry": {
-            "type": feature.geometry_type,
-            "coordinates": feature.coordinates,
-        },
-        "centroid": {"x": feature.centroid_x, "y": feature.centroid_y}
-        if feature.centroid_x is not None and feature.centroid_y is not None
-        else None,
-    }
 
 
 def _optional_point(

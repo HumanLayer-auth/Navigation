@@ -21,4 +21,4 @@ def test_검색어가_없으면_전체_매장을_조회한다(api_client):
     response = api_client.get(f"/buildings/{BUILDING_ID}/stores")
 
     assert response.status_code == 200
-    assert len(response.json()) == 61
+    assert len(response.json()) == 59

@@ -4,7 +4,7 @@ import 'package:latlong2/latlong.dart';
 /// (FloorPlan, IndoorRoute)이 전부 이 규칙을 공유해야 MapLibre 벡터 타일
 /// (실좌표 기준으로 렌더링됨) 위에서 좌표가 어긋나지 않는다.
 ///
-/// 건물에 실좌표 앵커(geo_transform)가 없으면(예: test-center) 백엔드가 이
+/// 건물에 실좌표 앵커(geo_transform)가 없으면 백엔드가 이
 /// 필드를 null로 내려준다 — 이 경우 null을 그대로 반환하고 호출자가 그
 /// 지점을 건너뛴다.
 LatLng? wgs84PointToLatLng(Map<String, dynamic>? point) {

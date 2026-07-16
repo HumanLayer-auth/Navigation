@@ -14,7 +14,7 @@ import 'dart:math' as math;
 
 import '../models/floor_graph.dart';
 
-/// test-center처럼 실측 wgs84 앵커가 전혀 없는 합성 건물을 임의로 배치할
+/// 실측 wgs84 앵커가 전혀 없는 합성 데이터셋을 임의로 배치할
 /// 기준점(서울시청). geo_transform.py의 _SYNTHETIC_ANCHOR_*와 반드시 같은 값을
 /// 유지해야 서버가 계산했던 것과 같은 위치에 경로가 그려진다.
 const _syntheticAnchorLat = 37.5665;
