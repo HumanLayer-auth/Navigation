@@ -95,6 +95,11 @@ def get_floor_graph(
     floor = _find_floor(session, building_id, floor_name)
     if floor is None:
         return None
+    return _to_floor_graph_dict(session, floor)
+
+
+def _to_floor_graph_dict(session: Session, floor: Floor) -> dict[str, Any]:
+    """층 지도와 독립 그래프 API가 공유하는 길찾기 레이어 응답을 조립한다."""
     nodes = session.scalars(select(Node).where(Node.floor_id == floor.id)).all()
     edges = session.scalars(select(Edge).where(Edge.floor_id == floor.id)).all()
     return {
