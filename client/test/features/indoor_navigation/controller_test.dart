@@ -13,7 +13,8 @@ class FakePdrMotionSource implements PdrMotionSource {
   int startCount = 0;
   int stopCount = 0;
   int resetCount = 0;
-  int _sessionId = 1;
+  int finalizeCount = 0;
+  int _sessionId = 0;
   Object? startError;
   Object? stopError;
   Object? resetError;
@@ -38,6 +39,11 @@ class FakePdrMotionSource implements PdrMotionSource {
     resetCount++;
     if (resetError case final error?) throw error;
     return ++_sessionId;
+  }
+
+  @override
+  Future<void> finalizePedometer() async {
+    finalizeCount++;
   }
 
   @override
@@ -110,6 +116,7 @@ void main() {
   test('startGuidance는 소스를 켜고 awaitingPin으로 간다', () async {
     await driver.startGuidance(floorId: 'F1');
     expect(source.startCount, 1);
+    expect(source.resetCount, 1);
     expect(driver.currentCalibration.phase, CalibrationPhase.awaitingPin);
   });
 
@@ -302,13 +309,14 @@ void main() {
     await driver.startGuidance(floorId: 'F1');
     await driver.stopGuidance();
     expect(source.stopCount, 1);
+    expect(source.finalizeCount, 1);
     expect(driver.currentCalibration.phase, CalibrationPhase.uncalibrated);
   });
 
   test('changeFloor는 pedometer를 reset하고 awaitingPin으로 간다', () async {
     await driver.startGuidance(floorId: 'F1');
     await driver.changeFloor(floorId: 'F2');
-    expect(source.resetCount, 1);
+    expect(source.resetCount, 2);
     expect(driver.currentCalibration.phase, CalibrationPhase.awaitingPin);
   });
 }

@@ -16,13 +16,17 @@ import '../models/floor_plan.dart';
 /// 플러그인이 대체 구현을 찾지 못해 알아보기 힘든
 /// "TargetPlatform.windows is not yet supported by the maps plugin" 텍스트를
 /// 그대로 그리므로, 그 대신 원인이 분명한 안내를 보여준다.
-const _mapSupportedNativePlatforms = {TargetPlatform.android, TargetPlatform.iOS};
+const _mapSupportedNativePlatforms = {
+  TargetPlatform.android,
+  TargetPlatform.iOS,
+};
 
 bool get _isMapSupportedOnThisPlatform =>
     kIsWeb || _mapSupportedNativePlatforms.contains(defaultTargetPlatform);
 
 const _tileSourceId = 'floor-tiles';
 const _routeSourceId = 'floor-route';
+const _pdrTrailSourceId = 'floor-pdr-trail';
 const _markersSourceId = 'floor-markers';
 const _highlightSourceId = 'floor-highlight';
 const _directionSourceId = 'floor-direction';
@@ -74,10 +78,12 @@ class FloorPlanView extends StatefulWidget {
     required this.floorName,
     required this.floorPlan,
     this.onStoreSelected,
+    this.onMapPressed,
     this.currentLocation,
     this.currentHeadingDegrees,
     this.destination,
     this.routePoints = const [],
+    this.pdrPathPoints = const [],
     this.interactive = true,
     this.highlightedStoreId,
     this.visibleInsets = EdgeInsets.zero,
@@ -87,6 +93,10 @@ class FloorPlanView extends StatefulWidget {
   final String floorName;
   final FloorPlan floorPlan;
   final ValueChanged<StorePolygon>? onStoreSelected;
+
+  /// PDR anchor를 놓는 중인 경우 지도 빈 곳 탭을 상위에 전달한다. true를
+  /// 반환하면 해당 탭은 매장 선택으로 이어지지 않는다.
+  final bool Function(ll.LatLng point)? onMapPressed;
 
   /// 선택된(또는 포커스된) 매장의 [StorePolygon.id]. null이면 강조 표시가 없다.
   final String? highlightedStoreId;
@@ -104,6 +114,9 @@ class FloorPlanView extends StatefulWidget {
 
   /// 시작점→목적지 경로선. 2개 미만이면 그리지 않는다.
   final List<ll.LatLng> routePoints;
+
+  /// 센서로 확정된 PDR 경로. 길찾기 route와 다른 초록색으로 렌더한다.
+  final List<ll.LatLng> pdrPathPoints;
 
   /// false면 스크롤/줌/회전 제스처를 전부 끈다. 웹에서는 MapLibre 지도가
   /// 실제 DOM 캔버스라 그 위에 떠 있는 바텀시트를 스크롤해도 마우스 휠
@@ -161,7 +174,11 @@ class _FloorPlanViewState extends State<FloorPlanView> {
     // 뽑아 쓴다 — 실좌표 앵커가 없어 footprint_wgs84가 비어 오는 건물이라도
     // 여기서는 상관없이 정확한 건물 크기를 얻는다. local_m이 어쩌다 비어
     // 있다면 매장/POI 좌표(wgs84)로 폴백한다.
-    final minZoom = _computeMinZoom(widget.floorPlan, viewport, widget.visibleInsets);
+    final minZoom = _computeMinZoom(
+      widget.floorPlan,
+      viewport,
+      widget.visibleInsets,
+    );
     _minZoom = minZoom;
     return MapLibreMap(
       styleString: _initialStyle,
@@ -215,6 +232,9 @@ class _FloorPlanViewState extends State<FloorPlanView> {
       if (widget.routePoints.length >= 2 && oldWidget.routePoints.length < 2) {
         _fitToRouteBounds(widget.routePoints);
       }
+    }
+    if (oldWidget.pdrPathPoints != widget.pdrPathPoints) {
+      _updatePdrTrailSource();
     }
     if (oldWidget.currentLocation != widget.currentLocation ||
         oldWidget.destination != widget.destination) {
@@ -295,7 +315,10 @@ class _FloorPlanViewState extends State<FloorPlanView> {
     // 필요한 아이콘들을 먼저 오프스크린 렌더링해 addImage로 등록한 다음
     // type 속성에 따라 골라 쓰는 match 표현식을 iconImage에 건다.
     for (final icon in {..._poiIconByType.values, _defaultPoiIcon}) {
-      await controller.addImage(_poiIconImageName(icon), await _renderPoiIcon(icon));
+      await controller.addImage(
+        _poiIconImageName(icon),
+        await _renderPoiIcon(icon),
+      );
     }
     await controller.addImage(
       _destinationPinImageName,
@@ -349,7 +372,27 @@ class _FloorPlanViewState extends State<FloorPlanView> {
       enableInteraction: false,
     );
 
-    await controller.addGeoJsonSource(_markersSourceId, _emptyFeatureCollection);
+    await controller.addGeoJsonSource(
+      _pdrTrailSourceId,
+      _emptyFeatureCollection,
+    );
+    await controller.addLineLayer(
+      _pdrTrailSourceId,
+      'floor-pdr-trail-line',
+      const LineLayerProperties(
+        lineColor: '#35A853',
+        lineWidth: 4,
+        lineOpacity: 0.9,
+        lineCap: 'round',
+        lineJoin: 'round',
+      ),
+      enableInteraction: false,
+    );
+
+    await controller.addGeoJsonSource(
+      _markersSourceId,
+      _emptyFeatureCollection,
+    );
 
     // 목적지는 빨간 물방울 핀(_destinationPinImageName)에 "도착" 텍스트를
     // 얹어서 표시한다. 텍스트는 아이콘에 미리 굽지 않고 MapLibre의 textField로
@@ -401,7 +444,11 @@ class _FloorPlanViewState extends State<FloorPlanView> {
         textAllowOverlap: true,
         textIgnorePlacement: true,
       ),
-      filter: ['==', ['get', 'kind'], 'destination'],
+      filter: [
+        '==',
+        ['get', 'kind'],
+        'destination',
+      ],
       enableInteraction: false,
     );
 
@@ -409,11 +456,18 @@ class _FloorPlanViewState extends State<FloorPlanView> {
     // 값이 없으면(실내는 아직 PDR 방향 연동 전이라 기본값) 북쪽(0도)을
     // 향하게 그린다. 흰 테두리 선을 밑에 깔아서 매장 채움색 위에서도
     // 또렷하게 보이게 한다.
-    await controller.addGeoJsonSource(_directionSourceId, _emptyFeatureCollection);
+    await controller.addGeoJsonSource(
+      _directionSourceId,
+      _emptyFeatureCollection,
+    );
     await controller.addLineLayer(
       _directionSourceId,
       'floor-direction-arrow-outline',
-      const LineLayerProperties(lineColor: '#FFFFFF', lineWidth: 2.5, lineJoin: 'round'),
+      const LineLayerProperties(
+        lineColor: '#FFFFFF',
+        lineWidth: 2.5,
+        lineJoin: 'round',
+      ),
       enableInteraction: false,
     );
     await controller.addFillLayer(
@@ -423,7 +477,10 @@ class _FloorPlanViewState extends State<FloorPlanView> {
       enableInteraction: false,
     );
 
-    await controller.addGeoJsonSource(_highlightSourceId, _emptyFeatureCollection);
+    await controller.addGeoJsonSource(
+      _highlightSourceId,
+      _emptyFeatureCollection,
+    );
     // 선택된 매장을 옅게 채우고 테두리 선 색을 진하게 바꿔서 "포커스"가
     // 어디 있는지 보여준다. 매장 탭/검색으로 고른 매장이 바뀔 때마다
     // _updateHighlightSource가 이 소스의 폴리곤만 바꿔치기한다.
@@ -446,6 +503,7 @@ class _FloorPlanViewState extends State<FloorPlanView> {
 
     _styleReady = true;
     await _updateRouteSource();
+    await _updatePdrTrailSource();
     await _updateMarkersSource();
     await _updateDirectionSource();
     await _updateHighlightSource();
@@ -480,7 +538,10 @@ class _FloorPlanViewState extends State<FloorPlanView> {
         ? null
         : widget.floorPlan.stores.where((s) => s.id == storeId).firstOrNull;
     if (store == null || store.polygon.length < 3) {
-      await controller.setGeoJsonSource(_highlightSourceId, _emptyFeatureCollection);
+      await controller.setGeoJsonSource(
+        _highlightSourceId,
+        _emptyFeatureCollection,
+      );
       return;
     }
 
@@ -528,7 +589,9 @@ class _FloorPlanViewState extends State<FloorPlanView> {
 
     // 출발점과 도착점이 사실상 같은 좌표면 경계 상자 폭이 0에 가까워져
     // 줌 계산이 발산한다 — 이 경우엔 화면에 맞출 "경로"랄 게 없으니 건너뛴다.
-    if ((maxLat - minLat).abs() < 1e-6 && (maxLng - minLng).abs() < 1e-6) return;
+    if ((maxLat - minLat).abs() < 1e-6 && (maxLng - minLng).abs() < 1e-6) {
+      return;
+    }
 
     await controller.moveCamera(
       CameraUpdate.newLatLngBounds(
@@ -575,8 +638,12 @@ class _FloorPlanViewState extends State<FloorPlanView> {
   }
 
   static ll.LatLng _centroid(List<ll.LatLng> footprint) {
-    final lat = footprint.map((p) => p.latitude).reduce((a, b) => a + b) / footprint.length;
-    final lng = footprint.map((p) => p.longitude).reduce((a, b) => a + b) / footprint.length;
+    final lat =
+        footprint.map((p) => p.latitude).reduce((a, b) => a + b) /
+        footprint.length;
+    final lng =
+        footprint.map((p) => p.longitude).reduce((a, b) => a + b) /
+        footprint.length;
     return ll.LatLng(lat, lng);
   }
 
@@ -587,11 +654,18 @@ class _FloorPlanViewState extends State<FloorPlanView> {
   static Future<Uint8List> _renderPoiIcon(IconData icon) async {
     const canvasSize = 96.0;
     final recorder = ui.PictureRecorder();
-    final canvas = Canvas(recorder, const Rect.fromLTWH(0, 0, canvasSize, canvasSize));
+    final canvas = Canvas(
+      recorder,
+      const Rect.fromLTWH(0, 0, canvasSize, canvasSize),
+    );
     const center = Offset(canvasSize / 2, canvasSize / 2);
 
     canvas.drawCircle(center, canvasSize / 2, Paint()..color = Colors.white);
-    canvas.drawCircle(center, canvasSize / 2 - 5, Paint()..color = _poiIconBackgroundColor);
+    canvas.drawCircle(
+      center,
+      canvasSize / 2 - 5,
+      Paint()..color = _poiIconBackgroundColor,
+    );
 
     final textPainter = TextPainter(textDirection: TextDirection.ltr)
       ..text = TextSpan(
@@ -604,9 +678,15 @@ class _FloorPlanViewState extends State<FloorPlanView> {
         ),
       )
       ..layout();
-    textPainter.paint(canvas, center - Offset(textPainter.width / 2, textPainter.height / 2));
+    textPainter.paint(
+      canvas,
+      center - Offset(textPainter.width / 2, textPainter.height / 2),
+    );
 
-    final image = await recorder.endRecording().toImage(canvasSize.toInt(), canvasSize.toInt());
+    final image = await recorder.endRecording().toImage(
+      canvasSize.toInt(),
+      canvasSize.toInt(),
+    );
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
     return byteData!.buffer.asUint8List();
   }
@@ -658,9 +738,9 @@ class _FloorPlanViewState extends State<FloorPlanView> {
     );
 
     final image = await recorder.endRecording().toImage(
-          canvasWidth.toInt(),
-          canvasHeight.toInt(),
-        );
+      canvasWidth.toInt(),
+      canvasHeight.toInt(),
+    );
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
     return byteData!.buffer.asUint8List();
   }
@@ -681,7 +761,8 @@ class _FloorPlanViewState extends State<FloorPlanView> {
     // 좌표(미터)로 바꾼다 — 회전/거리 계산을 위/경도 그대로 하면 위도에 따라
     // 경도 1도의 실제 거리가 달라 왜곡되기 때문이다.
     final localPoints = footprint.map((p) {
-      final dx = (p.longitude - center.longitude) * cosLat * _metersPerDegreeLat;
+      final dx =
+          (p.longitude - center.longitude) * cosLat * _metersPerDegreeLat;
       final dy = (p.latitude - center.latitude) * _metersPerDegreeLat;
       return Offset(dx, dy);
     }).toList();
@@ -714,7 +795,10 @@ class _FloorPlanViewState extends State<FloorPlanView> {
       if (widthM <= 0 || heightM <= 0) continue;
 
       final metersPerPixelAtLat = _metersPerPixelAtZoom0Equator * cosLat;
-      final metersPerPixelNeeded = max(widthM / availableWidth, heightM / availableHeight);
+      final metersPerPixelNeeded = max(
+        widthM / availableWidth,
+        heightM / availableHeight,
+      );
       final zoom = log(metersPerPixelAtLat / metersPerPixelNeeded) / log(2);
 
       if (zoom > bestZoom) {
@@ -769,7 +853,10 @@ class _FloorPlanViewState extends State<FloorPlanView> {
   static List<ll.LatLng> _extentWgs84Points(FloorPlan floorPlan) {
     return <ll.LatLng>[
       ...floorPlan.footprint,
-      for (final store in floorPlan.stores) ...[store.centroid, ...store.polygon],
+      for (final store in floorPlan.stores) ...[
+        store.centroid,
+        ...store.polygon,
+      ],
       for (final poi in floorPlan.pois) poi.point,
     ];
   }
@@ -790,7 +877,8 @@ class _FloorPlanViewState extends State<FloorPlanView> {
     final cosLat = cos(center.latitude * pi / 180);
     var maxRadius = 0.0;
     for (final p in points) {
-      final dx = (p.longitude - center.longitude) * cosLat * _metersPerDegreeLat;
+      final dx =
+          (p.longitude - center.longitude) * cosLat * _metersPerDegreeLat;
       final dy = (p.latitude - center.latitude) * _metersPerDegreeLat;
       maxRadius = max(maxRadius, sqrt(dx * dx + dy * dy));
     }
@@ -802,10 +890,41 @@ class _FloorPlanViewState extends State<FloorPlanView> {
     if (controller == null) return;
     final points = widget.routePoints;
     if (points.length < 2) {
-      await controller.setGeoJsonSource(_routeSourceId, _emptyFeatureCollection);
+      await controller.setGeoJsonSource(
+        _routeSourceId,
+        _emptyFeatureCollection,
+      );
       return;
     }
     await controller.setGeoJsonSource(_routeSourceId, {
+      'type': 'FeatureCollection',
+      'features': [
+        {
+          'type': 'Feature',
+          'properties': const <String, dynamic>{},
+          'geometry': {
+            'type': 'LineString',
+            'coordinates': [
+              for (final point in points) [point.longitude, point.latitude],
+            ],
+          },
+        },
+      ],
+    });
+  }
+
+  Future<void> _updatePdrTrailSource() async {
+    final controller = _controller;
+    if (controller == null) return;
+    final points = widget.pdrPathPoints;
+    if (points.length < 2) {
+      await controller.setGeoJsonSource(
+        _pdrTrailSourceId,
+        _emptyFeatureCollection,
+      );
+      return;
+    }
+    await controller.setGeoJsonSource(_pdrTrailSourceId, {
       'type': 'FeatureCollection',
       'features': [
         {
@@ -859,7 +978,10 @@ class _FloorPlanViewState extends State<FloorPlanView> {
 
     final current = widget.currentLocation;
     if (current == null) {
-      await controller.setGeoJsonSource(_directionSourceId, _emptyFeatureCollection);
+      await controller.setGeoJsonSource(
+        _directionSourceId,
+        _emptyFeatureCollection,
+      );
       return;
     }
 
@@ -879,8 +1001,12 @@ class _FloorPlanViewState extends State<FloorPlanView> {
     }
 
     final tip = offsetPoint(forward * tipMeters);
-    final backLeft = offsetPoint(-forward * backMeters - right * halfWidthMeters);
-    final backRight = offsetPoint(-forward * backMeters + right * halfWidthMeters);
+    final backLeft = offsetPoint(
+      -forward * backMeters - right * halfWidthMeters,
+    );
+    final backRight = offsetPoint(
+      -forward * backMeters + right * halfWidthMeters,
+    );
     final ring = [tip, backRight, backLeft, tip];
 
     await controller.setGeoJsonSource(_directionSourceId, {
@@ -892,7 +1018,9 @@ class _FloorPlanViewState extends State<FloorPlanView> {
           'geometry': {
             'type': 'Polygon',
             'coordinates': [
-              [for (final p in ring) [p.longitude, p.latitude]],
+              [
+                for (final p in ring) [p.longitude, p.latitude],
+              ],
             ],
           },
         },
@@ -907,15 +1035,21 @@ class _FloorPlanViewState extends State<FloorPlanView> {
     // 매장 폴리곤이 있으면 그 매장 정보 시트가 겹쳐 열리는 문제가 있었다.
     if (!widget.interactive) return;
 
+    final mapPressed = widget.onMapPressed;
+    if (mapPressed?.call(
+          ll.LatLng(coordinates.latitude, coordinates.longitude),
+        ) ==
+        true) {
+      return;
+    }
+
     final controller = _controller;
     final onStoreSelected = widget.onStoreSelected;
     if (controller == null || onStoreSelected == null) return;
 
-    final features = await controller.queryRenderedFeatures(
-      point,
-      [_storesFillLayerId],
-      null,
-    );
+    final features = await controller.queryRenderedFeatures(point, [
+      _storesFillLayerId,
+    ], null);
     if (features.isEmpty) return;
 
     final properties = (features.first as Map)['properties'] as Map?;
@@ -949,7 +1083,8 @@ class _FloorPlanViewState extends State<FloorPlanView> {
   static double _straighteningBearing(List<ll.LatLng> footprint) {
     if (footprint.length < 2) return 0.0;
 
-    final meanLatRad = footprint.map((p) => p.latitude).reduce((a, b) => a + b) /
+    final meanLatRad =
+        footprint.map((p) => p.latitude).reduce((a, b) => a + b) /
         footprint.length *
         (pi / 180);
     final cosLat = cos(meanLatRad);
@@ -1000,7 +1135,10 @@ class _UnsupportedPlatformNotice extends StatelessWidget {
   }
 }
 
-const _emptyFeatureCollection = {'type': 'FeatureCollection', 'features': <Map<String, dynamic>>[]};
+const _emptyFeatureCollection = {
+  'type': 'FeatureCollection',
+  'features': <Map<String, dynamic>>[],
+};
 
 // 원본 SVG(hyundai_floor_map_corrected_v6.svg)의 배경색을 그대로 옮겼다.
 // 나머지 레이어(외곽선/매장/POI/경로)는 스타일 로드 후 벡터·GeoJSON

@@ -1,7 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart' as ll;
 
 import '../../core/service_locator.dart';
+import '../../domain/geo_transform.dart';
+import '../../features/indoor_navigation/contract/indoor_navigation_contract.dart';
 import '../../models/building.dart';
+import '../../models/floor_graph.dart';
 import '../../models/floor_plan.dart';
 import '../../models/indoor_route.dart';
 import '../../models/poi_search_result.dart';
@@ -52,10 +58,16 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
   Building? _building;
   String? _selectedFloor;
   FloorPlan? _floorPlan;
+  FloorGraph? _floorGraph;
   IndoorRoute? _route;
   PoiSearchResult? _routeDestination;
   bool _interactive = true;
   String? _highlightedStoreId;
+  PdrSnapshot? _pdrSnapshot;
+  CalibrationStatus _pdrCalibration = indoorNavigationDriver.currentCalibration;
+  StreamSubscription<PdrSnapshot>? _pdrSnapshotSub;
+  StreamSubscription<CalibrationStatus>? _pdrCalibrationSub;
+  bool _placingPdrAnchor = false;
 
   /// 검색·길찾기 시트가 지도 위에 떠 있는 동안 지도 제스처를 꺼서, 시트를
   /// 마우스 휠로 스크롤할 때 그 아래 지도까지 같이 움직이지 않게 한다.
@@ -78,7 +90,29 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
   @override
   void initState() {
     super.initState();
+    _pdrSnapshot = indoorNavigationDriver.currentSnapshot;
+    _pdrSnapshotSub = indoorNavigationDriver.snapshots.listen((snapshot) {
+      if (mounted) setState(() => _pdrSnapshot = snapshot);
+    });
+    _pdrCalibrationSub = indoorNavigationDriver.calibration.listen((status) {
+      if (mounted) {
+        setState(() {
+          _pdrCalibration = status;
+          if (status.phase == CalibrationPhase.calibrated ||
+              status.phase == CalibrationPhase.uncalibrated) {
+            _placingPdrAnchor = false;
+          }
+        });
+      }
+    });
     _loadBuilding();
+  }
+
+  @override
+  void dispose() {
+    _pdrSnapshotSub?.cancel();
+    _pdrCalibrationSub?.cancel();
+    super.dispose();
   }
 
   @override
@@ -104,13 +138,15 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
       // 전환한 직후 지도가 빈 화면으로 보이는 원인). 새 평면도가 준비될
       // 때까지는 로딩 스피너만 보이도록 확실히 비워둔다.
       _floorPlan = null;
+      _floorGraph = null;
     });
     try {
       final building = await buildingRepository.getBuilding(widget.buildingId);
       if (!mounted) return;
 
-      final selectedFloor =
-          building != null && building.floors.isNotEmpty ? building.floors.first : null;
+      final selectedFloor = building != null && building.floors.isNotEmpty
+          ? building.floors.first
+          : null;
       setState(() {
         _building = building;
         _selectedFloor = selectedFloor;
@@ -128,27 +164,43 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
 
   Future<void> _loadFloorPlan(String floor) async {
     try {
-      final geojson = await buildingRepository.getFloorGeoJson(widget.buildingId, floor);
+      final geojson = await buildingRepository.getFloorGeoJson(
+        widget.buildingId,
+        floor,
+      );
       if (!mounted || geojson == null) return;
-      setState(() => _floorPlan = FloorPlan.fromJson(geojson));
+      final graphJson = geojson['navigation_graph'];
+      final graph = graphJson is Map<String, dynamic>
+          ? FloorGraph.fromJson(graphJson)
+          : null;
+      setState(() {
+        _floorPlan = FloorPlan.fromJson(geojson);
+        _floorGraph = graph;
+      });
     } catch (_) {
       if (!mounted) return;
       setState(() => _error = '지도를 불러오지 못했습니다. 서버 연결을 확인해주세요.');
     }
   }
 
-  void _selectFloor(String floor) {
+  Future<void> _selectFloor(String floor) async {
     final hadRoute = _route != null;
     setState(() {
       _selectedFloor = floor;
       _floorPlan = null;
+      _floorGraph = null;
       // 층을 바꾸면 이전 경로는 다른 층 지도 위에 남아 있어도 의미가 없다.
       _route = null;
       _routeDestination = null;
       _highlightedStoreId = null;
     });
     if (hadRoute) widget.onRouteVisibleChanged?.call(false);
-    _loadFloorPlan(floor);
+    if (indoorNavigationDriver.currentRuntimeStatus.state !=
+        PdrRuntimeState.idle) {
+      await indoorNavigationDriver.changeFloor(floorId: floor);
+      if (mounted) setState(() => _placingPdrAnchor = true);
+    }
+    await _loadFloorPlan(floor);
   }
 
   /// 위치 보정 버튼. 실제 PDR 위치 연동 전까지는 별도로 보정할 상태가 없어
@@ -164,9 +216,12 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
   /// [origin]을 주면(매장 정보 시트의 "출발지로 설정") 그 매장의 입구 노드를
   /// 시작점으로 쓰고, 없으면 기존처럼 현재 위치에서 가장 가까운 매장 입구를
   /// 자동으로 고른다.
-  Future<void> showRouteTo(PoiSearchResult destination, {PoiSearchResult? origin}) async {
+  Future<void> showRouteTo(
+    PoiSearchResult destination, {
+    PoiSearchResult? origin,
+  }) async {
     if (destination.floor != _selectedFloor) {
-      _selectFloor(destination.floor);
+      await _selectFloor(destination.floor);
       await _loadFloorPlan(destination.floor);
     }
     if (!mounted) return;
@@ -180,7 +235,9 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
     });
 
     final endNodeId = destination.nodeId;
-    final startNodeId = origin?.nodeId ?? _pickStartNodeId(floorPlan, excludingNodeId: endNodeId);
+    final startNodeId =
+        origin?.nodeId ??
+        _pickStartNodeId(floorPlan, excludingNodeId: endNodeId);
     if (endNodeId == null || startNodeId == null) return;
 
     final route = await buildingRepository.getShortestRoute(
@@ -197,7 +254,8 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
   /// PDR이 아직 없어 "현재 위치"를 알 수 없다. 임시로 층 평면도 중심에서
   /// 가장 가까운 매장 입구 노드를 출발점으로 쓴다.
   String? _pickStartNodeId(FloorPlan floorPlan, {String? excludingNodeId}) {
-    final origin = floorPlan.approximateCurrentLocation();
+    final origin =
+        _pdrCurrentLocation ?? floorPlan.approximateCurrentLocation();
     if (origin == null) return null;
     StorePolygon? nearest;
     double? nearestDistance;
@@ -219,6 +277,131 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
       _routeDestination = null;
     });
     widget.onRouteVisibleChanged?.call(false);
+  }
+
+  ll.LatLng? get _pdrCurrentLocation {
+    final snapshot = _pdrSnapshot;
+    final anchor = _pdrCalibration.anchor;
+    final graph = _floorGraph;
+    if (snapshot == null ||
+        anchor == null ||
+        !_pdrCalibration.canRenderPosition ||
+        anchor.floorId != _selectedFloor ||
+        graph == null ||
+        graph.nodes.isEmpty) {
+      return null;
+    }
+    final floorPoint = FloorCoordinateTransform(
+      anchor,
+    ).toFloor(snapshot.position);
+    final wgs84 = fitFloorGeoTransform(
+      graph.nodes,
+    ).apply(floorPoint.eastM, floorPoint.northM);
+    return ll.LatLng(wgs84.$1, wgs84.$2);
+  }
+
+  List<ll.LatLng> get _pdrPathPoints {
+    final snapshot = _pdrSnapshot;
+    final anchor = _pdrCalibration.anchor;
+    final graph = _floorGraph;
+    if (snapshot == null ||
+        anchor == null ||
+        !_pdrCalibration.canRenderPosition ||
+        anchor.floorId != _selectedFloor ||
+        graph == null ||
+        graph.nodes.isEmpty) {
+      return const [];
+    }
+    final pdrToFloor = FloorCoordinateTransform(anchor);
+    final floorToWgs84 = fitFloorGeoTransform(graph.nodes);
+    return snapshot.path
+        .map((point) {
+          final floorPoint = pdrToFloor.toFloor(point);
+          final wgs84 = floorToWgs84.apply(floorPoint.eastM, floorPoint.northM);
+          return ll.LatLng(wgs84.$1, wgs84.$2);
+        })
+        .toList(growable: false);
+  }
+
+  Future<void> _togglePdr() async {
+    final floor = _selectedFloor;
+    final graph = _floorGraph;
+    if (floor == null || graph == null || graph.nodes.isEmpty) {
+      _showPdrMessage('이 층은 PDR 좌표 변환용 navigation graph가 아직 없습니다.');
+      return;
+    }
+    if (indoorNavigationDriver.currentRuntimeStatus.state !=
+        PdrRuntimeState.idle) {
+      await indoorNavigationDriver.stopGuidance();
+      if (mounted) setState(() => _placingPdrAnchor = false);
+      return;
+    }
+    await indoorNavigationDriver.startGuidance(floorId: floor);
+    if (!mounted) return;
+    setState(() => _placingPdrAnchor = true);
+    _showPdrMessage('현재 서 있는 위치를 지도에서 한 번 탭해 PDR 시작점을 맞춰주세요.');
+  }
+
+  bool _onMapPressedForPdr(ll.LatLng point) {
+    if (!_placingPdrAnchor) return false;
+    final graph = _floorGraph;
+    if (graph == null || graph.nodes.isEmpty) return false;
+    final local = fitFloorGeoTransform(
+      graph.nodes,
+    ).invert(point.latitude, point.longitude);
+    if (local == null) {
+      _showPdrMessage('이 층 좌표를 계산하지 못했습니다.');
+      return true;
+    }
+    unawaited(_confirmPdrAnchor(PdrLocalPoint(local.$1, local.$2)));
+    return true;
+  }
+
+  Future<void> _confirmPdrAnchor(PdrLocalPoint floorPoint) async {
+    await indoorNavigationDriver.confirmAnchorByPin(floorPointM: floorPoint);
+    if (!mounted) return;
+    if (indoorNavigationDriver.currentCalibration.phase ==
+        CalibrationPhase.awaitingHeading) {
+      final heading = await _askFloorHeading();
+      if (heading == null || !mounted) return;
+      await indoorNavigationDriver.confirmAnchorByHeading(
+        floorHeadingDeg: heading,
+      );
+    }
+    if (!mounted) return;
+    setState(() => _placingPdrAnchor = false);
+    _showPdrMessage('PDR 시작점이 설정됐습니다. 초록 선은 확정 걸음 경로입니다.');
+  }
+
+  Future<double?> _askFloorHeading() {
+    return showDialog<double>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('진행 방향 보정'),
+        content: const Text(
+          '이 기기는 절대 북쪽 기준 heading을 얻지 못했습니다. 현재 휴대폰이 향한 지도 방향을 선택해주세요.',
+        ),
+        actions: [
+          for (final entry in const [
+            (label: '위쪽', value: 0.0),
+            (label: '오른쪽', value: 90.0),
+            (label: '아래쪽', value: 180.0),
+            (label: '왼쪽', value: 270.0),
+          ])
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(entry.value),
+              child: Text(entry.label),
+            ),
+        ],
+      ),
+    );
+  }
+
+  void _showPdrMessage(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -262,9 +445,12 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
 
     final route = _route;
     final routeDestination = _routeDestination;
-    final current = (route != null && route.points.isNotEmpty)
-        ? route.points.first
-        : floorPlan.approximateCurrentLocation();
+    final pdrCurrent = _pdrCurrentLocation;
+    final current =
+        pdrCurrent ??
+        ((route != null && route.points.isNotEmpty)
+            ? route.points.first
+            : floorPlan.approximateCurrentLocation());
 
     // 지도가 화면 끝까지 그려지지만 위/아래 UI에 실제로 가려지는 두께를 계산해
     // FloorPlanView에 넘긴다. 축소 하한이 이 "가려지지 않는 세로 영역"에 맞춰
@@ -272,8 +458,11 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
     // 인포바는 위쪽 대각선 공간만 살짝 차지해 vertical fit에 큰 영향은 없지만,
     // 하한이 아주 살짝 더 넉넉해지도록 top에 포함해 둔다.
     final systemPadding = MediaQuery.paddingOf(context);
-    final topOverlay = systemPadding.top + _mapShellTopChromePx + _indoorInfoBarBottomPx;
-    final bottomOverlay = systemPadding.bottom + _mapShellBottomChromePx +
+    final topOverlay =
+        systemPadding.top + _mapShellTopChromePx + _indoorInfoBarBottomPx;
+    final bottomOverlay =
+        systemPadding.bottom +
+        _mapShellBottomChromePx +
         (route != null ? _etaCardHeightPx : 0);
 
     return Stack(
@@ -284,8 +473,13 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
           floorName: _selectedFloor!,
           floorPlan: floorPlan,
           currentLocation: current,
+          currentHeadingDegrees: pdrCurrent == null
+              ? null
+              : _pdrSnapshot?.walkingHeadingDeg,
           destination: routeDestination?.point,
           routePoints: route?.points ?? const [],
+          pdrPathPoints: _pdrPathPoints,
+          onMapPressed: _onMapPressedForPdr,
           onStoreSelected: (selected) {
             setState(() => _highlightedStoreId = selected.id);
             widget.onStoreTap?.call(
@@ -313,6 +507,30 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
           ),
         ),
 
+        Positioned(
+          top: 116,
+          right: 12,
+          child: SafeArea(
+            child: FilledButton.icon(
+              onPressed: _togglePdr,
+              icon: Icon(
+                indoorNavigationDriver.currentRuntimeStatus.state ==
+                        PdrRuntimeState.idle
+                    ? Icons.my_location
+                    : Icons.stop_circle_outlined,
+              ),
+              label: Text(
+                _placingPdrAnchor
+                    ? '시작 위치 탭'
+                    : indoorNavigationDriver.currentRuntimeStatus.state ==
+                          PdrRuntimeState.idle
+                    ? 'PDR 시작'
+                    : 'PDR 종료',
+              ),
+            ),
+          ),
+        ),
+
         if (route != null && routeDestination != null)
           Positioned(
             left: 0,
@@ -324,9 +542,10 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
                 padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
                 child: EtaCard(
                   distanceMeters: route.distanceMeters,
-                  minutes: (route.distanceMeters / _walkingSpeedMetersPerSecond / 60)
-                      .ceil()
-                      .clamp(1, 999),
+                  minutes:
+                      (route.distanceMeters / _walkingSpeedMetersPerSecond / 60)
+                          .ceil()
+                          .clamp(1, 999),
                   label: '${routeDestination.name}까지',
                   onClose: _clearRoute,
                 ),
@@ -372,7 +591,10 @@ class _IndoorInfoBar extends StatelessWidget {
               elevation: 2,
               shadowColor: Colors.black.withValues(alpha: 0.1),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 child: Text(
                   label,
                   style: const TextStyle(
@@ -415,7 +637,11 @@ class _IndoorInfoBar extends StatelessWidget {
 }
 
 class _FloorChip extends StatelessWidget {
-  const _FloorChip({required this.label, required this.active, required this.onTap});
+  const _FloorChip({
+    required this.label,
+    required this.active,
+    required this.onTap,
+  });
 
   final String label;
   final bool active;

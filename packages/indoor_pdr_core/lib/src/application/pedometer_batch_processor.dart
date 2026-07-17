@@ -152,6 +152,8 @@ class PedometerBatchProcessor {
       trackedSteps: trackedSteps,
       nativeDistanceM: nativeDistanceM,
       nativeDistanceAvailable: stride.distanceAvailable,
+      isAndroid: event.isAndroid,
+      stepAccelAmplitudeMps2: event.stepAccelAmplitudeMps2,
     );
     final peakTimes = event.stepPeakTimes;
     final batchId = _nextBatchId++;

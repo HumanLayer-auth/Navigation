@@ -38,6 +38,8 @@ import UIKit
       switch call.method {
       case "resetPedometer":
         result(handler.resetPedometerBaseline())
+      case "finalizePedometer":
+        result(handler.finalizePedometer())
       default:
         result(FlutterMethodNotImplemented)
       }

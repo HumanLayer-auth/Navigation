@@ -89,6 +89,11 @@ class IndoorNavigationDriver implements IndoorNavigationController {
     );
     try {
       await _source.start();
+      // 새 guidance는 native step-session도 반드시 새로 연다. 그렇지 않으면
+      // 직전 stop에서 동결한 Android counter가 재시작 뒤에도 finalized 상태로
+      // 남아 이후 걸음을 모두 무시한다.
+      final newSessionId = await _source.resetPedometer();
+      _session.reset(newStepSessionId: newSessionId);
     } on Object {
       _updateRuntime(
         PdrRuntimeState.degraded,
@@ -106,6 +111,18 @@ class IndoorNavigationDriver implements IndoorNavigationController {
     _guiding = false;
     _backgrounded = false;
     _updateRuntime(PdrRuntimeState.stopping);
+    try {
+      // stop 전에 native가 보유한 마지막 STEP_COUNTER/CMPedometer 상태를
+      // 한 번만 flush한다. finalize 뒤 native는 추가 pedometer callback을
+      // 경로로 보내지 않으므로 종료 지점이 흔들리지 않는다.
+      await _source.finalizePedometer();
+      await Future<void>.delayed(Duration.zero);
+    } on Object {
+      _updateRuntime(
+        PdrRuntimeState.degraded,
+        warnings: const ['pedometerFinalizeFailed'],
+      );
+    }
     await _source.stop();
     _pendingPinFloorM = null;
     _pendingPinPdrM = null;

@@ -55,6 +55,8 @@ class NativePdrEvent {
       walkDirDeg: _double(raw, 'walkDirDeg'),
       walkDirConfidence: _double(raw, 'walkDirConfidence'),
       magneticAccuracy: raw['magneticAccuracy']?.toString(),
+      magneticField: _double(raw, 'magneticField'),
+      rotationHeadingAccuracyDeg: _double(raw, 'rotationHeadingAccuracyDeg'),
       headingSource: raw['headingSource']?.toString(),
     );
   }
@@ -91,9 +93,15 @@ class NativePdrEvent {
       stepPeakTimes: (raw['stepPeakTimes'] as List?)
           ?.map((value) => (value as num).toDouble())
           .toList(),
+      isAndroid: raw['source']?.toString() == 'android_sensor_manager',
+      stepCountSource: raw['stepCountSource']?.toString(),
+      authoritativeSteps: (raw['authoritativeSteps'] as num?)?.toInt(),
+      stepCounterSteps: (raw['stepCounterSteps'] as num?)?.toInt(),
+      stepCounterDelta: (raw['stepCounterDelta'] as num?)?.toInt(),
+      counterLastEventAtMs: _double(raw, 'counterLastEventAtMs'),
+      stepAccelAmplitudeMps2: _double(raw, 'stepAccelAmplitudeMps2'),
     );
   }
 
-  static double? _double(Map raw, String key) =>
-      (raw[key] as num?)?.toDouble();
+  static double? _double(Map raw, String key) => (raw[key] as num?)?.toDouble();
 }

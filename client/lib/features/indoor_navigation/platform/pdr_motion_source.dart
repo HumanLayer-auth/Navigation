@@ -18,6 +18,13 @@ abstract interface class PdrMotionSource {
   /// CMPedometer를 "지금"부터 재시작한다. 새 stepSessionId를 반환한다.
   Future<int?> resetPedometer();
 
+  /// 안내 종료 직전 native 센서가 이미 관측한 마지막 걸음 수를 확정한다.
+  ///
+  /// Android의 STEP_COUNTER는 비동기·배치 방식이라 stop 직전에 한 번 동결하지
+  /// 않으면, 폰을 내려놓는 동안 도착한 callback이 종료된 path를 다시 늘릴 수
+  /// 있다. iOS도 같은 호출 표면을 제공해 lifecycle을 플랫폼별로 갈라놓지 않는다.
+  Future<void> finalizePedometer();
+
   /// 리소스 해제.
   Future<void> dispose();
 }

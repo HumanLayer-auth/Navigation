@@ -19,6 +19,8 @@ class HeadingEvent {
     this.walkDirDeg,
     this.walkDirConfidence,
     this.magneticAccuracy,
+    this.magneticField,
+    this.rotationHeadingAccuracyDeg,
     this.headingSource,
   });
 
@@ -34,6 +36,8 @@ class HeadingEvent {
   final double? walkDirDeg;
   final double? walkDirConfidence;
   final String? magneticAccuracy;
+  final double? magneticField;
+  final double? rotationHeadingAccuracyDeg;
   final String? headingSource;
 }
 
@@ -52,6 +56,13 @@ class PedometerBatchEvent {
     this.cadenceAvailable,
     this.paceAvailable,
     this.stepPeakTimes,
+    this.isAndroid = false,
+    this.stepCountSource,
+    this.authoritativeSteps,
+    this.stepCounterSteps,
+    this.stepCounterDelta,
+    this.counterLastEventAtMs,
+    this.stepAccelAmplitudeMps2,
   });
 
   final int steps;
@@ -66,6 +77,16 @@ class PedometerBatchEvent {
   final bool? cadenceAvailable;
   final bool? paceAvailable;
   final List<double>? stepPeakTimes;
+
+  /// Android는 CMPedometer distance가 없으므로 stride 후보를 shadow 진단으로만
+  /// 계산한다. 확정 거리에는 fallback/calibration만 사용한다.
+  final bool isAndroid;
+  final String? stepCountSource;
+  final int? authoritativeSteps;
+  final int? stepCounterSteps;
+  final int? stepCounterDelta;
+  final double? counterLastEventAtMs;
+  final double? stepAccelAmplitudeMps2;
 }
 
 /// native accel step-peak 카운터 신호. 주황(preview) 경로 전용.

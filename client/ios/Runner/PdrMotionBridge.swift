@@ -38,6 +38,7 @@ final class PdrMotionStreamHandler: NSObject, FlutterStreamHandler {
   private var latestPaceAvailable = false
   private var pedometerSessionStartMs = 0.0
   private var lastPedometerCallbackAt: Date?
+  private var pedometerFinalized = false
 
   private var hasMotionSample = false
   private var latestFusedHeadingDeg = 0.0
@@ -123,6 +124,7 @@ final class PdrMotionStreamHandler: NSObject, FlutterStreamHandler {
     latestCadenceAvailable = false
     latestPaceAvailable = false
     lastPedometerCallbackAt = nil
+    pedometerFinalized = false
     accelTimes.removeAll(keepingCapacity: true)
     accelEast.removeAll(keepingCapacity: true)
     accelNorth.removeAll(keepingCapacity: true)
@@ -142,6 +144,22 @@ final class PdrMotionStreamHandler: NSObject, FlutterStreamHandler {
     return stepSessionId
   }
 
+  /// 안내 종료 시점의 마지막 CMPedometer 상태를 동결한다. iOS의 후속 callback은
+  /// stop() 전에 도착할 수 있으므로, 이 호출 뒤에는 세션 path를 바꾸지 않는다.
+  func finalizePedometer() -> [String: Any] {
+    dispatchPrecondition(condition: .onQueue(.main))
+    let stoppedAtMs = Date().timeIntervalSince1970 * 1000.0
+    pedometerFinalized = true
+    emit(kind: "snapshot")
+    return [
+      "stepSessionId": stepSessionId,
+      "sessionStartMs": pedometerSessionStartMs,
+      "stoppedAtMs": stoppedAtMs,
+      "steps": latestSteps,
+      "distanceAvailable": latestDistanceAvailable,
+    ]
+  }
+
   private func startPedometer() {
     guard CMPedometer.isStepCountingAvailable() else {
       sendError("Pedometer is not available on this device.")
@@ -155,6 +173,7 @@ final class PdrMotionStreamHandler: NSObject, FlutterStreamHandler {
       guard let self else { return }
       DispatchQueue.main.async {
         guard sessionAtStart == self.stepSessionId else { return }
+        guard !self.pedometerFinalized else { return }
         if let error {
           self.sendError("Pedometer: \(error.localizedDescription)")
           return

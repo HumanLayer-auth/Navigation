@@ -5,12 +5,14 @@ import 'package:flutter/services.dart';
 import 'native_pdr_event.dart';
 import 'pdr_motion_source.dart';
 
-/// iOS CoreMotion/CMPedometer 브릿지 어댑터.
+/// Android SensorManager bridge adapter.
 ///
-/// native `PdrMotionBridge.swift`가 EventChannel로 raw 센서 map을 흘리고,
-/// MethodChannel로 reset 명령을 받는다. 여기서 raw map을 [NativePdrEvent]로 파싱한다.
-class IosPdrMotionSource implements PdrMotionSource {
-  IosPdrMotionSource({
+/// Native code owns the sensor registrations and emits the same tagged
+/// EventChannel contract as iOS. This class deliberately only converts the
+/// raw payload at the platform boundary; PDR count/heading policy stays in
+/// the typed core.
+class AndroidPdrMotionSource implements PdrMotionSource {
+  AndroidPdrMotionSource({
     EventChannel? eventChannel,
     MethodChannel? commandChannel,
   }) : _eventChannel =
@@ -31,9 +33,7 @@ class IosPdrMotionSource implements PdrMotionSource {
 
   @override
   Future<void> start() async {
-    if (_rawSub != null) {
-      return;
-    }
+    if (_rawSub != null) return;
     final controller = _controller ??=
         StreamController<NativePdrEvent>.broadcast();
     _rawSub = _eventChannel.receiveBroadcastStream().listen(
@@ -43,10 +43,8 @@ class IosPdrMotionSource implements PdrMotionSource {
           controller.add(parsed);
         }
       },
-      onError: (Object error, StackTrace stack) {
-        if (!controller.isClosed) {
-          controller.addError(error, stack);
-        }
+      onError: (Object error, StackTrace stackTrace) {
+        if (!controller.isClosed) controller.addError(error, stackTrace);
       },
     );
   }

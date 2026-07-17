@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 /// confirmed path에 쓸 step distance를 고른다.
 ///
 /// 우선순위는 Apple distance delta, Apple cadence/pace, fallback stride 순서다.
@@ -21,6 +23,14 @@ class StrideEstimator {
   String source = 'fixed';
   String rejectReason = 'none';
 
+  /// Android의 cadence/가속도 후보는 거리 스케일에 자동 적용하지 않는다. 기종·폰
+  /// 위치 차이를 라벨 없이 일반화할 수 없기 때문이다. 대신 이후 실측 검증용으로
+  /// conservative candidate만 유지한다.
+  double cadenceCandidateMeters = 0.70;
+  double weinbergCandidateMeters = 0.70;
+  double shadowCandidateMeters = 0.70;
+  double androidCandidateConfidence = 0;
+
   double? _lastNativeDistanceM;
   int? _lastDistanceSteps;
 
@@ -36,7 +46,14 @@ class StrideEstimator {
     required int trackedSteps,
     required double? nativeDistanceM,
     required bool nativeDistanceAvailable,
+    bool isAndroid = false,
+    double? stepAccelAmplitudeMps2,
   }) {
+    _updateAndroidCandidates(
+      isAndroid: isAndroid,
+      cadence: cadenceHz,
+      amplitudeMps2: stepAccelAmplitudeMps2,
+    );
     final apple = _appleDistanceStride(
       deltaSteps: deltaSteps,
       cumulativeSteps: cumulativeSteps,
@@ -57,7 +74,9 @@ class StrideEstimator {
     } else if (cadence != null) {
       rejectReason = 'apple: $rejectReason';
     } else if (rejectReason == 'none') {
-      rejectReason = 'fixed fallback';
+      rejectReason = isAndroid
+          ? 'android shadow candidates; fixed fallback'
+          : 'fixed fallback';
     }
 
     effectiveMeters = _smooth(measured, trackedSteps);
@@ -97,6 +116,10 @@ class StrideEstimator {
     lastBatchMeters = fallbackMeters;
     source = 'fixed';
     rejectReason = 'none';
+    cadenceCandidateMeters = fallbackMeters;
+    weinbergCandidateMeters = fallbackMeters;
+    shadowCandidateMeters = fallbackMeters;
+    androidCandidateConfidence = 0;
     _lastNativeDistanceM = null;
     _lastDistanceSteps = null;
   }
@@ -164,5 +187,41 @@ class StrideEstimator {
     return (previous + (capped - previous) * alpha)
         .clamp(minMeters, maxMeters)
         .toDouble();
+  }
+
+  void _updateAndroidCandidates({
+    required bool isAndroid,
+    required double cadence,
+    required double? amplitudeMps2,
+  }) {
+    if (!isAndroid) return;
+    final base = fallbackMeters;
+    final hasCadence = cadence.isFinite && cadence >= 0.5 && cadence <= 3.5;
+    final hasAmplitude =
+        amplitudeMps2 != null &&
+        amplitudeMps2.isFinite &&
+        amplitudeMps2 >= 0.2 &&
+        amplitudeMps2 <= 12;
+    cadenceCandidateMeters = hasCadence
+        ? (base * math.pow(cadence / 1.75, 0.18))
+              .clamp(minMeters, maxMeters)
+              .toDouble()
+        : base;
+    weinbergCandidateMeters = hasAmplitude
+        ? (base * math.pow((amplitudeMps2 / 2).clamp(0.25, 4), 0.25))
+              .clamp(minMeters, maxMeters)
+              .toDouble()
+        : base;
+    shadowCandidateMeters = switch ((hasCadence, hasAmplitude)) {
+      (true, true) => (cadenceCandidateMeters + weinbergCandidateMeters) / 2,
+      (true, false) => cadenceCandidateMeters,
+      (false, true) => weinbergCandidateMeters,
+      (false, false) => base,
+    };
+    androidCandidateConfidence = switch ((hasCadence, hasAmplitude)) {
+      (true, true) => 0.65,
+      (true, false) || (false, true) => 0.40,
+      (false, false) => 0.0,
+    };
   }
 }

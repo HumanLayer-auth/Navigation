@@ -4,6 +4,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 import 'api_config.dart';
 import '../features/indoor_navigation/application/indoor_navigation_controller.dart';
+import '../features/indoor_navigation/platform/android_pdr_motion_source.dart';
 import '../features/indoor_navigation/platform/ios_pdr_motion_source.dart';
 import '../features/indoor_navigation/platform/pdr_motion_source.dart';
 import '../repositories/building_repository.dart';
@@ -17,7 +18,10 @@ import '../state/favorites_controller.dart';
 
 /// 앱 전체에서 공유하는 PDR 센서 소스와 세션 드라이버다. 화면이 바뀌어도
 /// 센서 세션을 다시 만들지 않도록 singleton으로 유지한다.
-final PdrMotionSource pdrMotionSource = IosPdrMotionSource();
+final PdrMotionSource pdrMotionSource = switch (defaultTargetPlatform) {
+  TargetPlatform.android => AndroidPdrMotionSource(),
+  _ => IosPdrMotionSource(),
+};
 final IndoorNavigationDriver indoorNavigationDriver = IndoorNavigationDriver(
   source: pdrMotionSource,
 );
