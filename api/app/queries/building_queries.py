@@ -126,7 +126,13 @@ def _find_floor(
 
 
 def _to_building_summary(building: Building) -> dict[str, Any]:
-    floors = sorted(building.floors, key=lambda floor: floor.level)
+    # level은 층 높이가 아니라 "위층부터 세는 표시 순서"다(6F=0 … 1F=5 … B1=6).
+    # 내림차순으로 정렬해 지상 저층이 앞에 오게 한다. 클라이언트가 floors.first를
+    # 초기 층으로 쓰기 때문에(indoor_map_screen) 1F가 먼저 와야 하고, 가로 층 칩도
+    # 1F→4F로 읽힌다.
+    # 주의: 지하층이 추가되면 level이 더 커서 B층이 앞으로 온다. 그때는 "기본 층"을
+    # 정렬 순서로 정하지 말고 별도로 표현해야 한다(응답에 default_floor 등).
+    floors = sorted(building.floors, key=lambda floor: floor.level, reverse=True)
     return {
         "id": building.id,
         "name": building.name,
