@@ -1,45 +1,41 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
-import '../core/theme/app_theme.dart';
+import '../theme/app_theme.dart';
 
-/// 현재 위치 마커 모드. design.md 7.6: 실내외 모두 현재 위치는 Deep Teal이며,
-/// 실내(PDR)는 화면 밀도가 높아 한 단계 작게 그린다.
+/// 현재 위치 마커 모드. 실외(GPS)/실내(PDR)에 따라 색과 아이콘이 다르다.
 enum LocationMode {
-  outdoor(color: AppColors.primary, icon: Icons.navigation, size: 30),
-  indoor(color: AppColors.primary, icon: Icons.navigation, size: 26);
+  outdoor(color: AppColors.primary, icon: Icons.navigation),
+  indoor(color: AppColors.indoor, icon: Icons.circle);
 
-  const LocationMode({
-    required this.color,
-    required this.icon,
-    required this.size,
-  });
+  const LocationMode({required this.color, required this.icon});
 
   final Color color;
   final IconData icon;
-  final double size;
 }
 
-/// 현재 위치 마커 (design.md 7.6): Deep Teal 원형 + 흰색 외곽선 + 방향 화살표.
+/// 현재 위치를 나타내는 마커 아이콘 (design.md 공통 컴포넌트: LocationMarker).
 ///
 /// [colorOverride]는 GPS 정확도 낮음 등 상태에 따라 기본 모드 색을 덮어써야 할 때 쓴다.
+/// [headingDegrees]를 주면(북쪽 기준 시계방향 각도) 화살표 끝이 그 방향을
+/// 가리키도록 회전시켜 진행 방향을 보여준다 — 없으면(실내 모드 등) 회전하지 않는다.
 class LocationMarker extends StatelessWidget {
-  const LocationMarker({super.key, required this.mode, this.colorOverride});
+  const LocationMarker({super.key, required this.mode, this.colorOverride, this.headingDegrees});
 
   final LocationMode mode;
   final Color? colorOverride;
+  final double? headingDegrees;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: mode.size,
-      height: mode.size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: colorOverride ?? mode.color,
-        border: Border.all(color: Colors.white, width: 2.5),
-        boxShadow: appShadow,
-      ),
-      child: Icon(mode.icon, color: Colors.white, size: mode.size * 0.5),
+    final icon = Icon(
+      mode.icon,
+      color: colorOverride ?? mode.color,
+      size: mode == LocationMode.indoor ? 14 : 24,
     );
+    final heading = headingDegrees;
+    if (heading == null) return icon;
+    return Transform.rotate(angle: heading * (pi / 180), child: icon);
   }
 }

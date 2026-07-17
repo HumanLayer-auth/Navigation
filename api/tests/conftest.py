@@ -1,61 +1,135 @@
 """
 공용 픽스처
-실 데이터 json 을 etl 로 임시 sqlite 에 적재하여 세션 전체에서 재사용한다.
-테스트가 실제 적재 경로를 그대로 검증한다.
 
-api client는 FastAPI의 dependency_overrides 로 get_db만 임시 db로 바꾼다.
+테스트는 데이터 출처에 따라 두 갈래다.
+
+1) 합성 픽스처(tests/fixtures/studio/test-tower) — 기본.
+   입력이 고정이라 응답 값을 그대로 단언할 수 있다. Studio에서 실데이터를 편집해도
+   깨지지 않는다. 2F는 일부러 1F와 다른 local_m 프레임(2배 스케일 + 오프셋)으로
+   만들어, 다층 좌표 정규화가 정답을 복원하는지 검증할 수 있게 했다.
+
+2) 실데이터(app/data/studio/thehyundai-seoul) — 스모크용.
+   실제 파이프라인이 도는지만 본다. 매장 수 같은 값은 편집으로 계속 바뀌므로
+   단언하지 않고 불변식(참조 무결성 등)만 검사한다. real_* 픽스처를 쓴다.
 """
 
-
-import sqlite3
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
-from app.FastAPIConfig import create_app, get_db
-from scripts.load_dataset import DEFAULT_JSON, load_navigation_db
+import app.models  # noqa: F401  # 모든 모델을 Base.metadata에 등록
+from app.core.database import get_db
+from app.main import create_app
+from app.models.base import Base
+from scripts import studio_adapter
+from scripts.studio_adapter import seed_studio
 
-# 여러 테스트가 같은 실데이터 식별자를 사용하도록 상수로 공유한다.
-BUILDING_ID = "thehyundai-seoul"
+FIXTURE_DIR = Path(__file__).parent / "fixtures" / "studio" / "test-tower"
+
+# 합성 픽스처 식별자 — 동작 검증 테스트가 쓴다.
+BUILDING_ID = "test-tower"
 FLOOR_NAME = "1F"
+FLOOR_NAMES = ["1F", "2F"]  # 건물 목록은 지상 저층이 앞(_to_building_summary 참고)
+FLOOR_ID = "FL-TEST-1F"
+
+# 실데이터 식별자 — 스모크 테스트가 쓴다.
+REAL_BUILDING_ID = "thehyundai-seoul"
+REAL_FLOOR_NAME = "1F"
+
+
+def _seeded_engine(tmp_path_factory, name: str, directory: Path):
+    db_path = tmp_path_factory.mktemp(name) / "navigation.db"
+    engine = create_engine(
+        f"sqlite:///{db_path.as_posix()}",
+        # TestClient 요청은 스레드풀에서 실행되므로 스레드 검사를 끈다.
+        connect_args={"check_same_thread": False},
+    )
+    Base.metadata.create_all(engine)
+    session = sessionmaker(bind=engine)()
+    try:
+        seed_studio(session=session, directory=directory)
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+    return engine
 
 
 @pytest.fixture(scope="session")
-def navigation_db_path(tmp_path_factory):
-    """실데이터 JSON을 임시 SQLite로 적재 (세션당 1회)."""
-    # session scope이므로 전체 테스트 실행 중 ETL은 한 번만 수행한다.
-    db_path = tmp_path_factory.mktemp("db") / "navigation.db"
-    counts = load_navigation_db(json_path=DEFAULT_JSON, db_path=db_path)
-    assert counts["buildings"] == 1  # 적재 자체가 깨지면 여기서 바로 실패
-    return db_path
+def db_engine(tmp_path_factory):
+    """합성 픽스처를 시드한 임시 SQLite (세션당 1회)."""
+    engine = _seeded_engine(tmp_path_factory, "db", FIXTURE_DIR)
+    yield engine
+    engine.dispose()
 
 
-@pytest.fixture
-def db_connection(navigation_db_path):
-    # 각 테스트에 독립 커넥션을 제공하고 종료 시 닫는다.
-    conn = sqlite3.connect(navigation_db_path)
-    conn.row_factory = sqlite3.Row
-    yield conn
-    conn.close()
+@pytest.fixture(scope="session")
+def real_db_engine(tmp_path_factory):
+    """실제 Studio 데이터를 시드한 임시 SQLite (스모크용, 세션당 1회)."""
+    engine = _seeded_engine(tmp_path_factory, "real_db", studio_adapter.STUDIO_DIR)
+    yield engine
+    engine.dispose()
 
 
-@pytest.fixture
-def api_client(navigation_db_path):
-    # 실제 앱과 같은 라우터 구성을 사용하되 DB dependency만 임시 DB로 교체한다.
+def _make_session_factory(engine):
+    return sessionmaker(bind=engine, autocommit=False, autoflush=False)
+
+
+def _session(factory):
+    # 각 테스트에 독립 Session을 제공하고 종료 시 닫는다.
+    session = factory()
+    yield session
+    session.close()
+
+
+def _client(factory):
+    # 실제 앱과 같은 라우터 구성을 사용하되 DB dependency만 시드 DB로 교체한다.
     app = create_app()
 
     def override_get_db():
-        # TestClient 요청은 스레드풀에서 실행되므로 요청당 커넥션 생성
-        conn = sqlite3.connect(navigation_db_path)
-        conn.row_factory = sqlite3.Row
+        session = factory()
         try:
-            yield conn
+            yield session
         finally:
-            conn.close()
+            session.close()
 
     app.dependency_overrides[get_db] = override_get_db
-    # TestClient 컨텍스트가 FastAPI 애플리케이션 수명주기를 관리한다.
     with TestClient(app) as client:
         yield client
     # 다른 테스트에 override가 남지 않도록 사용 후 초기화한다.
     app.dependency_overrides.clear()
+
+
+@pytest.fixture(scope="session")
+def session_factory(db_engine):
+    return _make_session_factory(db_engine)
+
+
+@pytest.fixture(scope="session")
+def real_session_factory(real_db_engine):
+    return _make_session_factory(real_db_engine)
+
+
+@pytest.fixture
+def db_session(session_factory):
+    yield from _session(session_factory)
+
+
+@pytest.fixture
+def real_db_session(real_session_factory):
+    yield from _session(real_session_factory)
+
+
+@pytest.fixture
+def api_client(session_factory):
+    yield from _client(session_factory)
+
+
+@pytest.fixture
+def real_api_client(real_session_factory):
+    yield from _client(real_session_factory)

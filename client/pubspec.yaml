@@ -34,15 +34,18 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+  collection: ^1.19.0
+  dio: ^5.8.0
+  flutter_riverpod: ^2.6.1
   http: ^1.2.0
   permission_handler: ^11.3.1
   flutter_map: ^7.0.2
   latlong2: ^0.9.1
   geolocator: ^13.0.2
   flutter_svg: ^2.3.0
-  webview_flutter: ^4.14.1
-
-  # 실내 PDR 순수 Dart 코어 (Phase 1에서 채워진다).
+  maplibre_gl: ^0.26.0
+  shared_preferences: ^2.3.2
+  webview_flutter: ^4.14.0
   indoor_pdr_core:
     path: ../packages/indoor_pdr_core
 

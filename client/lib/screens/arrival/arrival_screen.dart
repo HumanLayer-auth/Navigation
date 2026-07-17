@@ -2,13 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../../core/theme/app_theme.dart';
 import '../../models/poi_search_result.dart';
 import '../../routing/app_routes.dart';
+import '../../theme/app_theme.dart';
 
 const _autoDismissDelay = Duration(seconds: 2);
 
-/// 목적지 도착 화면 (design.md 10.5): Coral 강조는 도착 아이콘에만 최소로 쓴다.
 class ArrivalScreen extends StatefulWidget {
   const ArrivalScreen({super.key});
 
@@ -47,43 +46,66 @@ class _ArrivalScreenState extends State<ArrivalScreen> {
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
+          padding: const EdgeInsets.fromLTRB(32, 20, 32, 20),
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Spacer(flex: 3),
               Container(
                 width: 88,
                 height: 88,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE8F5E9),
                   shape: BoxShape.circle,
-                  color: AppColors.destinationSoft,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.success.withValues(alpha: 0.28),
+                      blurRadius: 56,
+                    ),
+                  ],
                 ),
+                alignment: Alignment.center,
                 child: const Icon(
-                  Icons.check_rounded,
-                  size: 44,
-                  color: AppColors.destination,
+                  Icons.check_circle,
+                  color: AppColors.success,
+                  size: 50,
                 ),
               ),
-              const SizedBox(height: AppSpacing.lg),
-              const Text('목적지에 도착했어요', style: AppTextStyles.heading2),
+              const SizedBox(height: 22),
+              const Text(
+                '도착했습니다!',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 27,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.text,
+                  letterSpacing: -0.6,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                destination == null
+                    ? '목적지에 도착했습니다'
+                    : '${destination.name}에 도착했습니다',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 14.5, color: AppColors.muted),
+              ),
               if (destination != null) ...[
-                const SizedBox(height: AppSpacing.xs),
+                const SizedBox(height: 4),
                 Text(
-                  '${destination.name} ${destination.floor}',
-                  style: AppTextStyles.body.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
+                  destination.floor,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 12, color: AppColors.muted),
                 ),
               ],
-              const Spacer(flex: 4),
+              const SizedBox(height: 28),
               SizedBox(
                 width: double.infinity,
-                child: FilledButton(
+                child: FilledButton.icon(
                   onPressed: _startNewSearch,
-                  child: const Text('새 목적지 탐색'),
+                  icon: const Icon(Icons.search, size: 18),
+                  label: const Text('새 목적지 탐색'),
                 ),
               ),
-              const SizedBox(height: AppSpacing.md),
             ],
           ),
         ),

@@ -10,6 +10,7 @@ void main() {
       NavigationApp(
         onPdrBackgrounded: () => backgrounds++,
         onPdrForegrounded: () => foregrounds++,
+        home: const SizedBox(),
       ),
     );
 
@@ -29,6 +30,7 @@ void main() {
       NavigationApp(
         onPdrBackgrounded: () => backgrounds++,
         onPdrForegrounded: () => foregrounds++,
+        home: const SizedBox(),
       ),
     );
 
