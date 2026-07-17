@@ -9,6 +9,7 @@ import '../repositories/http_building_repository.dart';
 import '../repositories/mock_destination_repository.dart';
 import '../repositories/mock_directions_repository.dart';
 import '../repositories/tmap_directions_repository.dart';
+import '../state/favorites_controller.dart';
 
 /// 실내 지도·목적지 검색·경로 안내가 전부 백엔드(api/) 다익스트라 그래프로
 /// 동작하도록 HttpBuildingRepository를 쓴다. 백엔드 없이 오프라인으로 확인할
@@ -31,6 +32,10 @@ DestinationRepository destinationRepository = MockDestinationRepository(
 final DirectionsRepository directionsRepository = tmapAppKey.isEmpty
     ? MockDirectionsRepository()
     : TmapDirectionsRepository();
+
+/// 사용자가 "장소" 탭에 저장해둔 매장 목록. SharedPreferences로 앱 재실행
+/// 뒤에도 유지된다. 테스트에서는 이 변수를 in-memory 컨트롤러로 교체한다.
+FavoritesController favoritesController = FavoritesController();
 
 Future<Map<Permission, PermissionStatus>> defaultRequestStartupPermissions() {
   return [

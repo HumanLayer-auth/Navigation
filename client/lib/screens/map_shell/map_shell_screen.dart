@@ -3,10 +3,12 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../../core/api_config.dart';
 import '../../core/service_locator.dart';
+import '../../models/favorite_place.dart';
 import '../../models/poi_search_result.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/building_switcher_sheet.dart';
 import '../../widgets/directions_sheet.dart';
+import '../../widgets/favorites_sheet.dart';
 import '../../widgets/map_bottom_bar.dart';
 import '../../widgets/map_top_bar.dart';
 import '../../widgets/store_info_sheet.dart';
@@ -128,14 +130,27 @@ class _MapShellScreenState extends State<MapShellScreen> {
   /// 매장 정보 시트를 띄운다. 검색 결과를 탭했을 때와 지도 위 매장 폴리곤을
   /// 직접 탭했을 때 모두 이 메서드를 거쳐 같은 시트가 뜨고, 출발지/도착지로
   /// 지정하면 그 매장을 채운 채로 길찾기 시트로 넘어간다.
-  Future<void> _showStoreInfo(PoiSearchResult match) async {
-    final action = await _withMapsLocked(
-      () => StoreInfoSheet.show(context, title: match.name, subtitle: match.floor),
+  ///
+  /// 반환값은 사용자가 출발/도착 액션을 실제로 골랐는지를 뜻한다. 저장된
+  /// 장소 시트에서 넘어온 경우 호출자가 이 값을 보고 "그냥 닫힘"이면 다시
+  /// 저장된 장소 시트로 돌려보내는 데 쓴다.
+  Future<bool> _showStoreInfo(PoiSearchResult match) async {
+    final favorite = FavoritePlace.fromPoiSearchResult(
+      match,
+      buildingId: _buildingId,
     );
-    if (!mounted) return;
+    final action = await _withMapsLocked(
+      () => StoreInfoSheet.show(
+        context,
+        title: match.name,
+        subtitle: match.floor,
+        favorite: favorite,
+      ),
+    );
+    if (!mounted) return false;
     // 시트가 어떻게 닫혔든(선택 없이 닫힘 포함) 지도 위 강조 표시도 같이 지운다.
     _indoorKey.currentState?.clearHighlight();
-    if (action == null) return;
+    if (action == null) return false;
 
     final candidate = DirectionsCandidate(
       title: match.name,
@@ -149,6 +164,7 @@ class _MapShellScreenState extends State<MapShellScreen> {
     } else {
       await _openDirections(presetDestination: candidate);
     }
+    return true;
   }
 
   Future<List<DirectionsCandidate>> _searchDirectionsCandidates(String query) async {
@@ -230,6 +246,21 @@ class _MapShellScreenState extends State<MapShellScreen> {
     }
   }
 
+  /// "장소" 칩을 누르면 사용자가 저장해둔 매장 목록 시트를 연다. 항목을
+  /// 탭하면 지도에서 매장을 직접 눌렀을 때와 동일한 매장 정보 시트가 뜬다.
+  ///
+  /// 매장 정보 시트에서 출발/도착을 고르지 않고 뒤로 닫으면 다시 저장된 장소
+  /// 시트로 돌아온다 — 사용자가 여러 저장 항목을 훑어보다 잘못 눌렀거나
+  /// 다른 항목을 다시 고르려는 경우를 위한 흐름이다.
+  Future<void> _openFavorites() async {
+    while (mounted) {
+      final picked = await _withMapsLocked(() => FavoritesSheet.show(context));
+      if (picked == null || !mounted) return;
+      final tookAction = await _showStoreInfo(picked.toPoiSearchResult());
+      if (tookAction) return;
+    }
+  }
+
   Future<void> _onHamburgerTap() async {
     final selected = await _withMapsLocked(
       () => BuildingSwitcherSheet.show(context, selectedBuildingId: _buildingId),
@@ -289,9 +320,18 @@ class _MapShellScreenState extends State<MapShellScreen> {
             ),
           ),
 
+          Positioned(
+            top: 78,
+            left: 16,
+            child: SafeArea(
+              bottom: false,
+              child: _FavoritesPill(onTap: _openFavorites),
+            ),
+          ),
+
           if (placeInfo != null)
             Positioned(
-              top: 84,
+              top: 128,
               left: 12,
               right: 12,
               child: _PlaceInfoCard(
@@ -314,6 +354,46 @@ class _MapShellScreenState extends State<MapShellScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// 검색창 바로 아래에 뜨는 작은 "장소" 칩. 저장해둔 매장 리스트로 가는
+/// 지름길이다. 검색과 시각적으로 분리되도록 흰 카드 톤을 유지한다.
+class _FavoritesPill extends StatelessWidget {
+  const _FavoritesPill({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      elevation: 3,
+      shadowColor: Colors.black.withValues(alpha: 0.15),
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.bookmark_outline, size: 16, color: AppColors.primary),
+              SizedBox(width: 6),
+              Text(
+                '장소',
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.text,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
