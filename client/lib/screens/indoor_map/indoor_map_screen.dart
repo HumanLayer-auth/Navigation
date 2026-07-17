@@ -11,6 +11,18 @@ import '../../widgets/floor_plan_view.dart';
 
 const _walkingSpeedMetersPerSecond = 1.2;
 
+// MapShellScreen이 지도 위에 얹는 상단 검색바/하단 홈-실내 버튼바가 지도를
+// 가리는 두께. 축소 하한 계산이 "실제 보이는 영역" 기준으로 되려면 이만큼
+// 잘라서 뷰포트로 넘겨야 한다. 각 위젯의 SafeArea 안쪽 padding + Material
+// 내용 높이(48px IconButton, 44px 모드 세그먼트 등)를 합해 눈으로 재본 값.
+const _mapShellTopChromePx = 68.0;
+const _mapShellBottomChromePx = 112.0;
+
+// IndoorMapBody 자신이 얹는 오버레이(층/건물명 인포바, 경로 ETA 카드) 높이.
+// 인포바는 top=78 지점에 있고, 위쪽 여백을 포함해 약 30px 세로를 차지한다.
+const _indoorInfoBarBottomPx = 30.0 + 78.0;
+const _etaCardHeightPx = 130.0;
+
 /// 실내 지도 본문(층 평면도 + 경로/매장 오버레이). 검색창·길찾기·건물 전환 같은
 /// 공통 UI는 [MapShellScreen]이 상단/하단 바로 얹으므로 여기서는 다루지 않는다.
 class IndoorMapBody extends StatefulWidget {
@@ -254,6 +266,16 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
         ? route.points.first
         : floorPlan.approximateCurrentLocation();
 
+    // 지도가 화면 끝까지 그려지지만 위/아래 UI에 실제로 가려지는 두께를 계산해
+    // FloorPlanView에 넘긴다. 축소 하한이 이 "가려지지 않는 세로 영역"에 맞춰
+    // 잡혀야 하한에 도달했을 때 건물의 위/아래가 오버레이 뒤로 밀리지 않는다.
+    // 인포바는 위쪽 대각선 공간만 살짝 차지해 vertical fit에 큰 영향은 없지만,
+    // 하한이 아주 살짝 더 넉넉해지도록 top에 포함해 둔다.
+    final systemPadding = MediaQuery.paddingOf(context);
+    final topOverlay = systemPadding.top + _mapShellTopChromePx + _indoorInfoBarBottomPx;
+    final bottomOverlay = systemPadding.bottom + _mapShellBottomChromePx +
+        (route != null ? _etaCardHeightPx : 0);
+
     return Stack(
       children: [
         FloorPlanView(
@@ -277,6 +299,7 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
           },
           interactive: _interactive,
           highlightedStoreId: _highlightedStoreId,
+          visibleInsets: EdgeInsets.fromLTRB(0, topOverlay, 0, bottomOverlay),
         ),
 
         Positioned(
@@ -334,81 +357,45 @@ class _IndoorInfoBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final floors = building.floors;
     final selectedFloor = this.selectedFloor;
+    final label = selectedFloor == null
+        ? building.name
+        : '${building.name} · $selectedFloor';
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Material(
-        color: Colors.white.withValues(alpha: 0.94),
-        borderRadius: BorderRadius.circular(18),
-        elevation: 3,
-        shadowColor: Colors.black.withValues(alpha: 0.12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 10, 10, 6),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          building.name,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.text,
-                            letterSpacing: -0.3,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if (selectedFloor != null)
-                          Text(
-                            'PDR 모드 · 현재 $selectedFloor 위치',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: AppColors.indoor,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                      ],
-                    ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          Flexible(
+            child: Material(
+              color: Colors.white.withValues(alpha: 0.9),
+              borderRadius: BorderRadius.circular(12),
+              elevation: 2,
+              shadowColor: Colors.black.withValues(alpha: 0.1),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.text,
+                    letterSpacing: -0.2,
                   ),
-                  if (selectedFloor != null)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: AppColors.indoor,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.layers, size: 13, color: Colors.white),
-                          const SizedBox(width: 5),
-                          Text(
-                            selectedFloor,
-                            style: const TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ),
-            if (floors.length > 1)
-              SizedBox(
-                height: 38,
+          ),
+          if (floors.length > 1) ...[
+            const SizedBox(width: 6),
+            Flexible(
+              child: SizedBox(
+                height: 30,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                  shrinkWrap: true,
                   itemCount: floors.length,
-                  separatorBuilder: (_, _) => const SizedBox(width: 6),
+                  separatorBuilder: (_, _) => const SizedBox(width: 4),
                   itemBuilder: (context, index) {
                     final floor = floors[index];
                     return _FloorChip(
@@ -419,8 +406,9 @@ class _IndoorInfoBar extends StatelessWidget {
                   },
                 ),
               ),
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
