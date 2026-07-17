@@ -383,13 +383,28 @@ class _FloorPlanViewState extends State<FloorPlanView> {
       _pdrTrailSourceId,
       _emptyFeatureCollection,
     );
+    // PDR 궤적은 지도 위 도로/보행 경로처럼 얇은 흰 casing을 먼저 깔고,
+    // 채도가 과하지 않은 초록 중심선을 올린다. 기존의 굵은 단색 선은 평면도
+    // 위에 형광펜을 칠한 듯 보여 실제 지도와 이질감이 컸다.
+    await controller.addLineLayer(
+      _pdrTrailSourceId,
+      'floor-pdr-trail-casing',
+      const LineLayerProperties(
+        lineColor: '#FFFFFF',
+        lineWidth: 6.5,
+        lineOpacity: 0.9,
+        lineCap: 'round',
+        lineJoin: 'round',
+      ),
+      enableInteraction: false,
+    );
     await controller.addLineLayer(
       _pdrTrailSourceId,
       'floor-pdr-trail-line',
       const LineLayerProperties(
-        lineColor: '#35A853',
-        lineWidth: 4,
-        lineOpacity: 0.9,
+        lineColor: '#248A55',
+        lineWidth: 3.25,
+        lineOpacity: 0.96,
         lineCap: 'round',
         lineJoin: 'round',
       ),
@@ -399,6 +414,41 @@ class _FloorPlanViewState extends State<FloorPlanView> {
     await controller.addGeoJsonSource(
       _markersSourceId,
       _emptyFeatureCollection,
+    );
+
+    // 현재 위치는 실제 지도 앱의 "blue dot"처럼 바깥 흰 halo와 안쪽 파란
+    // 점으로 만든다. 방향 표시와 별개로 위치 중심이 보이므로, heading이 잠시
+    // 없거나 기기 값이 흔들려도 위치를 쉽게 읽을 수 있다.
+    await controller.addCircleLayer(
+      _markersSourceId,
+      'floor-markers-current-halo',
+      const CircleLayerProperties(
+        circleRadius: 10,
+        circleColor: '#FFFFFF',
+        circleOpacity: 0.96,
+      ),
+      filter: [
+        '==',
+        ['get', 'kind'],
+        'current',
+      ],
+      enableInteraction: false,
+    );
+    await controller.addCircleLayer(
+      _markersSourceId,
+      'floor-markers-current-dot',
+      const CircleLayerProperties(
+        circleRadius: 6.5,
+        circleColor: '#1A73E8',
+        circleStrokeColor: '#FFFFFF',
+        circleStrokeWidth: 1.5,
+      ),
+      filter: [
+        '==',
+        ['get', 'kind'],
+        'current',
+      ],
+      enableInteraction: false,
     );
 
     // 목적지는 빨간 물방울 핀(_destinationPinImageName)에 "도착" 텍스트를
@@ -459,10 +509,9 @@ class _FloorPlanViewState extends State<FloorPlanView> {
       enableInteraction: false,
     );
 
-    // 현재 위치를 진행 방향이 보이는 작은 화살표(삼각형)로 표시한다. 방향
-    // 값이 없으면(실내는 아직 PDR 방향 연동 전이라 기본값) 북쪽(0도)을
-    // 향하게 그린다. 흰 테두리 선을 밑에 깔아서 매장 채움색 위에서도
-    // 또렷하게 보이게 한다.
+    // 현재 위치의 진행 방향은 blue dot 위쪽에만 살짝 보이는 작은 포인터로
+    // 표시한다. 이전 보라색 큰 삼각형은 경로와 색/비율이 따로 놀아 실제 지도
+    // 마커처럼 보이지 않았으므로, 지도 기본 위치색과 같은 파랑으로 통일한다.
     await controller.addGeoJsonSource(
       _directionSourceId,
       _emptyFeatureCollection,
@@ -472,7 +521,7 @@ class _FloorPlanViewState extends State<FloorPlanView> {
       'floor-direction-arrow-outline',
       const LineLayerProperties(
         lineColor: '#FFFFFF',
-        lineWidth: 2.5,
+        lineWidth: 1.8,
         lineJoin: 'round',
       ),
       enableInteraction: false,
@@ -480,7 +529,7 @@ class _FloorPlanViewState extends State<FloorPlanView> {
     await controller.addFillLayer(
       _directionSourceId,
       'floor-direction-arrow',
-      const FillLayerProperties(fillColor: '#6C3FE0'),
+      const FillLayerProperties(fillColor: '#1A73E8'),
       enableInteraction: false,
     );
 
@@ -977,14 +1026,15 @@ class _FloorPlanViewState extends State<FloorPlanView> {
     };
   }
 
-  /// 현재 위치 화살표(삼각형) 폴리곤을 [widget.currentHeadingDegrees] 방향으로
-  /// 그려 넣는다(없으면 북쪽/0도). 위치가 없으면 빈 소스로 비운다.
+  /// 현재 위치 포인터(삼각형) 폴리곤을 [widget.currentHeadingDegrees] 방향으로
+  /// 그려 넣는다. heading이 없으면 북쪽을 임의로 가리키지 않고 숨긴다.
   Future<void> _updateDirectionSource() async {
     final controller = _controller;
     if (controller == null) return;
 
     final current = widget.currentLocation;
-    if (current == null) {
+    final heading = widget.currentHeadingDegrees;
+    if (current == null || heading == null) {
       await controller.setGeoJsonSource(
         _directionSourceId,
         _emptyFeatureCollection,
@@ -992,13 +1042,13 @@ class _FloorPlanViewState extends State<FloorPlanView> {
       return;
     }
 
-    final headingRad = (widget.currentHeadingDegrees ?? 0) * pi / 180;
+    final headingRad = heading * pi / 180;
     final forward = Offset(sin(headingRad), cos(headingRad));
     final right = Offset(cos(headingRad), -sin(headingRad));
 
-    const tipMeters = 0.8;
-    const backMeters = 0.5;
-    const halfWidthMeters = 0.55;
+    const tipMeters = 1.25;
+    const backMeters = 0.1;
+    const halfWidthMeters = 0.48;
 
     ll.LatLng offsetPoint(Offset metersEastNorth) {
       final cosLat = cos(current.latitude * pi / 180);
@@ -1163,7 +1213,8 @@ String get _glyphsUrl => '$apiBaseUrl/fonts/{fontstack}/{range}.pbf';
 /// glyphs가 비어 있으면 심볼 레이어가 폰트를 못 받아 레이아웃을 끝내지 못하고,
 /// 그 여파로 같은 벡터 타일의 fill 레이어까지 전부 안 그려진다. 배경색만 남고
 /// 지도가 빈 화면이 되므로 glyphs는 반드시 채워야 한다.
-String get _initialStyle => '''
+String get _initialStyle =>
+    '''
 {
   "version": 8,
   "glyphs": "$_glyphsUrl",

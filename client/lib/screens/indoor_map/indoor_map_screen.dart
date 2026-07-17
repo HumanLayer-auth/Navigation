@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart' as ll;
 
 import '../../core/service_locator.dart';
 import '../../domain/geo_transform.dart';
+import '../../features/indoor_navigation/application/floor_map_matcher.dart';
 import '../../features/indoor_navigation/contract/indoor_navigation_contract.dart';
 import '../../models/building.dart';
 import '../../models/floor_graph.dart';
@@ -279,28 +280,10 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
     widget.onRouteVisibleChanged?.call(false);
   }
 
-  ll.LatLng? get _pdrCurrentLocation {
-    final snapshot = _pdrSnapshot;
-    final anchor = _pdrCalibration.anchor;
-    final graph = _floorGraph;
-    if (snapshot == null ||
-        anchor == null ||
-        !_pdrCalibration.canRenderPosition ||
-        anchor.floorId != _selectedFloor ||
-        graph == null ||
-        graph.nodes.isEmpty) {
-      return null;
-    }
-    final floorPoint = FloorCoordinateTransform(
-      anchor,
-    ).toFloor(snapshot.position);
-    final wgs84 = fitFloorGeoTransform(
-      graph.nodes,
-    ).apply(floorPoint.eastM, floorPoint.northM);
-    return ll.LatLng(wgs84.$1, wgs84.$2);
-  }
-
-  List<ll.LatLng> get _pdrPathPoints {
+  /// PDR 원본 path를 floor graph의 통행 간선에 스냅한 결과다. 이 값만 지도에
+  /// 렌더해 센서 드리프트가 매장/벽을 가로질러 보이는 일을 막는다. 매 snapshot
+  /// 전체를 시간순으로 다시 매칭해 matcher의 간선 전환 히스테리시스도 유지한다.
+  List<PdrLocalPoint> get _pdrMatchedFloorPath {
     final snapshot = _pdrSnapshot;
     final anchor = _pdrCalibration.anchor;
     final graph = _floorGraph;
@@ -313,11 +296,32 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
       return const [];
     }
     final pdrToFloor = FloorCoordinateTransform(anchor);
+    return FloorMapMatcher(graph)
+        .matchPath(snapshot.path.map(pdrToFloor.toFloor))
+        .map((matched) => matched.point)
+        .toList(growable: false);
+  }
+
+  ll.LatLng? get _pdrCurrentLocation {
+    final graph = _floorGraph;
+    final path = _pdrMatchedFloorPath;
+    if (graph == null || path.isEmpty) return null;
+    final current = path.last;
+    final wgs84 = fitFloorGeoTransform(
+      graph.nodes,
+    ).apply(current.eastM, current.northM);
+    return ll.LatLng(wgs84.$1, wgs84.$2);
+  }
+
+  List<ll.LatLng> get _pdrPathPoints {
+    final graph = _floorGraph;
+    if (graph == null) {
+      return const [];
+    }
     final floorToWgs84 = fitFloorGeoTransform(graph.nodes);
-    return snapshot.path
+    return _pdrMatchedFloorPath
         .map((point) {
-          final floorPoint = pdrToFloor.toFloor(point);
-          final wgs84 = floorToWgs84.apply(floorPoint.eastM, floorPoint.northM);
+          final wgs84 = floorToWgs84.apply(point.eastM, point.northM);
           return ll.LatLng(wgs84.$1, wgs84.$2);
         })
         .toList(growable: false);
@@ -326,7 +330,10 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
   Future<void> _togglePdr() async {
     final floor = _selectedFloor;
     final graph = _floorGraph;
-    if (floor == null || graph == null || graph.nodes.isEmpty) {
+    if (floor == null ||
+        graph == null ||
+        graph.nodes.isEmpty ||
+        graph.edges.isEmpty) {
       _showPdrMessage('이 층은 PDR 좌표 변환용 navigation graph가 아직 없습니다.');
       return;
     }
@@ -370,7 +377,13 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
     }
     if (!mounted) return;
     setState(() => _placingPdrAnchor = false);
-    _showPdrMessage('PDR 시작점이 설정됐습니다. 초록 선은 확정 걸음 경로입니다.');
+    _showPdrMessage('PDR 시작점이 설정됐습니다. 이동 경로는 통로 그래프에 맞춰 표시됩니다.');
+  }
+
+  Future<void> _cancelPdrAnchor() async {
+    if (!_placingPdrAnchor) return;
+    await indoorNavigationDriver.stopGuidance();
+    if (mounted) setState(() => _placingPdrAnchor = false);
   }
 
   Future<double?> _askFloorHeading() {
@@ -511,25 +524,22 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
           top: 116,
           right: 12,
           child: SafeArea(
-            child: FilledButton.icon(
+            child: _PdrMapControl(
+              active:
+                  indoorNavigationDriver.currentRuntimeStatus.state !=
+                  PdrRuntimeState.idle,
               onPressed: _togglePdr,
-              icon: Icon(
-                indoorNavigationDriver.currentRuntimeStatus.state ==
-                        PdrRuntimeState.idle
-                    ? Icons.my_location
-                    : Icons.stop_circle_outlined,
-              ),
-              label: Text(
-                _placingPdrAnchor
-                    ? '시작 위치 탭'
-                    : indoorNavigationDriver.currentRuntimeStatus.state ==
-                          PdrRuntimeState.idle
-                    ? 'PDR 시작'
-                    : 'PDR 종료',
-              ),
             ),
           ),
         ),
+
+        if (_placingPdrAnchor)
+          Positioned(
+            top: 116,
+            left: 12,
+            right: 120,
+            child: SafeArea(child: _PdrAnchorHint(onCancel: _cancelPdrAnchor)),
+          ),
 
         if (route != null && routeDestination != null)
           Positioned(
@@ -553,6 +563,112 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
             ),
           ),
       ],
+    );
+  }
+}
+
+/// 지도 톤을 해치지 않는 compact PDR 시작/종료 제어. 강한 파란 큰 버튼 대신
+/// 실제 지도 앱처럼 흰 surface 위에 상태 색만 얹어, 지도와 현재 위치가
+/// 시각적으로 우선되게 한다.
+class _PdrMapControl extends StatelessWidget {
+  const _PdrMapControl({required this.active, required this.onPressed});
+
+  final bool active;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = active ? const Color(0xFFD93025) : AppColors.indoor;
+    return Tooltip(
+      message: active ? 'PDR 종료' : 'PDR 시작',
+      child: Material(
+        color: Colors.white.withValues(alpha: 0.96),
+        elevation: 3,
+        shadowColor: Colors.black.withValues(alpha: 0.16),
+        shape: StadiumBorder(
+          side: BorderSide(color: color.withValues(alpha: active ? 0.36 : 0.2)),
+        ),
+        child: InkWell(
+          onTap: onPressed,
+          customBorder: const StadiumBorder(),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(10, 8, 13, 8),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 26,
+                  height: 26,
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    active ? Icons.stop_rounded : Icons.directions_walk_rounded,
+                    size: 17,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(width: 7),
+                Text(
+                  active ? 'PDR 종료' : 'PDR 시작',
+                  style: TextStyle(
+                    color: active
+                        ? const Color(0xFFB3261E)
+                        : const Color(0xFF202124),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 시작 위치를 지도에 놓는 동안에만 보이는 간결한 안내. SnackBar만으로는 손이
+/// 지도 위에 올라간 뒤 안내가 사라져 어디를 눌러야 하는지 놓치기 쉬워서, 지도
+/// chrome 바로 아래에 남겨 둔다.
+class _PdrAnchorHint extends StatelessWidget {
+  const _PdrAnchorHint({required this.onCancel});
+
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white.withValues(alpha: 0.97),
+      elevation: 3,
+      shadowColor: Colors.black.withValues(alpha: 0.14),
+      borderRadius: BorderRadius.circular(14),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
+        child: Row(
+          children: [
+            const Icon(
+              Icons.touch_app_outlined,
+              color: AppColors.indoor,
+              size: 21,
+            ),
+            const SizedBox(width: 8),
+            const Expanded(
+              child: Text(
+                '현재 위치를 지도에서 탭하세요',
+                maxLines: 2,
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+              ),
+            ),
+            IconButton(
+              tooltip: 'PDR 취소',
+              onPressed: onCancel,
+              icon: const Icon(Icons.close_rounded, size: 20),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
