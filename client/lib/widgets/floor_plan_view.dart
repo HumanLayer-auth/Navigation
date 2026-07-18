@@ -1213,8 +1213,7 @@ String get _glyphsUrl => '$apiBaseUrl/fonts/{fontstack}/{range}.pbf';
 /// glyphs가 비어 있으면 심볼 레이어가 폰트를 못 받아 레이아웃을 끝내지 못하고,
 /// 그 여파로 같은 벡터 타일의 fill 레이어까지 전부 안 그려진다. 배경색만 남고
 /// 지도가 빈 화면이 되므로 glyphs는 반드시 채워야 한다.
-String get _initialStyle =>
-    '''
+String get _initialStyle => '''
 {
   "version": 8,
   "glyphs": "$_glyphsUrl",
