@@ -4,7 +4,7 @@
 > **어떤 함수가 어떤 자료를 받아 무엇을 돌려주는지** 추적한 문서.
 > HTTP 요청 처리 흐름은 [fastapi-request-flow.md](fastapi-request-flow.md)를 참고.
 >
-> 기준 코드: `api/scripts/` (split_studio_export · studio_adapter · floor_alignment ·
+> 기준 코드: `backend/scripts/` (split_studio_export · studio_adapter · floor_alignment ·
 > vertical_transfers · seed_navigation · reset_and_seed)
 
 ## 0. 전체 그림
@@ -333,14 +333,14 @@ flowchart LR
 ## 8. 실행 방법
 
 ```bash
-# 1) Studio 통합 export → 2개 파일 (api/ 에서)
-python -m scripts.split_studio_export <통합export.json> --floor 2f
+# 1) Studio 통합 export → 2개 파일 (backend/ 에서)
+python -m scripts.transform.split_studio_export <통합export.json> --floor 2f
 
 # 2) DB 초기화 + 전 층 적재
-python -m scripts.reset_and_seed
+python -m scripts.seed.reset_and_seed
 
 # 3) 적재 진단만 보기(층별 정규화 잔차·전이 수)
-python -m scripts.studio_adapter
+python -m scripts.seed.studio_adapter
 ```
 
 Docker는 컨테이너 시작 시 `reset_and_seed`를 자동 실행한다(`docker-compose.yml`).

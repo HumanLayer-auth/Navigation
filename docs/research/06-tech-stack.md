@@ -78,7 +78,7 @@ Flutter 화면 렌더링과 클라이언트 경로 계산이 같은 좌표계를
 | 버전 관리 | Git + GitHub Flow | Projects 보드와 함께 운영 |
 | CI/CD | GitHub Actions | `.github/workflows/ci.yml`, `.github/workflows/project-automation.yml` |
 | Flutter 린트 | `flutter_lints` | `client/analysis_options.yaml` |
-| Python 테스트 | `pytest` | `api/tests/` |
+| Python 테스트 | `pytest` | `backend/tests/` |
 | 컨테이너 | Docker Compose | `docker compose up --build api`로 API 서버 실행 |
 
 ## 7. 후속 후보
