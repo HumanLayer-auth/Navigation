@@ -7,6 +7,9 @@ import '../../core/service_locator.dart';
 import '../../domain/geo_transform.dart';
 import '../../features/indoor_navigation/application/floor_map_matcher.dart';
 import '../../features/indoor_navigation/contract/indoor_navigation_contract.dart';
+import '../../features/indoor_navigation/debug/pdr_debug_device_info.dart';
+import '../../features/indoor_navigation/debug/pdr_debug_session_recorder.dart';
+import '../../features/indoor_navigation/debug/pdr_debug_session_share.dart';
 import '../../models/building.dart';
 import '../../models/floor_graph.dart';
 import '../../models/floor_plan.dart';
@@ -69,6 +72,8 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
   StreamSubscription<PdrSnapshot>? _pdrSnapshotSub;
   StreamSubscription<CalibrationStatus>? _pdrCalibrationSub;
   bool _placingPdrAnchor = false;
+  PdrDebugSessionRecorder? _pdrDebugRecorder;
+  bool _exportingPdrDebugJson = false;
 
   /// 검색·길찾기 시트가 지도 위에 떠 있는 동안 지도 제스처를 꺼서, 시트를
   /// 마우스 휠로 스크롤할 때 그 아래 지도까지 같이 움직이지 않게 한다.
@@ -93,11 +98,13 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
     super.initState();
     _pdrSnapshot = indoorNavigationDriver.currentSnapshot;
     _pdrSnapshotSub = indoorNavigationDriver.snapshots.listen((snapshot) {
+      _pdrDebugRecorder?.recordSnapshot(snapshot);
       if (mounted) setState(() => _pdrSnapshot = snapshot);
     });
     _pdrCalibrationSub = indoorNavigationDriver.calibration.listen((status) {
       if (mounted) {
         setState(() {
+          _pdrDebugRecorder?.recordCalibration(status);
           _pdrCalibration = status;
           if (status.phase == CalibrationPhase.calibrated ||
               status.phase == CalibrationPhase.uncalibrated) {
@@ -339,11 +346,27 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
     }
     if (indoorNavigationDriver.currentRuntimeStatus.state !=
         PdrRuntimeState.idle) {
+      final recorder = _pdrDebugRecorder;
+      final snapshot = indoorNavigationDriver.currentSnapshot;
+      if (snapshot != null) recorder?.recordSnapshot(snapshot);
       await indoorNavigationDriver.stopGuidance();
-      if (mounted) setState(() => _placingPdrAnchor = false);
+      recorder?.recordRuntime(indoorNavigationDriver.currentRuntimeStatus);
+      if (mounted) {
+        setState(() => _placingPdrAnchor = false);
+        if (recorder?.hasSnapshot ?? false) {
+          _showPdrMessageWithExport('PDR 세션이 종료됐습니다. JSON으로 내보내 분석할 수 있습니다.');
+        }
+      }
       return;
     }
+    _pdrDebugRecorder = PdrDebugSessionRecorder();
+    _pdrDebugRecorder?.recordRuntime(
+      indoorNavigationDriver.currentRuntimeStatus,
+    );
     await indoorNavigationDriver.startGuidance(floorId: floor);
+    _pdrDebugRecorder?.recordRuntime(
+      indoorNavigationDriver.currentRuntimeStatus,
+    );
     if (!mounted) return;
     setState(() => _placingPdrAnchor = true);
     _showPdrMessage('현재 서 있는 위치를 지도에서 한 번 탭해 PDR 시작점을 맞춰주세요.');
@@ -383,6 +406,9 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
   Future<void> _cancelPdrAnchor() async {
     if (!_placingPdrAnchor) return;
     await indoorNavigationDriver.stopGuidance();
+    _pdrDebugRecorder?.recordRuntime(
+      indoorNavigationDriver.currentRuntimeStatus,
+    );
     if (mounted) setState(() => _placingPdrAnchor = false);
   }
 
@@ -415,6 +441,44 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void _showPdrMessageWithExport(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(message),
+          action: SnackBarAction(
+            label: 'JSON 공유',
+            onPressed: () => unawaited(_exportPdrDebugJson()),
+          ),
+        ),
+      );
+  }
+
+  Future<void> _exportPdrDebugJson() async {
+    final recorder = _pdrDebugRecorder;
+    if (recorder == null || !recorder.hasSnapshot || _exportingPdrDebugJson) {
+      _showPdrMessage('내보낼 PDR 세션이 없습니다.');
+      return;
+    }
+    setState(() => _exportingPdrDebugJson = true);
+    try {
+      final device = await PdrDebugDeviceInfo.load();
+      final session = recorder.buildJson(
+        buildingId: widget.buildingId,
+        selectedFloor: _selectedFloor,
+        graph: _floorGraph,
+        device: device,
+      );
+      await const PdrDebugSessionShare().share(session);
+    } on Object catch (error) {
+      if (mounted) _showPdrMessage('PDR JSON을 내보내지 못했습니다: $error');
+    } finally {
+      if (mounted) setState(() => _exportingPdrDebugJson = false);
+    }
   }
 
   @override
@@ -458,6 +522,9 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
 
     final route = _route;
     final routeDestination = _routeDestination;
+    final pdrActive =
+        indoorNavigationDriver.currentRuntimeStatus.state !=
+        PdrRuntimeState.idle;
     final pdrCurrent = _pdrCurrentLocation;
     final current =
         pdrCurrent ??
@@ -525,10 +592,12 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
           right: 12,
           child: SafeArea(
             child: _PdrMapControl(
-              active:
-                  indoorNavigationDriver.currentRuntimeStatus.state !=
-                  PdrRuntimeState.idle,
+              active: pdrActive,
               onPressed: _togglePdr,
+              canExport:
+                  !pdrActive && (_pdrDebugRecorder?.hasSnapshot ?? false),
+              exporting: _exportingPdrDebugJson,
+              onExport: _exportPdrDebugJson,
             ),
           ),
         ),
@@ -571,10 +640,19 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
 /// 실제 지도 앱처럼 흰 surface 위에 상태 색만 얹어, 지도와 현재 위치가
 /// 시각적으로 우선되게 한다.
 class _PdrMapControl extends StatelessWidget {
-  const _PdrMapControl({required this.active, required this.onPressed});
+  const _PdrMapControl({
+    required this.active,
+    required this.onPressed,
+    required this.canExport,
+    required this.exporting,
+    required this.onExport,
+  });
 
   final bool active;
   final VoidCallback onPressed;
+  final bool canExport;
+  final bool exporting;
+  final VoidCallback onExport;
 
   @override
   Widget build(BuildContext context) {
@@ -588,41 +666,62 @@ class _PdrMapControl extends StatelessWidget {
         shape: StadiumBorder(
           side: BorderSide(color: color.withValues(alpha: active ? 0.36 : 0.2)),
         ),
-        child: InkWell(
-          onTap: onPressed,
-          customBorder: const StadiumBorder(),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(10, 8, 13, 8),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 26,
-                  height: 26,
-                  decoration: BoxDecoration(
-                    color: color,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    active ? Icons.stop_rounded : Icons.directions_walk_rounded,
-                    size: 17,
-                    color: Colors.white,
-                  ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            InkWell(
+              onTap: onPressed,
+              customBorder: const StadiumBorder(),
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(10, 8, canExport ? 7 : 13, 8),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 26,
+                      height: 26,
+                      decoration: BoxDecoration(
+                        color: color,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        active
+                            ? Icons.stop_rounded
+                            : Icons.directions_walk_rounded,
+                        size: 17,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(width: 7),
+                    Text(
+                      active ? 'PDR 종료' : 'PDR 시작',
+                      style: TextStyle(
+                        color: active
+                            ? const Color(0xFFB3261E)
+                            : const Color(0xFF202124),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 7),
-                Text(
-                  active ? 'PDR 종료' : 'PDR 시작',
-                  style: TextStyle(
-                    color: active
-                        ? const Color(0xFFB3261E)
-                        : const Color(0xFF202124),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
+            if (canExport) ...[
+              Container(width: 1, height: 24, color: const Color(0xFFE0E3E7)),
+              IconButton(
+                tooltip: 'PDR 디버그 JSON 공유',
+                onPressed: exporting ? null : onExport,
+                icon: exporting
+                    ? const SizedBox(
+                        width: 17,
+                        height: 17,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.ios_share_rounded, size: 20),
+              ),
+            ],
+          ],
         ),
       ),
     );

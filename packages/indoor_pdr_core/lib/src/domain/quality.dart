@@ -12,6 +12,9 @@ class PdrQualityFeatures {
     required this.pedometerUndercountSuspected,
     required this.pedometerFlaggedSpanS,
     required this.headingStable,
+    required this.headingSource,
+    required this.magneticAccuracy,
+    required this.rotationHeadingAccuracyDeg,
     required this.cadenceHz,
     required this.pitchDeg,
     required this.rollDeg,
@@ -33,6 +36,9 @@ class PdrQualityFeatures {
   final double pedometerFlaggedSpanS;
 
   final bool headingStable;
+  final String headingSource;
+  final String magneticAccuracy;
+  final double rotationHeadingAccuracyDeg;
   final double cadenceHz;
   final double pitchDeg;
   final double rollDeg;

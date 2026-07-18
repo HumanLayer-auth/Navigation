@@ -45,7 +45,7 @@ class AppliedBatchInfo {
 ///   방향 = fused heading smoothing + walkOffset 보정
 class PdrSession {
   PdrSession({PdrSessionConfig? config})
-      : config = config ?? const PdrSessionConfig() {
+    : config = config ?? const PdrSessionConfig() {
     _paths = PathAccumulator(maxPoints: this.config.maxPathPoints);
     _accelPreview = AccelPreviewTrack(maxPoints: this.config.maxPathPoints);
     _stride.fallbackMeters = this.config.fallbackStrideMeters;
@@ -79,6 +79,7 @@ class PdrSession {
   double pitchDeg = 0;
   double rollDeg = 0;
   String magneticAccuracy = 'unknown';
+  double rotationHeadingAccuracyDeg = -1;
   double walkDirDeg = 0;
   double walkDirConfidence = 0;
   int? lastMotionAtMs;
@@ -115,6 +116,8 @@ class PdrSession {
     headingSource = e.headingSource ?? headingSource;
     deviceHeadingDeg = e.deviceHeadingDeg ?? deviceHeadingDeg;
     magneticAccuracy = e.magneticAccuracy ?? magneticAccuracy;
+    rotationHeadingAccuracyDeg =
+        e.rotationHeadingAccuracyDeg ?? rotationHeadingAccuracyDeg;
     headingStable = e.headingStable ?? headingStable;
     yawDeg = e.yawDeg ?? yawDeg;
     gyroHeadingDeg = e.gyroHeadingDeg ?? gyroHeadingDeg;
@@ -125,8 +128,8 @@ class PdrSession {
 
     // motionTimestamp는 native step peak timestamp와 같은 시간축이다.
     final motionMs = e.motionTimestampMs;
-    final dtSeconds =
-        ((motionMs - (lastMotionAtMs ?? motionMs)) / 1000.0).clamp(0.0, 0.5);
+    final dtSeconds = ((motionMs - (lastMotionAtMs ?? motionMs)) / 1000.0)
+        .clamp(0.0, 0.5);
     lastMotionAtMs = motionMs;
 
     // 팔 흔들림은 smoothing 전 raw heading으로 판단한다.
@@ -162,8 +165,7 @@ class PdrSession {
       fallbackStrideMeters: _stride.fallbackMeters,
       confirmedSteps: iosTrackedSteps,
       confirmedDistanceM: _stride.trackedDistanceM,
-      pedometerCadenceHz:
-          _stride.cadenceAvailable ? _stride.cadenceHz : null,
+      pedometerCadenceHz: _stride.cadenceAvailable ? _stride.cadenceHz : null,
       headingAt: _headingHistory.at,
       fallbackHeadingDeg: walkingHeadingDeg,
     );
@@ -300,8 +302,9 @@ class PdrSession {
 
   PdrQuality _buildQuality() {
     final undercount = QualityMetrics.undercountScan(_pedometer.batches);
-    final undercountSuspected =
-        QualityMetrics.pedometerUndercountSuspected(_pedometer.batches);
+    final undercountSuspected = QualityMetrics.pedometerUndercountSuspected(
+      _pedometer.batches,
+    );
     final overcountLikely = QualityMetrics.accelOvercountLikely(
       nativeSessionSteps: _pedometer.nativeSessionSteps,
       accelPreviewSteps: _accelPreview.steps,
@@ -309,8 +312,9 @@ class PdrSession {
     );
     final green = _stride.trackedDistanceM;
     final orange = _accelPreview.distanceM;
-    final divergencePct =
-        green > 0 ? (orange - green).abs() / green * 100.0 : 0.0;
+    final divergencePct = green > 0
+        ? (orange - green).abs() / green * 100.0
+        : 0.0;
     final ratio = _pedometer.nativeSessionSteps > 0
         ? _accelPreview.steps / _pedometer.nativeSessionSteps
         : 0.0;
@@ -343,6 +347,9 @@ class PdrSession {
         pedometerUndercountSuspected: undercountSuspected,
         pedometerFlaggedSpanS: undercount.flaggedSpanMs / 1000.0,
         headingStable: headingStable,
+        headingSource: headingSource,
+        magneticAccuracy: magneticAccuracy,
+        rotationHeadingAccuracyDeg: rotationHeadingAccuracyDeg,
         cadenceHz: _stride.cadenceHz,
         pitchDeg: pitchDeg,
         rollDeg: rollDeg,
