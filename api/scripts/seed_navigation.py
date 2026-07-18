@@ -162,3 +162,4 @@ def add_transfer_edges(session: Session, transfers: list[dict]) -> None:
         )
         for transfer in transfers
     )
+

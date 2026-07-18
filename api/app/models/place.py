@@ -56,3 +56,5 @@ class Poi(Base):
     linked_node: Mapped["Node | None"] = relationship(
         foreign_keys=[linked_node_id],
     )
+
+

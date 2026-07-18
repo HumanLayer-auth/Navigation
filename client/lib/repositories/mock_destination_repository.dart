@@ -34,18 +34,12 @@ class MockDestinationRepository implements DestinationRepository {
             floor: floor,
             point: store.centroid,
             nodeId: store.entranceNodeId,
-            category: store.category ?? 'store',
           ),
         );
       }
       for (final poi in floorPlan.pois) {
         results.add(
-          PoiSearchResult(
-            name: poi.name,
-            floor: floor,
-            point: poi.point,
-            category: poi.type,
-          ),
+          PoiSearchResult(name: poi.name, floor: floor, point: poi.point),
         );
       }
     }

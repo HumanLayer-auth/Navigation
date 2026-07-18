@@ -48,9 +48,6 @@ vector_tile_migration_prompt.md
 vector_tile_handoff.md
 ui_redesign_prompt.md
 
-# Codex 내부 작업 설계·계획 문서
-docs/superpowers/
-
 # Generated SQLite database (api/scripts/load_dataset.py 로 재생성 가능)
 api/data/
 api/dataBase/*.db

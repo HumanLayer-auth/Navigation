@@ -30,14 +30,6 @@
 	<string>실외에서 현재 위치를 지도에 표시하기 위해 위치 권한이 필요합니다.</string>
 	<key>NSMotionUsageDescription</key>
 	<string>실내에서 걸음을 감지해 위치를 추정하기 위해 동작 센서 권한이 필요합니다.</string>
-	<key>NSLocalNetworkUsageDescription</key>
-	<string>개발용 FastAPI 서버에 연결해 실내 지도 데이터를 확인하기 위해 로컬 네트워크 접근이 필요합니다.</string>
-	<key>NSAppTransportSecurity</key>
-	<dict>
-		<!-- 개발 기기의 LAN FastAPI(http://IP:8000) 연동을 위한 설정이다. -->
-		<key>NSAllowsArbitraryLoads</key>
-		<true/>
-	</dict>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
