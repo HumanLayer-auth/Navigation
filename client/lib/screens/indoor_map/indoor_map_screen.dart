@@ -892,12 +892,12 @@ class _FloorChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(horizontal: 15),
+    // IndoorMapBody는 화면 본문으로도, 단독 위젯 테스트로도 쓰인다.
+    // 이 표면을 여기서 제공하면 어느 쪽에서도 InkWell이 Material 조상을
+    // 잃지 않고, 선택 시 ripple도 chip decoration 위에 자연스럽게 그려진다.
+    return Material(
+      color: Colors.transparent,
+      child: Ink(
         decoration: BoxDecoration(
           color: active ? AppColors.indoor : Colors.white,
           borderRadius: BorderRadius.circular(20),
@@ -915,12 +915,21 @@ class _FloorChip extends StatelessWidget {
             ),
           ],
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12.5,
-            fontWeight: FontWeight.w700,
-            color: active ? Colors.white : AppColors.muted,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 15),
+            child: Center(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                  color: active ? Colors.white : AppColors.muted,
+                ),
+              ),
+            ),
           ),
         ),
       ),
