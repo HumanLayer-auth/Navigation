@@ -41,10 +41,23 @@ class AffineTransform {
   final double lngScale;
 
   /// local_m 좌표 하나를 (lat, lng)로 변환한다.
-  (double lat, double lng) apply(double xM, double yM) {
+  (double, double) apply(double xM, double yM) {
     final u = a * xM + b * yM + tx;
     final v = c * xM + d * yM + ty;
     return (v, u / lngScale);
+  }
+
+  /// 지도에서 사용자가 탭한 WGS84 위치를 floor `local_m`으로 되돌린다.
+  ///
+  /// PDR anchor는 반드시 floor 좌표계에서 보관해야 하므로, UI tap 좌표를
+  /// 이 역변환으로 바꾼 뒤 [FloorCoordinateTransform]에 넘긴다. 그래프의
+  /// 대응점이 퇴화해 변환이 특이한 경우만 null이다.
+  (double, double)? invert(double lat, double lng) {
+    final u = lng * lngScale - tx;
+    final v = lat - ty;
+    final determinant = a * d - b * c;
+    if (determinant.abs() < 1e-12) return null;
+    return ((d * u - b * v) / determinant, (-c * u + a * v) / determinant);
   }
 }
 
@@ -95,7 +108,8 @@ List<_Pair> _syntheticPairs() {
 /// cos값(lngScale)을 경도에 곱해 등방(isotropic) 공간으로 만든 뒤 피팅한다.
 /// 대응점이 한 직선 위에 몰려 있어 유일해가 없으면 null을 반환한다.
 AffineTransform? _fitWgs84Transform(List<_Pair> pairs) {
-  final meanLat = pairs.map((p) => p.lat).reduce((a, b) => a + b) / pairs.length;
+  final meanLat =
+      pairs.map((p) => p.lat).reduce((a, b) => a + b) / pairs.length;
   final lngScale = math.cos(meanLat * math.pi / 180);
 
   // 정규방정식 (X^T X) w = X^T y를 u = a*x+b*y+tx, v = c*x+d*y+ty 각각 풀어

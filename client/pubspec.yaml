@@ -43,6 +43,12 @@ dependencies:
   flutter_svg: ^2.3.0
   maplibre_gl: ^0.26.0
   shared_preferences: ^2.3.2
+  share_plus: ^10.1.4
+  device_info_plus: ^11.2.0
+  package_info_plus: ^8.1.2
+  webview_flutter: ^4.14.0
+  indoor_pdr_core:
+    path: ../packages/indoor_pdr_core
 
 dev_dependencies:
   flutter_test:

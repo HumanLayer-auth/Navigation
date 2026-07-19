@@ -131,9 +131,7 @@ void main() {
   testWidgets('api health check shows loading then a status message', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(
-      const MaterialApp(home: ApiHealthCheckScreen()),
-    );
+    await tester.pumpWidget(const MaterialApp(home: ApiHealthCheckScreen()));
 
     // Right after start, the health check is in-flight.
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
@@ -288,14 +286,15 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('데모 건물'), findsOneWidget);
-    expect(find.textContaining('현재 1F 위치'), findsOneWidget);
+    // 실내 지도 보조 바는 건물명과 선택 층을 한 라벨로 표시한다.
+    expect(find.text('데모 건물 · 1F'), findsOneWidget);
     expect(find.byType(FloorPlanView), findsOneWidget);
-    expect(find.byIcon(Icons.layers), findsOneWidget);
 
-    // PDR이 아직 없어도, 실내 지도 진입 시 "현재 위치" 아이콘이 뜨도록
-    // 층 평면도 근사 위치가 FloorPlanView로 전달돼야 한다.
-    final floorPlanView = tester.widget<FloorPlanView>(find.byType(FloorPlanView));
+    // PDR이 아직 없어도, 실내 지도 진입 시 층 평면도 근사 위치가
+    // FloorPlanView로 전달돼야 한다.
+    final floorPlanView = tester.widget<FloorPlanView>(
+      find.byType(FloorPlanView),
+    );
     expect(floorPlanView.currentLocation, isNotNull);
   });
 
@@ -310,8 +309,12 @@ void main() {
     await tester.tap(find.text('2F'));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('현재 2F 위치'), findsOneWidget);
     expect(find.byType(FloorPlanView), findsOneWidget);
+    expect(find.text('데모 건물 · 2F'), findsOneWidget);
+    expect(
+      tester.widget<FloorPlanView>(find.byType(FloorPlanView)).floorName,
+      '2F',
+    );
   });
 
   testWidgets('destination screen shows every POI by default', (
@@ -405,7 +408,8 @@ void main() {
       MaterialApp(
         home: const ArrivalScreen(),
         routes: {
-          AppRoutes.indoorMap: (context) => const Scaffold(body: Text('INDOOR')),
+          AppRoutes.indoorMap: (context) =>
+              const Scaffold(body: Text('INDOOR')),
         },
       ),
     );
@@ -430,7 +434,8 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         routes: {
-          AppRoutes.indoorMap: (context) => const Scaffold(body: Text('INDOOR')),
+          AppRoutes.indoorMap: (context) =>
+              const Scaffold(body: Text('INDOOR')),
         },
         onGenerateInitialRoutes: (initialRoute) => [
           MaterialPageRoute(

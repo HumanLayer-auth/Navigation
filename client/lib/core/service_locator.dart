@@ -1,7 +1,12 @@
+import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import 'api_config.dart';
+import '../features/indoor_navigation/application/indoor_navigation_controller.dart';
+import '../features/indoor_navigation/platform/android_pdr_motion_source.dart';
+import '../features/indoor_navigation/platform/ios_pdr_motion_source.dart';
+import '../features/indoor_navigation/platform/pdr_motion_source.dart';
 import '../repositories/building_repository.dart';
 import '../repositories/destination_repository.dart';
 import '../repositories/directions_repository.dart';
@@ -10,6 +15,16 @@ import '../repositories/mock_destination_repository.dart';
 import '../repositories/mock_directions_repository.dart';
 import '../repositories/tmap_directions_repository.dart';
 import '../state/favorites_controller.dart';
+
+/// 앱 전체에서 공유하는 PDR 센서 소스와 세션 드라이버다. 화면이 바뀌어도
+/// 센서 세션을 다시 만들지 않도록 singleton으로 유지한다.
+final PdrMotionSource pdrMotionSource = switch (defaultTargetPlatform) {
+  TargetPlatform.android => AndroidPdrMotionSource(),
+  _ => IosPdrMotionSource(),
+};
+final IndoorNavigationDriver indoorNavigationDriver = IndoorNavigationDriver(
+  source: pdrMotionSource,
+);
 
 /// 실내 지도·목적지 검색·경로 안내가 전부 백엔드(api/) 다익스트라 그래프로
 /// 동작하도록 HttpBuildingRepository를 쓴다. 백엔드 없이 오프라인으로 확인할
@@ -38,10 +53,13 @@ final DirectionsRepository directionsRepository = tmapAppKey.isEmpty
 FavoritesController favoritesController = FavoritesController();
 
 Future<Map<Permission, PermissionStatus>> defaultRequestStartupPermissions() {
-  return [
-    Permission.locationWhenInUse,
-    Permission.activityRecognition,
-  ].request();
+  final permissions = <Permission>[Permission.locationWhenInUse];
+  if (defaultTargetPlatform == TargetPlatform.iOS) {
+    permissions.add(Permission.sensors);
+  } else if (defaultTargetPlatform == TargetPlatform.android) {
+    permissions.add(Permission.activityRecognition);
+  }
+  return permissions.request();
 }
 
 /// 스플래시 화면의 시작 권한 요청. 플랫폼 채널이 없는 테스트 환경에서는
