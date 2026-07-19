@@ -25,6 +25,7 @@ class Store(Base):
     floor_id: Mapped[str] = mapped_column(ForeignKey("floors.id"), nullable=False)
     name: Mapped[str] = mapped_column(String, nullable=False)
     category: Mapped[str | None] = mapped_column(String)
+    subcategory: Mapped[str | None] = mapped_column(String)
     centroid_x_m: Mapped[float] = mapped_column(Float, nullable=False)
     centroid_y_m: Mapped[float] = mapped_column(Float, nullable=False)
     entrance_x_m: Mapped[float | None] = mapped_column(Float)
