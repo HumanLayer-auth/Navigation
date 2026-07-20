@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/service_locator.dart';
 import '../models/favorite_place.dart';
 import '../theme/app_theme.dart';
+import 'sheet_header.dart';
 
 /// 사용자가 저장해둔 매장 목록을 보여주는 바텀시트.
 ///
@@ -13,19 +14,36 @@ import '../theme/app_theme.dart';
 /// 리스트 재빌드는 [ListenableBuilder]로 처리한다 — 수동으로 addListener
 /// 후 setState를 부르면 ReorderableListView의 드롭 애니메이션 중간에
 /// 재빌드가 끼어들어 `_elements.contains(element)` assertion이 터진다.
-class FavoritesSheet extends StatelessWidget {
-  const FavoritesSheet({super.key});
+class FavoritesSheet extends StatefulWidget {
+  const FavoritesSheet({super.key, required this.onCloseAll});
 
-  static Future<FavoritePlace?> show(BuildContext context) {
+  /// X 버튼이 눌리면 호출. 부모(MapShellScreen)가 chain-close 플래그를 세팅
+  /// 해 위쪽 시트들도 다시 열리지 않게 한다.
+  final VoidCallback onCloseAll;
+
+  static Future<FavoritePlace?> show(
+    BuildContext context, {
+    required VoidCallback onCloseAll,
+  }) {
     return showModalBottomSheet<FavoritePlace>(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (context) => const FavoritesSheet(),
+      builder: (context) => FavoritesSheet(onCloseAll: onCloseAll),
     );
   }
+
+  @override
+  State<FavoritesSheet> createState() => _FavoritesSheetState();
+}
+
+class _FavoritesSheetState extends State<FavoritesSheet> {
+  /// back/X/항목 선택으로 명시적 pop될 때 true. PopScope가 이 값이 false인
+  /// pop(=barrier/drag)을 잡아 chain 전체를 닫는다.
+  bool _intentionalPop = false;
+  void _markIntentional() => _intentionalPop = true;
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +52,12 @@ class FavoritesSheet extends StatelessWidget {
     // 리오더와 시트 스크롤이 같은 컨트롤러를 공유해 element 트리가 꼬이는
     // `_elements.contains(element)` assertion이 발생하기 때문이다.
     final maxHeight = MediaQuery.of(context).size.height * 0.8;
-    return SafeArea(
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop && !_intentionalPop) widget.onCloseAll();
+      },
+      child: SafeArea(
       top: false,
       child: ConstrainedBox(
         constraints: BoxConstraints(maxHeight: maxHeight),
@@ -42,16 +65,10 @@ class FavoritesSheet extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
-              child: Text(
-                '저장한 장소',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.text,
-                ),
-              ),
+            SheetHeader(
+              title: '저장한 장소',
+              onCloseAll: widget.onCloseAll,
+              onIntentionalPop: _markIntentional,
             ),
             Flexible(
               child: ListenableBuilder(
@@ -86,7 +103,10 @@ class FavoritesSheet extends StatelessWidget {
                         index: index,
                         child: _FavoriteTile(
                           place: place,
-                          onTap: () => Navigator.of(context).pop(place),
+                          onTap: () {
+                            _markIntentional();
+                            Navigator.of(context).pop(place);
+                          },
                           onDelete: () =>
                               favoritesController.removeByKey(place.key),
                         ),
@@ -98,6 +118,7 @@ class FavoritesSheet extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }
