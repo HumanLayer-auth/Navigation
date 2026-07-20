@@ -63,6 +63,14 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
 
+# objective_c 9.4.1 calls xcrun from its build hook even when Xcode already
+# supplies SDKROOT. Xcode 26 can return empty output in that nested build
+# environment, so use the repository-pinned SDK resolver until upstream ships
+# an equivalent fix. See packages/objective_c_patched/PATCHES.md.
+dependency_overrides:
+  objective_c:
+    path: ../packages/objective_c_patched
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
