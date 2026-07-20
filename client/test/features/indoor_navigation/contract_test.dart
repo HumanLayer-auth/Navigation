@@ -135,12 +135,11 @@ void main() {
       expect(p.northM, closeTo(-1, 1e-9));
     });
 
-    test('90도 회전을 적용한다', () {
+    test('나침반 90도 보정은 북쪽 벡터를 동쪽으로 돌린다', () {
       final t = FloorCoordinateTransform(anchor(rotationDeg: 90));
-      // (1,0) → 90도 회전 → (0,1)
-      final p = t.toFloor(const PdrLocalPoint(1, 0));
-      expect(p.eastM, closeTo(0, 1e-9));
-      expect(p.northM, closeTo(1, 1e-9));
+      final p = t.toFloor(const PdrLocalPoint(0, 1));
+      expect(p.eastM, closeTo(1, 1e-9));
+      expect(p.northM, closeTo(0, 1e-9));
     });
 
     test('남쪽으로 증가하는 floor y축으로 자북 PDR를 바꾼다', () {
@@ -165,9 +164,9 @@ void main() {
         anchor(origin: const PdrLocalPoint(5, 5), rotationDeg: 90),
       );
       final p = t.toFloor(const PdrLocalPoint(2, 0));
-      // (2,0)→회전→(0,2)→+anchor(5,5)→(5,7)
+      // east 2m → bearing +90° 보정 → south 2m → +anchor(5,5)
       expect(p.eastM, closeTo(5, 1e-9));
-      expect(p.northM, closeTo(7, 1e-9));
+      expect(p.northM, closeTo(3, 1e-9));
     });
   });
 }

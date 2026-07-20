@@ -104,14 +104,31 @@ PdrToFloorAxes fitPdrToFloorAxes(List<GraphNode> nodes) {
     return const PdrToFloorAxes.identity();
   }
 
-  // transform의 u=lng*cos(lat), v=lat는 모두 degree 단위다. PDR는 미터
-  // 단위이므로 (east, north)를 degree로 바꾼 뒤 local_m에 대한 역변환을 적용한다.
-  final scale = _metersPerDegreeLat * determinant;
+  // 역 affine의 두 열은 east/north가 floor에서 향하는 방향이다. local_m이
+  // 실제 미터가 된 뒤에는 WGS84 fit의 미세한 scale/shear 오차를 PDR 거리에
+  // 섞지 않도록 Gram-Schmidt로 직교 단위축만 남긴다.
+  final eastScale = _metersPerDegreeLat * determinant;
+  var eastX = transform.d / eastScale;
+  var eastY = -transform.c / eastScale;
+  final eastNorm = math.sqrt(eastX * eastX + eastY * eastY);
+  if (eastNorm < 1e-12) return const PdrToFloorAxes.identity();
+  eastX /= eastNorm;
+  eastY /= eastNorm;
+
+  var northX = -transform.b / eastScale;
+  var northY = transform.a / eastScale;
+  final projection = northX * eastX + northY * eastY;
+  northX -= projection * eastX;
+  northY -= projection * eastY;
+  final northNorm = math.sqrt(northX * northX + northY * northY);
+  if (northNorm < 1e-12) return const PdrToFloorAxes.identity();
+  northX /= northNorm;
+  northY /= northNorm;
   return PdrToFloorAxes(
-    eastToX: transform.d / scale,
-    northToX: -transform.b / scale,
-    eastToY: -transform.c / scale,
-    northToY: transform.a / scale,
+    eastToX: eastX,
+    northToX: northX,
+    eastToY: eastY,
+    northToY: northY,
   );
 }
 

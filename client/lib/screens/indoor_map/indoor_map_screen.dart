@@ -85,6 +85,7 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
   String? _selectedFloor;
   FloorPlan? _floorPlan;
   FloorGraph? _floorGraph;
+  String _mapCalibrationVersion = 'unversioned';
   IndoorRoute? _route;
   PoiSearchResult? _routeDestination;
   bool _interactive = true;
@@ -226,6 +227,7 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
       // 때까지는 로딩 스피너만 보이도록 확실히 비워둔다.
       _floorPlan = null;
       _floorGraph = null;
+      _mapCalibrationVersion = 'unversioned';
     });
     try {
       final building = await buildingRepository.getBuilding(widget.buildingId);
@@ -263,6 +265,8 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
       setState(() {
         _floorPlan = FloorPlan.fromJson(geojson);
         _floorGraph = graph;
+        _mapCalibrationVersion =
+            geojson['map_calibration_version'] as String? ?? 'unversioned';
       });
     } catch (_) {
       if (!mounted) return;
@@ -276,6 +280,7 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
       _selectedFloor = floor;
       _floorPlan = null;
       _floorGraph = null;
+      _mapCalibrationVersion = 'unversioned';
       // 층을 바꾸면 이전 경로는 다른 층 지도 위에 남아 있어도 의미가 없다.
       _route = null;
       _routeDestination = null;
@@ -641,6 +646,7 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
       final session = recorder.buildJson(
         buildingId: widget.buildingId,
         selectedFloor: _selectedFloor,
+        mapCalibrationVersion: _mapCalibrationVersion,
         graph: _floorGraph,
         device: device,
       );

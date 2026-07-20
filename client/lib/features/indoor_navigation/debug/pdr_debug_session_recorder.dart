@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:indoor_pdr_core/indoor_pdr_core.dart';
 
 import '../../../models/floor_graph.dart';
@@ -14,7 +16,7 @@ class PdrDebugSessionRecorder {
   PdrDebugSessionRecorder({DateTime? startedAt})
     : _startedAt = startedAt ?? DateTime.now().toUtc();
 
-  static const schemaVersion = 2;
+  static const schemaVersion = 3;
   static const _maxQualitySamples = 900;
 
   final DateTime _startedAt;
@@ -56,6 +58,7 @@ class PdrDebugSessionRecorder {
   Map<String, Object?> buildJson({
     required String buildingId,
     required String? selectedFloor,
+    required String mapCalibrationVersion,
     required FloorGraph? graph,
     required Map<String, Object?> device,
     DateTime? exportedAt,
@@ -88,11 +91,16 @@ class PdrDebugSessionRecorder {
       'map_context': {
         'building_id': buildingId,
         'floor_id': selectedFloor,
+        'map_calibration_version': mapCalibrationVersion,
         'graph_node_count': graph?.nodes.length ?? 0,
         'graph_edge_count': graph?.edges.length ?? 0,
       },
       'anchor': _anchorJson(anchor),
-      'summary': _summaryJson(snapshot),
+      'summary': _summaryJson(
+        snapshot,
+        floorPathDistanceM: _pathLength(floorPath),
+        mapMatchedDistanceM: _pathLength(matchedPath),
+      ),
       'paths': {
         'confirmed_pdr_local_m': _pointsJson(rawPath),
         'floor_local_m_before_matching': _pointsJson(floorPath),
@@ -128,13 +136,19 @@ class PdrDebugSessionRecorder {
     };
   }
 
-  static Map<String, Object?> _summaryJson(PdrSnapshot? snapshot) {
+  static Map<String, Object?> _summaryJson(
+    PdrSnapshot? snapshot, {
+    required double floorPathDistanceM,
+    required double mapMatchedDistanceM,
+  }) {
     if (snapshot == null) return const {'recorded': false};
     final features = snapshot.quality.features;
     return {
       'recorded': true,
       'confirmed_steps': snapshot.steps,
       'confirmed_distance_m': snapshot.distanceM,
+      'floor_path_distance_m_before_matching': floorPathDistanceM,
+      'map_matched_path_distance_m': mapMatchedDistanceM,
       'walking_heading_deg': snapshot.walkingHeadingDeg,
       'has_heading': snapshot.hasHeading,
       'preview_steps': snapshot.preview.steps,
@@ -170,6 +184,16 @@ class PdrDebugSessionRecorder {
     'east_m': point.eastM,
     'north_m': point.northM,
   };
+
+  static double _pathLength(List<PdrLocalPoint> points) {
+    var total = 0.0;
+    for (var index = 1; index < points.length; index++) {
+      final dx = points[index].eastM - points[index - 1].eastM;
+      final dy = points[index].northM - points[index - 1].northM;
+      total += math.sqrt(dx * dx + dy * dy);
+    }
+    return total;
+  }
 }
 
 class _PdrQualitySample {

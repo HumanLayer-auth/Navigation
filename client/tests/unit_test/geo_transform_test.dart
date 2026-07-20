@@ -54,4 +54,23 @@ void main() {
     expect(floorDelta.eastM, closeTo(2, 1e-6));
     expect(floorDelta.northM, closeTo(-5, 1e-6));
   });
+
+  test('WGS84 affine의 scale과 shear를 PDR 보행 거리에 섞지 않는다', () {
+    final nodes = [
+      node(0, 0, lat: 0, lng: 0),
+      node(10, 0, lat: 0.2 / 111320, lng: 12 / 111320),
+      node(0, 10, lat: -8 / 111320, lng: 0.3 / 111320),
+    ];
+
+    final axes = fitPdrToFloorAxes(nodes);
+    final east = axes.apply(const PdrLocalPoint(1, 0));
+    final north = axes.apply(const PdrLocalPoint(0, 1));
+    final eastNorm = (east.eastM * east.eastM + east.northM * east.northM);
+    final northNorm = (north.eastM * north.eastM + north.northM * north.northM);
+    final dot = east.eastM * north.eastM + east.northM * north.northM;
+
+    expect(eastNorm, closeTo(1, 1e-9));
+    expect(northNorm, closeTo(1, 1e-9));
+    expect(dot, closeTo(0, 1e-9));
+  });
 }

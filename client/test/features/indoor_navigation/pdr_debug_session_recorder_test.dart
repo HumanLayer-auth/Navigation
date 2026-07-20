@@ -94,6 +94,7 @@ void main() {
     final json = recorder.buildJson(
       buildingId: 'thehyundai-seoul',
       selectedFloor: '1F',
+      mapCalibrationVersion: 'thehyundai-seoul-1f-svg-v1',
       graph: _graph(),
       device: const {'device_name': 'Test device'},
       exportedAt: DateTime.utc(2026, 7, 18, 9, 1),
@@ -104,8 +105,14 @@ void main() {
     final matched = paths['map_matched_floor_local_m']! as List<Object?>;
     final finalMatched = matched.last! as Map<String, double>;
 
-    expect(json['schema_version'], 2);
+    expect(json['schema_version'], 3);
+    expect(
+      (json['map_context']! as Map<String, Object?>)['map_calibration_version'],
+      'thehyundai-seoul-1f-svg-v1',
+    );
     expect(summary['confirmed_steps'], 4);
+    expect(summary['confirmed_distance_m'], 3.1);
+    expect(summary['map_matched_path_distance_m'], closeTo(4, 1e-9));
     expect(
       (summary['quality']! as Map<String, Object?>)['magnetic_accuracy'],
       'low',

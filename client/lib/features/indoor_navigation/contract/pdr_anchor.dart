@@ -81,6 +81,20 @@ class PdrToFloorAxes {
   );
 }
 
+/// 나침반 bearing 보정각을 PDR east/north 벡터에 적용한다.
+///
+/// bearing은 0°=북쪽, 90°=동쪽이며 시계 방향으로 증가한다. 따라서 일반적인
+/// Cartesian 반시계 회전 행렬과 부호가 반대다.
+PdrLocalPoint rotatePdrBearing(PdrLocalPoint point, double bearingDeg) {
+  final theta = bearingDeg * math.pi / 180.0;
+  final cosT = math.cos(theta);
+  final sinT = math.sin(theta);
+  return PdrLocalPoint(
+    point.eastM * cosT + point.northM * sinT,
+    -point.eastM * sinT + point.northM * cosT,
+  );
+}
+
 /// PDR 좌표를 floor 좌표로 옮기는 순수 변환. UI는 이 결과 좌표만 렌더한다.
 ///
 class FloorCoordinateTransform {
@@ -92,13 +106,7 @@ class FloorCoordinateTransform {
 
   /// PDR 로컬 좌표를 floor local_m 좌표로 변환한다.
   PdrLocalPoint toFloor(PdrLocalPoint pdr) {
-    final theta = anchor.rotationDeg * math.pi / 180.0;
-    final cosT = math.cos(theta);
-    final sinT = math.sin(theta);
-    final rotated = PdrLocalPoint(
-      pdr.eastM * cosT - pdr.northM * sinT,
-      pdr.eastM * sinT + pdr.northM * cosT,
-    );
+    final rotated = rotatePdrBearing(pdr, anchor.rotationDeg);
     final floorDelta = axes.apply(rotated);
     return PdrLocalPoint(
       anchor.anchorLocalM.eastM + floorDelta.eastM,

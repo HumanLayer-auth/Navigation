@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:indoor_pdr_core/indoor_pdr_core.dart';
 
@@ -308,12 +307,9 @@ class IndoorNavigationDriver implements IndoorNavigationController {
     // anchorLocalM = pinFloor - axes·R(rotationDeg)·pinPdr.
     // PDR는 +east/+north지만 floor local_m은 +y가 남쪽일 수 있으므로, anchor
     // 확정에도 렌더링과 같은 축 변환을 적용해야 한다.
-    final theta = rotationDeg * math.pi / 180.0;
-    final cosT = math.cos(theta);
-    final sinT = math.sin(theta);
-    final rx = pinPdr.eastM * cosT - pinPdr.northM * sinT;
-    final ry = pinPdr.eastM * sinT + pinPdr.northM * cosT;
-    final mappedPinPdr = _pendingAxes.apply(PdrLocalPoint(rx, ry));
+    final mappedPinPdr = _pendingAxes.apply(
+      rotatePdrBearing(pinPdr, rotationDeg),
+    );
     final anchorLocalM = PdrLocalPoint(
       pinFloor.eastM - mappedPinPdr.eastM,
       pinFloor.northM - mappedPinPdr.northM,
