@@ -1,0 +1,19 @@
+name: objective_c
+description: >-
+  Repository-pinned objective_c 9.4.1 with a resilient Apple SDK resolver for
+  Flutter builds launched from Xcode.
+version: 9.4.1+sdkroot.1
+publish_to: none
+repository: https://github.com/dart-lang/native/tree/main/pkgs/objective_c
+
+environment:
+  sdk: '>=3.10.0 <4.0.0'
+
+dependencies:
+  code_assets: ^1.1.0
+  collection: ^1.19.1
+  ffi: ^2.1.0
+  hooks: ^2.0.0
+  logging: ^1.3.0
+  meta: ^1.15.0
+  pub_semver: ^2.1.4

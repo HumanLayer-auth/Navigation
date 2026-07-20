@@ -42,6 +42,13 @@ dependencies:
   geolocator: ^13.0.2
   flutter_svg: ^2.3.0
   maplibre_gl: ^0.26.0
+  shared_preferences: ^2.3.2
+  share_plus: ^10.1.4
+  device_info_plus: ^11.2.0
+  package_info_plus: ^8.1.2
+  webview_flutter: ^4.14.0
+  indoor_pdr_core:
+    path: ../packages/indoor_pdr_core
 
 dev_dependencies:
   flutter_test:
@@ -55,6 +62,14 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+
+# objective_c 9.4.1 calls xcrun from its build hook even when Xcode already
+# supplies SDKROOT. Xcode 26 can return empty output in that nested build
+# environment, so use the repository-pinned SDK resolver until upstream ships
+# an equivalent fix. See packages/objective_c_patched/PATCHES.md.
+dependency_overrides:
+  objective_c:
+    path: ../packages/objective_c_patched
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

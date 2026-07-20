@@ -6,6 +6,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:navigation_client/app.dart';
 import 'package:navigation_client/core/api_config.dart';
@@ -86,6 +87,8 @@ void main() {
   final testBuildingRepository = MockBuildingRepository();
 
   setUp(() {
+    // ignore: invalid_use_of_visible_for_testing_member
+    SharedPreferences.setMockInitialValues({});
     // 실제 permission_handler/geolocator 플러그인 채널이 없는 테스트 환경에서
     // 멈추지 않도록 즉시 완료되는 가짜 함수로 교체한다.
     requestStartupPermissions = () async => {};
@@ -131,9 +134,7 @@ void main() {
   testWidgets('api health check shows loading then a status message', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(
-      const MaterialApp(home: ApiHealthCheckScreen()),
-    );
+    await tester.pumpWidget(const MaterialApp(home: ApiHealthCheckScreen()));
 
     // Right after start, the health check is in-flight.
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
@@ -277,7 +278,8 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('데모 건물'), findsOneWidget);
+    // 최신 실내 chrome은 건물명을 중복 표시하지 않고 현재 층 chip만 남긴다.
+    expect(find.text('1F'), findsOneWidget);
   });
 
   testWidgets('indoor map renders the floor plan view', (
@@ -288,16 +290,44 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('데모 건물'), findsOneWidget);
-    expect(find.textContaining('현재 1F 위치'), findsOneWidget);
+    // 검색창 아래 보조 바에는 현재 층 chip만 표시한다.
+    expect(find.text('1F'), findsOneWidget);
     expect(find.byType(FloorPlanView), findsOneWidget);
-    expect(find.byIcon(Icons.layers), findsOneWidget);
 
-    // PDR이 아직 없어도, 실내 지도 진입 시 "현재 위치" 아이콘이 뜨도록
-    // 층 평면도 근사 위치가 FloorPlanView로 전달돼야 한다.
-    final floorPlanView = tester.widget<FloorPlanView>(find.byType(FloorPlanView));
-    expect(floorPlanView.currentLocation, isNotNull);
+    // PDR anchor 또는 실제 경로가 아직 없으면, 도면 중앙을 현재 위치로
+    // 가장하지 않는다. 사용자가 PDR 시작점을 지정한 뒤에만 위치를 표시한다.
+    final floorPlanView = tester.widget<FloorPlanView>(
+      find.byType(FloorPlanView),
+    );
+    expect(floorPlanView.currentLocation, isNull);
+
+    // 기본 지도에는 설정 진입점만 남고 PDR 제어는 디버그 모드를 켠 뒤에만
+    // 나타난다. 일반 사용자의 내비게이션 UI와 센서 테스트 UI를 분리한다.
+    expect(find.byIcon(Icons.bug_report_outlined), findsOneWidget);
+    expect(find.text('PDR 시작'), findsNothing);
   });
+
+  testWidgets(
+    'debug settings stays at bottom while PDR control sits below search',
+    (WidgetTester tester) async {
+      // ignore: invalid_use_of_visible_for_testing_member
+      SharedPreferences.setMockInitialValues({'debug_mode.enabled': true});
+      await tester.pumpWidget(
+        const MaterialApp(home: IndoorMapBody(buildingId: demoBuildingId)),
+      );
+      await tester.pumpAndSettle();
+
+      final logicalHeight =
+          tester.view.physicalSize.height / tester.view.devicePixelRatio;
+      final debugButtonY = tester
+          .getCenter(find.byIcon(Icons.bug_report_outlined))
+          .dy;
+      final pdrButtonY = tester.getCenter(find.text('PDR 시작')).dy;
+
+      expect(debugButtonY, greaterThan(logicalHeight - 100));
+      expect(pdrButtonY, lessThan(180));
+    },
+  );
 
   testWidgets('indoor map switches floor via the floor tabs', (
     WidgetTester tester,
@@ -307,11 +337,18 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    // 접힌 층 chip을 먼저 연 뒤 다른 층을 선택한다.
+    await tester.tap(find.text('1F'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('2F'));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('현재 2F 위치'), findsOneWidget);
     expect(find.byType(FloorPlanView), findsOneWidget);
+    expect(find.text('2F'), findsOneWidget);
+    expect(
+      tester.widget<FloorPlanView>(find.byType(FloorPlanView)).floorName,
+      '2F',
+    );
   });
 
   testWidgets('destination screen shows every POI by default', (
@@ -405,7 +442,8 @@ void main() {
       MaterialApp(
         home: const ArrivalScreen(),
         routes: {
-          AppRoutes.indoorMap: (context) => const Scaffold(body: Text('INDOOR')),
+          AppRoutes.indoorMap: (context) =>
+              const Scaffold(body: Text('INDOOR')),
         },
       ),
     );
@@ -430,7 +468,8 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         routes: {
-          AppRoutes.indoorMap: (context) => const Scaffold(body: Text('INDOOR')),
+          AppRoutes.indoorMap: (context) =>
+              const Scaffold(body: Text('INDOOR')),
         },
         onGenerateInitialRoutes: (initialRoute) => [
           MaterialPageRoute(

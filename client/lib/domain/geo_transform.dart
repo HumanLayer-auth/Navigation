@@ -12,9 +12,10 @@ library;
 
 import 'dart:math' as math;
 
+import '../features/indoor_navigation/contract/pdr_anchor.dart';
 import '../models/floor_graph.dart';
 
-/// test-center처럼 실측 wgs84 앵커가 전혀 없는 합성 건물을 임의로 배치할
+/// 실측 wgs84 앵커가 전혀 없는 합성 데이터셋을 임의로 배치할
 /// 기준점(서울시청). geo_transform.py의 _SYNTHETIC_ANCHOR_*와 반드시 같은 값을
 /// 유지해야 서버가 계산했던 것과 같은 위치에 경로가 그려진다.
 const _syntheticAnchorLat = 37.5665;
@@ -41,10 +42,23 @@ class AffineTransform {
   final double lngScale;
 
   /// local_m 좌표 하나를 (lat, lng)로 변환한다.
-  (double lat, double lng) apply(double xM, double yM) {
+  (double, double) apply(double xM, double yM) {
     final u = a * xM + b * yM + tx;
     final v = c * xM + d * yM + ty;
     return (v, u / lngScale);
+  }
+
+  /// 지도에서 사용자가 탭한 WGS84 위치를 floor `local_m`으로 되돌린다.
+  ///
+  /// PDR anchor는 반드시 floor 좌표계에서 보관해야 하므로, UI tap 좌표를
+  /// 이 역변환으로 바꾼 뒤 [FloorCoordinateTransform]에 넘긴다. 그래프의
+  /// 대응점이 퇴화해 변환이 특이한 경우만 null이다.
+  (double, double)? invert(double lat, double lng) {
+    final u = lng * lngScale - tx;
+    final v = lat - ty;
+    final determinant = a * d - b * c;
+    if (determinant.abs() < 1e-12) return null;
+    return ((d * u - b * v) / determinant, (-c * u + a * v) / determinant);
   }
 }
 
@@ -57,17 +71,65 @@ class _Pair {
 }
 
 /// 노드의 (x_m, y_m, lat, lng) 대응점들로 local_m -> WGS84 affine 변환을 피팅한다.
-/// 실측 앵커가 3개 미만이면(건물에 wgs84 앵커가 없음) geo_transform.py와 동일한
-/// 합성 대응점으로 대체한다 — 그래야 앵커 없는 건물도 서버와 같은 위치에 뜬다.
+/// 실측 앵커가 3개 미만이거나(건물에 wgs84 앵커가 없음) 한 직선 위에 몰려 있어
+/// 유일해를 구할 수 없으면(예: 노드가 한 방향 복도에만 있는 층) geo_transform.py와
+/// 동일한 합성 대응점으로 대체한다 — 그래야 이런 건물도 서버와 같은 위치에 뜬다.
 AffineTransform fitFloorGeoTransform(List<GraphNode> nodes) {
-  var pairs = nodes
+  final realPairs = nodes
       .where((node) => node.lat != null && node.lng != null)
       .map((node) => _Pair(node.xM, node.yM, node.lat!, node.lng!))
       .toList();
 
-  if (pairs.length < 3) pairs = _syntheticPairs();
+  if (realPairs.length >= 3) {
+    final transform = _fitWgs84Transform(realPairs);
+    if (transform != null) return transform;
+  }
 
-  return _fitWgs84Transform(pairs);
+  // _syntheticPairs()는 한 직선 위에 있지 않은 3점(L자형)이라 항상 풀린다.
+  return _fitWgs84Transform(_syntheticPairs())!;
+}
+
+/// 자북 기준 PDR 좌표 `(east, north)`를 이 층의 `local_m` 증분으로 바꾼다.
+///
+/// [AffineTransform]은 `local_m -> (lng*cos(lat), lat)` 선형부를 갖는다.
+/// 이를 역행렬로 풀면 실제 동·북쪽 1m가 평면도의 어느 축·부호로 움직이는지
+/// 얻을 수 있다. 더현대 1F의 경우 local y가 북쪽이 아니라 남쪽으로 증가하므로
+/// 결과는 거의 `(east, north) -> (east, -north)`다.
+///
+/// 좌표 대응점이 퇴화한 층은 기존 동작을 보존하도록 항등 변환을 쓴다.
+PdrToFloorAxes fitPdrToFloorAxes(List<GraphNode> nodes) {
+  final transform = fitFloorGeoTransform(nodes);
+  final determinant = transform.a * transform.d - transform.b * transform.c;
+  if (determinant.abs() < 1e-12) {
+    return const PdrToFloorAxes.identity();
+  }
+
+  // 역 affine의 두 열은 east/north가 floor에서 향하는 방향이다. local_m이
+  // 실제 미터가 된 뒤에는 WGS84 fit의 미세한 scale/shear 오차를 PDR 거리에
+  // 섞지 않도록 Gram-Schmidt로 직교 단위축만 남긴다.
+  final eastScale = _metersPerDegreeLat * determinant;
+  var eastX = transform.d / eastScale;
+  var eastY = -transform.c / eastScale;
+  final eastNorm = math.sqrt(eastX * eastX + eastY * eastY);
+  if (eastNorm < 1e-12) return const PdrToFloorAxes.identity();
+  eastX /= eastNorm;
+  eastY /= eastNorm;
+
+  var northX = -transform.b / eastScale;
+  var northY = transform.a / eastScale;
+  final projection = northX * eastX + northY * eastY;
+  northX -= projection * eastX;
+  northY -= projection * eastY;
+  final northNorm = math.sqrt(northX * northX + northY * northY);
+  if (northNorm < 1e-12) return const PdrToFloorAxes.identity();
+  northX /= northNorm;
+  northY /= northNorm;
+  return PdrToFloorAxes(
+    eastToX: eastX,
+    northToX: northX,
+    eastToY: eastY,
+    northToY: northY,
+  );
 }
 
 List<_Pair> _syntheticPairs() {
@@ -88,8 +150,10 @@ List<_Pair> _syntheticPairs() {
 /// (x,y) -> (lng, lat) 대응점들로 6-DOF affine 변환을 최소자승 피팅한다.
 /// 위도/경도 1도의 실제 거리가 다른 문제를 보정하기 위해 평균 위도의
 /// cos값(lngScale)을 경도에 곱해 등방(isotropic) 공간으로 만든 뒤 피팅한다.
-AffineTransform _fitWgs84Transform(List<_Pair> pairs) {
-  final meanLat = pairs.map((p) => p.lat).reduce((a, b) => a + b) / pairs.length;
+/// 대응점이 한 직선 위에 몰려 있어 유일해가 없으면 null을 반환한다.
+AffineTransform? _fitWgs84Transform(List<_Pair> pairs) {
+  final meanLat =
+      pairs.map((p) => p.lat).reduce((a, b) => a + b) / pairs.length;
   final lngScale = math.cos(meanLat * math.pi / 180);
 
   // 정규방정식 (X^T X) w = X^T y를 u = a*x+b*y+tx, v = c*x+d*y+ty 각각 풀어
@@ -126,6 +190,7 @@ AffineTransform _fitWgs84Transform(List<_Pair> pairs) {
 
   final abTx = _solve3x3(normal, [sxu, syu, su]);
   final cdTy = _solve3x3(normal, [sxv, syv, sv]);
+  if (abTx == null || cdTy == null) return null;
 
   return AffineTransform(
     a: abTx[0],
@@ -138,9 +203,11 @@ AffineTransform _fitWgs84Transform(List<_Pair> pairs) {
   );
 }
 
-/// 3x3 선형계 A*w=b를 크라메르 공식으로 푼다.
-List<double> _solve3x3(List<List<double>> a, List<double> b) {
+/// 3x3 선형계 A*w=b를 크라메르 공식으로 푼다. 대응점이 한 직선 위에 몰려
+/// 있어 A가 특이행렬이면(det≈0) null을 반환한다.
+List<double>? _solve3x3(List<List<double>> a, List<double> b) {
   final det = _det3x3(a);
+  if (det.abs() < 1e-9) return null;
 
   final w = List<double>.filled(3, 0);
   for (var col = 0; col < 3; col++) {

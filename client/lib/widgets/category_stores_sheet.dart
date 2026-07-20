@@ -1,0 +1,247 @@
+import 'package:flutter/material.dart';
+
+import '../core/service_locator.dart';
+import '../models/floor_plan.dart';
+import '../models/poi_search_result.dart';
+import '../theme/app_theme.dart';
+import 'sheet_header.dart';
+
+/// 매장 정보 시트에서 카테고리 chip을 누르면 뜨는, 같은 대분류에 속하는
+/// 매장을 층별로 훑어볼 수 있는 목록 시트. 사용자가 항목을 탭하면 그 매장의
+/// [PoiSearchResult]로 pop해서 호출자가 다시 매장 정보 시트를 띄우게 한다.
+///
+/// 건물 전체 층을 순회하며 stores를 모아야 해서 첫 로드는 층 수만큼의 API
+/// 호출이 필요하다 — HttpBuildingRepository가 이 응답을 이미 캐시하므로
+/// 같은 건물 안에서는 두 번째부터 즉시 뜬다.
+class CategoryStoresSheet extends StatefulWidget {
+  const CategoryStoresSheet({
+    super.key,
+    required this.buildingId,
+    required this.category,
+    required this.onCloseAll,
+  });
+
+  final String buildingId;
+  final String category;
+
+  /// X 버튼이 눌리면 호출. 부모(MapShellScreen)가 chain-close 플래그를 세팅해
+  /// 위쪽 시트들(예: 매장 정보 시트, 저장한 장소)이 다시 열리지 않게 한다.
+  final VoidCallback onCloseAll;
+
+  static Future<PoiSearchResult?> show(
+    BuildContext context, {
+    required String buildingId,
+    required String category,
+    required VoidCallback onCloseAll,
+  }) {
+    return showModalBottomSheet<PoiSearchResult>(
+      context: context,
+      isScrollControlled: true,
+      isDismissible: true,
+      backgroundColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => CategoryStoresSheet(
+        buildingId: buildingId,
+        category: category,
+        onCloseAll: onCloseAll,
+      ),
+    );
+  }
+
+  @override
+  State<CategoryStoresSheet> createState() => _CategoryStoresSheetState();
+}
+
+class _CategoryStoresSheetState extends State<CategoryStoresSheet> {
+  late final Future<List<_CategoryStoreEntry>> _entriesFuture = _load();
+
+  /// back/X/항목 선택처럼 명시적 조작으로 pop될 때 true. PopScope가 pop을
+  /// 받았을 때 이 값이 false면 barrier·drag-down으로 dismiss된 것으로 보고
+  /// chain 전체를 닫는다.
+  bool _intentionalPop = false;
+  void _markIntentional() => _intentionalPop = true;
+
+  Future<List<_CategoryStoreEntry>> _load() async {
+    final building = await buildingRepository.getBuilding(widget.buildingId);
+    if (building == null) return const [];
+    final entries = <_CategoryStoreEntry>[];
+    for (final floor in building.floors) {
+      final json = await buildingRepository.getFloorGeoJson(
+        widget.buildingId,
+        floor,
+      );
+      if (json == null) continue;
+      final plan = FloorPlan.fromJson(json);
+      for (final store in plan.stores) {
+        if (store.category == widget.category) {
+          entries.add(_CategoryStoreEntry(store: store, floor: floor));
+        }
+      }
+    }
+    return entries;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // 바깥(투명 상단·barrier·drag-down) 탭으로 닫히면 PopScope가 잡아 chain
+    // 전체를 닫는다(back 버튼과 구분됨). 내부 콘텐츠는 inner GestureDetector가
+    // dismiss 전파를 막는다.
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop && !_intentionalPop) widget.onCloseAll();
+      },
+      child: GestureDetector(
+      onTap: () => Navigator.of(context).maybePop(),
+      behavior: HitTestBehavior.opaque,
+      child: DraggableScrollableSheet(
+        initialChildSize: 0.55,
+        minChildSize: 0.35,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (context, scrollController) {
+          return GestureDetector(
+            onTap: () {},
+            behavior: HitTestBehavior.opaque,
+            child: Material(
+              color: Colors.white,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: FutureBuilder<List<_CategoryStoreEntry>>(
+                future: _entriesFuture,
+                builder: (context, snapshot) {
+                  return CustomScrollView(
+                    controller: scrollController,
+                    slivers: [
+                      SliverToBoxAdapter(
+                        child: SheetHeader(
+                          title: widget.category,
+                          leading: Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEEF3FF),
+                              borderRadius: BorderRadius.circular(9),
+                            ),
+                            alignment: Alignment.center,
+                            child: const Icon(
+                              Icons.category_outlined,
+                              size: 16,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                          onCloseAll: widget.onCloseAll,
+                          onIntentionalPop: _markIntentional,
+                        ),
+                      ),
+                      ..._buildBody(snapshot),
+                    ],
+                  );
+                },
+              ),
+            ),
+          );
+        },
+      ),
+      ),
+    );
+  }
+
+  List<Widget> _buildBody(AsyncSnapshot<List<_CategoryStoreEntry>> snapshot) {
+    if (snapshot.connectionState != ConnectionState.done) {
+      return const [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 40),
+            child: Center(child: CircularProgressIndicator()),
+          ),
+        ),
+      ];
+    }
+    if (snapshot.hasError) {
+      return const [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(20, 8, 20, 24),
+            child: Text('매장 목록을 불러오지 못했습니다. 서버 연결을 확인해주세요.'),
+          ),
+        ),
+      ];
+    }
+    final entries = snapshot.data ?? const [];
+    if (entries.isEmpty) {
+      return const [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(20, 8, 20, 24),
+            child: Text('이 카테고리에 해당하는 매장이 없습니다.'),
+          ),
+        ),
+      ];
+    }
+    return [
+      SliverList.separated(
+        itemCount: entries.length,
+        separatorBuilder: (_, _) => const Divider(height: 1, indent: 20, endIndent: 20),
+        itemBuilder: (context, index) => _StoreTile(
+          entry: entries[index],
+          onTap: () {
+            _markIntentional();
+            Navigator.of(context).pop(entries[index].toPoiSearchResult());
+          },
+        ),
+      ),
+      const SliverToBoxAdapter(child: SizedBox(height: 12)),
+    ];
+  }
+}
+
+class _StoreTile extends StatelessWidget {
+  const _StoreTile({required this.entry, required this.onTap});
+
+  final _CategoryStoreEntry entry;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final store = entry.store;
+    final subcategory = store.subcategory;
+    final subtitle = subcategory != null && subcategory != store.category
+        ? '${entry.floor} · $subcategory'
+        : entry.floor;
+    return ListTile(
+      onTap: onTap,
+      leading: const Icon(Icons.storefront, size: 20, color: AppColors.primary),
+      title: Text(
+        store.name,
+        style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: const TextStyle(fontSize: 12, color: AppColors.muted),
+      ),
+      trailing: const Icon(Icons.chevron_right, size: 18, color: AppColors.muted),
+    );
+  }
+}
+
+class _CategoryStoreEntry {
+  const _CategoryStoreEntry({required this.store, required this.floor});
+
+  final StorePolygon store;
+  final String floor;
+
+  PoiSearchResult toPoiSearchResult() => PoiSearchResult(
+        name: store.name,
+        floor: floor,
+        point: store.centroid,
+        nodeId: store.entranceNodeId,
+        category: store.category,
+        subcategory: store.subcategory,
+      );
+}
