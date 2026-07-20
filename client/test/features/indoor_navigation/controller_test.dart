@@ -177,10 +177,19 @@ void main() {
     source.emitRaw(motionEvent(tMs: 1000, heading: 0));
     await settle();
 
-    await driver.confirmAnchorByPin(floorPointM: const PdrLocalPoint(10, 20));
+    await driver.confirmAnchorByPin(
+      floorPointM: const PdrLocalPoint(10, 20),
+      axes: const PdrToFloorAxes(
+        eastToX: 1,
+        northToX: 0,
+        eastToY: 0,
+        northToY: -1,
+      ),
+    );
     expect(driver.currentCalibration.phase, CalibrationPhase.calibrated);
     expect(driver.currentCalibration.canRenderPosition, isTrue);
     expect(driver.currentCalibration.anchor, isNotNull);
+    expect(driver.currentCalibration.anchor!.axes.northToY, -1);
   });
 
   test('arbitrary 기준: pin 후 heading 보정까지 요구한다', () async {

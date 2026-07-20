@@ -75,5 +75,30 @@ void main() {
       expect(path.map((point) => point.edgeId), ['ab', 'ab']);
       expect(path.last.point.northM, closeTo(0, 1e-9));
     });
+
+    test('간선 전환은 교차 노드를 경유해 렌더한다', () {
+      final matcher = FloorMapMatcher(_testGraph());
+      final path = matcher.matchRoutedPath(const [
+        PdrLocalPoint(8, 0.3),
+        PdrLocalPoint(10.2, 4),
+      ]);
+
+      // ab와 bc의 스냅 점만 직선으로 이으면 (8,0)→(10,4)가 되어 복도를
+      // 대각선으로 뚫는다. graph junction b=(10,0)를 반드시 포함해야 한다.
+      expect(path, contains(const PdrLocalPoint(10, 0)));
+      expect(path.last, const PdrLocalPoint(10, 4));
+    });
+
+    test('연결되지 않은 가까운 복도로는 순간이동하지 않는다', () {
+      final matcher = FloorMapMatcher(_testGraph());
+      final path = matcher.matchPath(const [
+        PdrLocalPoint(4, 0.1),
+        // de가 훨씬 가깝지만 ab와 graph 연결이 없다.
+        PdrLocalPoint(4, 3),
+      ]);
+
+      expect(path.map((point) => point.edgeId), ['ab', 'ab']);
+      expect(path.last.point, const PdrLocalPoint(4, 0));
+    });
   });
 }

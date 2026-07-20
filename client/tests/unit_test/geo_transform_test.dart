@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:indoor_pdr_core/indoor_pdr_core.dart';
 import 'package:navigation_client/domain/geo_transform.dart';
 import 'package:navigation_client/models/floor_graph.dart';
 
@@ -36,5 +37,21 @@ void main() {
     // geo_transform.py의 _SYNTHETIC_ANCHOR_LAT/LNG(서울시청)와 일치해야 한다.
     expect(lat, closeTo(37.5665, 1e-6));
     expect(lng, closeTo(126.9780, 1e-6));
+  });
+
+  test('WGS84 대응점에서 PDR의 북쪽 축을 floor 축으로 되돌린다', () {
+    // local x는 동쪽, local y는 남쪽으로 1m씩 증가하는 실제 층 평면도와 같은
+    // 축 규약이다. 그러므로 자북 PDR의 +north는 floor의 -y가 되어야 한다.
+    final nodes = [
+      node(0, 0, lat: 0, lng: 0),
+      node(10, 0, lat: 0, lng: 10 / 111320),
+      node(0, 10, lat: -10 / 111320, lng: 0),
+    ];
+
+    final axes = fitPdrToFloorAxes(nodes);
+    final floorDelta = axes.apply(const PdrLocalPoint(2, 5));
+
+    expect(floorDelta.eastM, closeTo(2, 1e-6));
+    expect(floorDelta.northM, closeTo(-5, 1e-6));
   });
 }

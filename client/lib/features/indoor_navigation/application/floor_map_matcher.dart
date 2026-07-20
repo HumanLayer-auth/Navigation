@@ -4,102 +4,283 @@ import 'package:indoor_pdr_core/indoor_pdr_core.dart';
 
 import '../../../models/floor_graph.dart';
 
-/// PDR의 floor-local 위치를 navigation graph의 통행 가능한 간선 위로 붙인다.
+/// PDR의 floor-local 위치를 navigation graph의 통행 간선 위로 붙인다.
 ///
-/// 센서 위치 자체를 고치는 알고리즘은 아니다. 위치를 그래프 폴리라인의 가장
-/// 가까운 선분으로 투영해 지도에는 "벽/매장 내부를 가로지르지 않는" 위치만
-/// 보여 준다. 매칭 결과를 시간 순서로 계산하면, 인접하지 않은 복도로 순간
-/// 점프하는 경우에는 직전 간선을 약하게 우선해 흔들림도 줄인다.
+/// 단순히 매 순간 가장 가까운 선분에 투영하면 서로 떨어진 복도 사이를
+/// 순간이동하거나, 렌더러가 두 스냅 점을 직선으로 이어 매장 내부를 가로지를 수
+/// 있다. 이 matcher는 직전 매칭점에서 graph를 따라 도달 가능한 후보만 간선
+/// 전환에 사용하고, [matchRoutedPath]는 전환 시 교차점까지의 실제 graph 경로를
+/// 펼친다.
 class FloorMapMatcher {
-  FloorMapMatcher(FloorGraph graph, {this.edgeSwitchBiasM = 1.25})
-    : _segments = _buildSegments(graph);
-
-  /// 다른 간선으로 바뀌기 위해 필요한 추가 근접도. 평행한 두 복도 사이에서
-  /// PDR 오차가 조금 흔들리는 경우, 경로가 프레임마다 번갈아 바뀌지 않게 한다.
-  final double edgeSwitchBiasM;
-  final List<_GraphSegment> _segments;
-  String? _lastEdgeId;
-
-  /// [raw]의 가장 가까운 graph 선분 위 점을 반환한다. 그래프에 유효한 선분이
-  /// 없으면 null을 반환해 호출자가 기존 raw 좌표를 보조적으로 쓸 수 있게 한다.
-  MapMatchedFloorPoint? match(PdrLocalPoint raw) {
-    if (_segments.isEmpty) return null;
-
-    final nearest = _nearestOn(_segments, raw);
-    if (nearest == null) return null;
-
-    var selected = nearest;
-    final lastEdgeId = _lastEdgeId;
-    if (lastEdgeId != null && nearest.edgeId != lastEdgeId) {
-      final previousEdge = _nearestOn(
-        _segments.where((segment) => segment.edgeId == lastEdgeId),
-        raw,
-      );
-      // 더 가까운 간선이 확실히 유리할 때만 간선을 바꾼다. 교차점·분기점에서는
-      // 두 후보 거리가 비슷하므로 직전 간선을 유지하고, 실제로 다음 복도로
-      // 걸어 들어가면 거리 차가 커져 자연스럽게 전환된다.
-      if (previousEdge != null &&
-          nearest.distanceM + edgeSwitchBiasM >= previousEdge.distanceM) {
-        selected = previousEdge;
-      }
+  FloorMapMatcher(
+    FloorGraph graph, {
+    this.edgeSwitchBiasM = 1.25,
+    this.minimumNetworkTransitionM = 4,
+    this.transitionDistanceMultiplier = 3,
+  }) : _nodes = {for (final node in graph.nodes) node.id: node},
+       _edges = _buildEdges(graph),
+       _adjacency = _buildAdjacency(graph) {
+    for (final edge in _edges) {
+      _edgeById[edge.id] = edge;
     }
-    _lastEdgeId = selected.edgeId;
-    return MapMatchedFloorPoint(
-      point: selected.point,
-      edgeId: selected.edgeId,
-      distanceToGraphM: selected.distanceM,
-    );
   }
 
+  /// 다른 간선으로 바뀌기 위해 필요한 추가 근접도. 평행 복도에서 조금
+  /// 흔들려도 간선이 번갈아 바뀌지 않게 한다.
+  final double edgeSwitchBiasM;
+
+  /// 한 PDR 점 사이에 graph를 따라 이동할 수 있는 최소 허용 거리다. 배치된
+  /// pedometer 점이 교차점 전후를 건너뛰어도 자연스럽게 이어지게 한다.
+  final double minimumNetworkTransitionM;
+
+  /// raw PDR의 두 점 사이 거리 대비 허용하는 graph 이동 배수다. 이 범위를
+  /// 넘는 후보는 센서 드리프트에 의한 다른 복도 스냅으로 보고 무시한다.
+  final double transitionDistanceMultiplier;
+
+  final Map<String, GraphNode> _nodes;
+  final List<_NetworkEdge> _edges;
+  final Map<String, _NetworkEdge> _edgeById = {};
+  final Map<String, List<_GraphArc>> _adjacency;
+  final Map<String, _NodeRoute?> _nodeRouteCache = {};
+
+  _MatchedCandidate? _last;
+  PdrLocalPoint? _lastRaw;
+
+  /// raw 한 점의 graph 위 매칭 결과다. 간선 전환은 현재 raw 점이 더 가깝다는
+  /// 사실만으로 허용하지 않고, 직전 매칭점에서 graph를 따라 도달 가능한지도
+  /// 함께 확인한다.
+  MapMatchedFloorPoint? match(PdrLocalPoint raw) {
+    if (_edges.isEmpty) return null;
+
+    final candidates = <_MatchedCandidate>[
+      for (final edge in _edges) edge.project(raw),
+    ]..sort((a, b) => a.distanceToGraphM.compareTo(b.distanceToGraphM));
+    if (candidates.isEmpty) return null;
+
+    final previous = _last;
+    _MatchedCandidate selected;
+    if (previous == null) {
+      selected = candidates.first;
+    } else {
+      final previousEdgeCandidate = previous.edge.project(raw);
+      final rawStepM = _lastRaw == null ? 0 : (raw - _lastRaw!).distance;
+      final maxTransitionM = math.max(
+        minimumNetworkTransitionM,
+        rawStepM * transitionDistanceMultiplier + edgeSwitchBiasM,
+      );
+
+      _MatchedCandidate? bestReachableSwitch;
+      // 가장 가까운 후보부터 몇 개만 살핀다. 매칭 그래프는 작지만, PDR path는
+      // 수백 점이 될 수 있어 무조건 모든 후보에 다익스트라를 돌리지 않는다.
+      for (final candidate in candidates.take(8)) {
+        if (candidate.edge.id == previous.edge.id) continue;
+        final route = _routeBetween(previous, candidate);
+        if (route == null || route.distanceM > maxTransitionM) continue;
+        bestReachableSwitch = candidate;
+        break;
+      }
+
+      // 다른 간선이 확실히 더 가까우면서, 실제 graph를 따라 갈 수 있을 때만
+      // 바꾼다. 그렇지 않으면 직전 간선 위에서 계속 투영해 벽 너머 복도로
+      // 점프하지 않는다.
+      if (bestReachableSwitch != null &&
+          bestReachableSwitch.distanceToGraphM + edgeSwitchBiasM <
+              previousEdgeCandidate.distanceToGraphM) {
+        selected = bestReachableSwitch;
+      } else {
+        selected = previousEdgeCandidate;
+      }
+    }
+
+    _last = selected;
+    _lastRaw = raw;
+    return selected.publicResult;
+  }
+
+  /// raw 점마다 선택된 간선만 돌려준다. 진단이나 간선 전환 테스트에 쓴다.
   List<MapMatchedFloorPoint> matchPath(Iterable<PdrLocalPoint> rawPath) => [
     for (final point in rawPath) ?match(point),
   ];
 
-  static List<_GraphSegment> _buildSegments(FloorGraph graph) {
-    final nodes = {for (final node in graph.nodes) node.id: node};
-    final segments = <_GraphSegment>[];
-    for (final edge in graph.edges) {
-      final geometry = edge.geometryLocalM.length >= 2
-          ? edge.geometryLocalM
-          : _edgeEndpoints(edge, nodes);
-      for (var index = 1; index < geometry.length; index++) {
-        final from = geometry[index - 1];
-        final to = geometry[index];
-        final dx = to.x - from.x;
-        final dy = to.y - from.y;
-        if (dx * dx + dy * dy < 1e-8) continue;
-        segments.add(_GraphSegment(edge.id, from, to));
+  /// 지도에 그릴 graph-constrained polyline이다.
+  ///
+  /// 간선이 바뀌면 직전 투영점 → 교차 노드들 → 새 투영점 순서로 추가한다.
+  /// 따라서 렌더러가 간선 사이를 직선으로 연결해 매장이나 벽을 뚫는 일이 없다.
+  List<PdrLocalPoint> matchRoutedPath(Iterable<PdrLocalPoint> rawPath) {
+    final routed = <PdrLocalPoint>[];
+    for (final raw in rawPath) {
+      final previous = _last;
+      final result = match(raw);
+      final selected = _last;
+      if (result == null || selected == null) continue;
+
+      if (previous == null) {
+        _appendDistinct(routed, selected.point);
+        continue;
+      }
+
+      final route = _routeBetween(previous, selected);
+      if (route == null) {
+        // match()가 전환을 거절했을 때 같은 간선 후보를 선택하므로 보통 이
+        // 분기는 닿지 않는다. 그래도 graph가 불완전한 경우 새 직선을 만들지
+        // 않고 마지막 안전 점을 유지한다.
+        continue;
+      }
+      for (final point in route.points) {
+        _appendDistinct(routed, point);
       }
     }
-    return segments;
+    return routed;
   }
 
-  static List<LocalPoint> _edgeEndpoints(
-    GraphEdge edge,
-    Map<String, GraphNode> nodes,
-  ) {
-    final from = nodes[edge.fromNodeId];
-    final to = nodes[edge.toNodeId];
-    if (from == null || to == null) return const [];
-    return [LocalPoint(from.xM, from.yM), LocalPoint(to.xM, to.yM)];
-  }
+  _NetworkRoute? _routeBetween(_MatchedCandidate from, _MatchedCandidate to) {
+    if (from.edge.id == to.edge.id) {
+      return _NetworkRoute(
+        distanceM: (to.distanceAlongEdgeM - from.distanceAlongEdgeM).abs(),
+        points: from.edge.pathBetween(
+          from.distanceAlongEdgeM,
+          to.distanceAlongEdgeM,
+        ),
+      );
+    }
 
-  static _SegmentCandidate? _nearestOn(
-    Iterable<_GraphSegment> segments,
-    PdrLocalPoint raw,
-  ) {
-    _SegmentCandidate? best;
-    for (final segment in segments) {
-      final candidate = segment.project(raw);
-      if (best == null || candidate.distanceM < best.distanceM) {
-        best = candidate;
+    _NetworkRoute? best;
+    for (final fromEndpoint in _EdgeEndpoint.values) {
+      final fromNode = from.edge.nodeIdAt(fromEndpoint);
+      final fromDistance = from.edge.distanceToEndpoint(
+        from.distanceAlongEdgeM,
+        fromEndpoint,
+      );
+      final fromPoints = from.edge.pathBetween(
+        from.distanceAlongEdgeM,
+        from.edge.distanceAt(fromEndpoint),
+      );
+
+      for (final toEndpoint in _EdgeEndpoint.values) {
+        final toNode = to.edge.nodeIdAt(toEndpoint);
+        final middle = _shortestNodeRoute(fromNode, toNode);
+        if (middle == null) continue;
+
+        final toDistance = to.edge.distanceToEndpoint(
+          to.distanceAlongEdgeM,
+          toEndpoint,
+        );
+        final distanceM = fromDistance + middle.distanceM + toDistance;
+        if (best != null && distanceM >= best.distanceM) continue;
+
+        final points = <PdrLocalPoint>[];
+        _appendAllDistinct(points, fromPoints);
+        _appendAllDistinct(points, middle.points);
+        _appendAllDistinct(
+          points,
+          to.edge.pathBetween(
+            to.edge.distanceAt(toEndpoint),
+            to.distanceAlongEdgeM,
+          ),
+        );
+        best = _NetworkRoute(distanceM: distanceM, points: points);
       }
     }
     return best;
   }
+
+  _NodeRoute? _shortestNodeRoute(String fromNodeId, String toNodeId) {
+    final cacheKey = '$fromNodeId>$toNodeId';
+    if (_nodeRouteCache.containsKey(cacheKey)) return _nodeRouteCache[cacheKey];
+    if (!_nodes.containsKey(fromNodeId) || !_nodes.containsKey(toNodeId)) {
+      return _nodeRouteCache[cacheKey] = null;
+    }
+    if (fromNodeId == toNodeId) {
+      final node = _nodes[fromNodeId]!;
+      return _nodeRouteCache[cacheKey] = _NodeRoute(
+        distanceM: 0,
+        points: [PdrLocalPoint(node.xM, node.yM)],
+      );
+    }
+
+    final distances = <String, double>{fromNodeId: 0};
+    final previous = <String, _PreviousNode>{};
+    final frontier = <_NodeQueueEntry>[
+      _NodeQueueEntry(nodeId: fromNodeId, distanceM: 0),
+    ];
+
+    while (frontier.isNotEmpty) {
+      frontier.sort((a, b) => a.distanceM.compareTo(b.distanceM));
+      final current = frontier.removeAt(0);
+      if (current.distanceM != distances[current.nodeId]) continue;
+      if (current.nodeId == toNodeId) break;
+
+      for (final arc in _adjacency[current.nodeId] ?? const []) {
+        final nextDistance = current.distanceM + arc.edge.lengthM;
+        final known = distances[arc.toNodeId];
+        if (known != null && known <= nextDistance) continue;
+        distances[arc.toNodeId] = nextDistance;
+        previous[arc.toNodeId] = _PreviousNode(current.nodeId, arc);
+        frontier.add(
+          _NodeQueueEntry(nodeId: arc.toNodeId, distanceM: nextDistance),
+        );
+      }
+    }
+
+    final totalDistance = distances[toNodeId];
+    if (totalDistance == null) return _nodeRouteCache[cacheKey] = null;
+
+    final arcs = <_GraphArc>[];
+    var cursor = toNodeId;
+    while (cursor != fromNodeId) {
+      final step = previous[cursor];
+      if (step == null) return _nodeRouteCache[cacheKey] = null;
+      arcs.add(step.arc);
+      cursor = step.fromNodeId;
+    }
+
+    final startNode = _nodes[fromNodeId]!;
+    final points = <PdrLocalPoint>[PdrLocalPoint(startNode.xM, startNode.yM)];
+    for (final arc in arcs.reversed) {
+      _appendAllDistinct(
+        points,
+        arc.edge.pathBetween(
+          arc.forward ? 0 : arc.edge.lengthM,
+          arc.forward ? arc.edge.lengthM : 0,
+        ),
+      );
+    }
+    return _nodeRouteCache[cacheKey] = _NodeRoute(
+      distanceM: totalDistance,
+      points: points,
+    );
+  }
+
+  static List<_NetworkEdge> _buildEdges(FloorGraph graph) {
+    final nodes = {for (final node in graph.nodes) node.id: node};
+    final edges = <_NetworkEdge>[];
+    for (final edge in graph.edges) {
+      final networkEdge = _NetworkEdge.fromGraphEdge(edge, nodes);
+      if (networkEdge != null) edges.add(networkEdge);
+    }
+    return edges;
+  }
+
+  static Map<String, List<_GraphArc>> _buildAdjacency(FloorGraph graph) {
+    final nodes = {for (final node in graph.nodes) node.id: node};
+    final adjacency = <String, List<_GraphArc>>{};
+    for (final edge in graph.edges) {
+      final networkEdge = _NetworkEdge.fromGraphEdge(edge, nodes);
+      if (networkEdge == null) continue;
+      adjacency
+          .putIfAbsent(networkEdge.fromNodeId, () => [])
+          .add(_GraphArc(networkEdge.toNodeId, networkEdge, true));
+      if (networkEdge.bidirectional) {
+        adjacency
+            .putIfAbsent(networkEdge.toNodeId, () => [])
+            .add(_GraphArc(networkEdge.fromNodeId, networkEdge, false));
+      }
+    }
+    return adjacency;
+  }
 }
 
-/// 지도 렌더링에 쓸 graph 위 좌표와 매칭 진단값.
+/// 지도 렌더링·진단에 쓸 graph 위 좌표와 매칭값.
 class MapMatchedFloorPoint {
   const MapMatchedFloorPoint({
     required this.point,
@@ -112,34 +293,216 @@ class MapMatchedFloorPoint {
   final double distanceToGraphM;
 }
 
-class _GraphSegment {
-  const _GraphSegment(this.edgeId, this.from, this.to);
+class _NetworkEdge {
+  _NetworkEdge({
+    required this.id,
+    required this.fromNodeId,
+    required this.toNodeId,
+    required this.bidirectional,
+    required this.points,
+  }) : _cumulativeLengths = _buildCumulativeLengths(points);
 
-  final String edgeId;
-  final LocalPoint from;
-  final LocalPoint to;
+  final String id;
+  final String fromNodeId;
+  final String toNodeId;
+  final bool bidirectional;
+  final List<PdrLocalPoint> points;
+  final List<double> _cumulativeLengths;
 
-  _SegmentCandidate project(PdrLocalPoint raw) {
-    final dx = to.x - from.x;
-    final dy = to.y - from.y;
-    final lengthSquared = dx * dx + dy * dy;
-    final rawT =
-        ((raw.eastM - from.x) * dx + (raw.northM - from.y) * dy) /
-        lengthSquared;
-    final t = rawT.clamp(0.0, 1.0).toDouble();
-    final point = PdrLocalPoint(from.x + dx * t, from.y + dy * t);
-    final distanceM = math.sqrt(
-      math.pow(raw.eastM - point.eastM, 2) +
-          math.pow(raw.northM - point.northM, 2),
+  double get lengthM => _cumulativeLengths.last;
+
+  static _NetworkEdge? fromGraphEdge(
+    GraphEdge edge,
+    Map<String, GraphNode> nodes,
+  ) {
+    final geometry = edge.geometryLocalM.length >= 2
+        ? edge.geometryLocalM
+        : _edgeEndpoints(edge, nodes);
+    if (geometry.length < 2) return null;
+    final points = geometry
+        .map((point) => PdrLocalPoint(point.x, point.y))
+        .toList(growable: false);
+    if (_buildCumulativeLengths(points).last <= 1e-8) return null;
+    return _NetworkEdge(
+      id: edge.id,
+      fromNodeId: edge.fromNodeId,
+      toNodeId: edge.toNodeId,
+      bidirectional: edge.bidirectional,
+      points: points,
     );
-    return _SegmentCandidate(edgeId, point, distanceM);
+  }
+
+  _MatchedCandidate project(PdrLocalPoint raw) {
+    _MatchedCandidate? best;
+    for (var index = 1; index < points.length; index++) {
+      final from = points[index - 1];
+      final to = points[index];
+      final dx = to.eastM - from.eastM;
+      final dy = to.northM - from.northM;
+      final segmentLengthSquared = dx * dx + dy * dy;
+      if (segmentLengthSquared < 1e-8) continue;
+      final rawT =
+          ((raw.eastM - from.eastM) * dx + (raw.northM - from.northM) * dy) /
+          segmentLengthSquared;
+      final t = rawT.clamp(0.0, 1.0).toDouble();
+      final point = PdrLocalPoint(from.eastM + dx * t, from.northM + dy * t);
+      final distance = (raw - point).distance;
+      final candidate = _MatchedCandidate(
+        edge: this,
+        point: point,
+        distanceToGraphM: distance,
+        distanceAlongEdgeM:
+            _cumulativeLengths[index - 1] + math.sqrt(segmentLengthSquared) * t,
+      );
+      if (best == null || candidate.distanceToGraphM < best.distanceToGraphM) {
+        best = candidate;
+      }
+    }
+    return best!;
+  }
+
+  String nodeIdAt(_EdgeEndpoint endpoint) => switch (endpoint) {
+    _EdgeEndpoint.from => fromNodeId,
+    _EdgeEndpoint.to => toNodeId,
+  };
+
+  double distanceAt(_EdgeEndpoint endpoint) => switch (endpoint) {
+    _EdgeEndpoint.from => 0,
+    _EdgeEndpoint.to => lengthM,
+  };
+
+  double distanceToEndpoint(
+    double distanceAlongEdgeM,
+    _EdgeEndpoint endpoint,
+  ) => (distanceAlongEdgeM - distanceAt(endpoint)).abs();
+
+  /// 동일 edge 위 두 점 사이의 실제 polyline. 역방향도 지원한다.
+  List<PdrLocalPoint> pathBetween(double fromDistanceM, double toDistanceM) {
+    final start = fromDistanceM.clamp(0.0, lengthM).toDouble();
+    final end = toDistanceM.clamp(0.0, lengthM).toDouble();
+    if (start <= end) return _forwardPath(start, end);
+    return _forwardPath(end, start).reversed.toList(growable: false);
+  }
+
+  List<PdrLocalPoint> _forwardPath(double start, double end) {
+    final output = <PdrLocalPoint>[pointAt(start)];
+    for (var index = 1; index < points.length - 1; index++) {
+      final distance = _cumulativeLengths[index];
+      if (distance > start + 1e-8 && distance < end - 1e-8) {
+        _appendDistinct(output, points[index]);
+      }
+    }
+    _appendDistinct(output, pointAt(end));
+    return output;
+  }
+
+  PdrLocalPoint pointAt(double distanceAlongEdgeM) {
+    final distance = distanceAlongEdgeM.clamp(0.0, lengthM).toDouble();
+    for (var index = 1; index < points.length; index++) {
+      final end = _cumulativeLengths[index];
+      if (distance > end && index < points.length - 1) continue;
+      final start = _cumulativeLengths[index - 1];
+      final segmentLength = end - start;
+      if (segmentLength <= 1e-8) return points[index];
+      final t = ((distance - start) / segmentLength).clamp(0.0, 1.0);
+      final from = points[index - 1];
+      final to = points[index];
+      return PdrLocalPoint(
+        from.eastM + (to.eastM - from.eastM) * t,
+        from.northM + (to.northM - from.northM) * t,
+      );
+    }
+    return points.last;
+  }
+
+  static List<double> _buildCumulativeLengths(List<PdrLocalPoint> points) {
+    final lengths = <double>[0];
+    for (var index = 1; index < points.length; index++) {
+      lengths.add(lengths.last + (points[index] - points[index - 1]).distance);
+    }
+    return lengths;
+  }
+
+  static List<LocalPoint> _edgeEndpoints(
+    GraphEdge edge,
+    Map<String, GraphNode> nodes,
+  ) {
+    final from = nodes[edge.fromNodeId];
+    final to = nodes[edge.toNodeId];
+    if (from == null || to == null) return const [];
+    return [LocalPoint(from.xM, from.yM), LocalPoint(to.xM, to.yM)];
   }
 }
 
-class _SegmentCandidate {
-  const _SegmentCandidate(this.edgeId, this.point, this.distanceM);
+class _MatchedCandidate {
+  const _MatchedCandidate({
+    required this.edge,
+    required this.point,
+    required this.distanceToGraphM,
+    required this.distanceAlongEdgeM,
+  });
 
-  final String edgeId;
+  final _NetworkEdge edge;
   final PdrLocalPoint point;
+  final double distanceToGraphM;
+  final double distanceAlongEdgeM;
+
+  MapMatchedFloorPoint get publicResult => MapMatchedFloorPoint(
+    point: point,
+    edgeId: edge.id,
+    distanceToGraphM: distanceToGraphM,
+  );
+}
+
+class _GraphArc {
+  const _GraphArc(this.toNodeId, this.edge, this.forward);
+
+  final String toNodeId;
+  final _NetworkEdge edge;
+  final bool forward;
+}
+
+class _PreviousNode {
+  const _PreviousNode(this.fromNodeId, this.arc);
+
+  final String fromNodeId;
+  final _GraphArc arc;
+}
+
+class _NodeQueueEntry {
+  const _NodeQueueEntry({required this.nodeId, required this.distanceM});
+
+  final String nodeId;
   final double distanceM;
+}
+
+class _NodeRoute {
+  const _NodeRoute({required this.distanceM, required this.points});
+
+  final double distanceM;
+  final List<PdrLocalPoint> points;
+}
+
+class _NetworkRoute {
+  const _NetworkRoute({required this.distanceM, required this.points});
+
+  final double distanceM;
+  final List<PdrLocalPoint> points;
+}
+
+enum _EdgeEndpoint { from, to }
+
+void _appendAllDistinct(
+  List<PdrLocalPoint> destination,
+  Iterable<PdrLocalPoint> source,
+) {
+  for (final point in source) {
+    _appendDistinct(destination, point);
+  }
+}
+
+void _appendDistinct(List<PdrLocalPoint> destination, PdrLocalPoint point) {
+  if (destination.isEmpty || (destination.last - point).distance > 1e-6) {
+    destination.add(point);
+  }
 }

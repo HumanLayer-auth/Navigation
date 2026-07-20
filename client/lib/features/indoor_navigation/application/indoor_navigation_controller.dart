@@ -50,6 +50,7 @@ class IndoorNavigationDriver implements IndoorNavigationController {
   // 캘리브레이션 진행 중 임시 상태.
   PdrLocalPoint? _pendingPinFloorM;
   PdrLocalPoint? _pendingPinPdrM;
+  PdrToFloorAxes _pendingAxes = const PdrToFloorAxes.identity();
 
   // ── IndoorNavigationView ──
 
@@ -126,17 +127,22 @@ class IndoorNavigationDriver implements IndoorNavigationController {
     await _source.stop();
     _pendingPinFloorM = null;
     _pendingPinPdrM = null;
+    _pendingAxes = const PdrToFloorAxes.identity();
     _updateCalibration(CalibrationPhase.uncalibrated);
     _updateRuntime(PdrRuntimeState.idle);
   }
 
   @override
-  Future<void> confirmAnchorByPin({required PdrLocalPoint floorPointM}) async {
+  Future<void> confirmAnchorByPin({
+    required PdrLocalPoint floorPointM,
+    PdrToFloorAxes axes = const PdrToFloorAxes.identity(),
+  }) async {
     if (!_guiding) {
       return;
     }
     _pendingPinFloorM = floorPointM;
     _pendingPinPdrM = _session.position;
+    _pendingAxes = axes;
     if (_session.headingReference == HeadingReference.magneticNorth) {
       // 자북 기준: 서버 north_alignment 오프셋을 Phase 3에서 주입한다. 지금은 0.
       _finalizeAnchor(rotationDeg: 0, source: AnchorSource.userPin);
@@ -164,6 +170,7 @@ class IndoorNavigationDriver implements IndoorNavigationController {
     _floorId = floorId;
     _pendingPinFloorM = null;
     _pendingPinPdrM = null;
+    _pendingAxes = const PdrToFloorAxes.identity();
     try {
       await _resetSessionForNewFloor();
     } on Object {
@@ -298,15 +305,18 @@ class IndoorNavigationDriver implements IndoorNavigationController {
     if (pinFloor == null || pinPdr == null) {
       return;
     }
-    // anchorLocalM = pinFloor - R(rotationDeg)·pinPdr.
+    // anchorLocalM = pinFloor - axes·R(rotationDeg)·pinPdr.
+    // PDR는 +east/+north지만 floor local_m은 +y가 남쪽일 수 있으므로, anchor
+    // 확정에도 렌더링과 같은 축 변환을 적용해야 한다.
     final theta = rotationDeg * math.pi / 180.0;
     final cosT = math.cos(theta);
     final sinT = math.sin(theta);
     final rx = pinPdr.eastM * cosT - pinPdr.northM * sinT;
     final ry = pinPdr.eastM * sinT + pinPdr.northM * cosT;
+    final mappedPinPdr = _pendingAxes.apply(PdrLocalPoint(rx, ry));
     final anchorLocalM = PdrLocalPoint(
-      pinFloor.eastM - rx,
-      pinFloor.northM - ry,
+      pinFloor.eastM - mappedPinPdr.eastM,
+      pinFloor.northM - mappedPinPdr.northM,
     );
 
     final reference = _session.headingReference;
@@ -319,9 +329,11 @@ class IndoorNavigationDriver implements IndoorNavigationController {
           reference != HeadingReference.magneticNorth,
       source: source,
       confidence: 1,
+      axes: _pendingAxes,
     );
     _pendingPinFloorM = null;
     _pendingPinPdrM = null;
+    _pendingAxes = const PdrToFloorAxes.identity();
     _updateCalibration(CalibrationPhase.calibrated, anchor: anchor);
   }
 

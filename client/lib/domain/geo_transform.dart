@@ -12,6 +12,7 @@ library;
 
 import 'dart:math' as math;
 
+import '../features/indoor_navigation/contract/pdr_anchor.dart';
 import '../models/floor_graph.dart';
 
 /// 실측 wgs84 앵커가 전혀 없는 합성 데이터셋을 임의로 배치할
@@ -86,6 +87,32 @@ AffineTransform fitFloorGeoTransform(List<GraphNode> nodes) {
 
   // _syntheticPairs()는 한 직선 위에 있지 않은 3점(L자형)이라 항상 풀린다.
   return _fitWgs84Transform(_syntheticPairs())!;
+}
+
+/// 자북 기준 PDR 좌표 `(east, north)`를 이 층의 `local_m` 증분으로 바꾼다.
+///
+/// [AffineTransform]은 `local_m -> (lng*cos(lat), lat)` 선형부를 갖는다.
+/// 이를 역행렬로 풀면 실제 동·북쪽 1m가 평면도의 어느 축·부호로 움직이는지
+/// 얻을 수 있다. 더현대 1F의 경우 local y가 북쪽이 아니라 남쪽으로 증가하므로
+/// 결과는 거의 `(east, north) -> (east, -north)`다.
+///
+/// 좌표 대응점이 퇴화한 층은 기존 동작을 보존하도록 항등 변환을 쓴다.
+PdrToFloorAxes fitPdrToFloorAxes(List<GraphNode> nodes) {
+  final transform = fitFloorGeoTransform(nodes);
+  final determinant = transform.a * transform.d - transform.b * transform.c;
+  if (determinant.abs() < 1e-12) {
+    return const PdrToFloorAxes.identity();
+  }
+
+  // transform의 u=lng*cos(lat), v=lat는 모두 degree 단위다. PDR는 미터
+  // 단위이므로 (east, north)를 degree로 바꾼 뒤 local_m에 대한 역변환을 적용한다.
+  final scale = _metersPerDegreeLat * determinant;
+  return PdrToFloorAxes(
+    eastToX: transform.d / scale,
+    northToX: -transform.b / scale,
+    eastToY: -transform.c / scale,
+    northToY: transform.a / scale,
+  );
 }
 
 List<_Pair> _syntheticPairs() {

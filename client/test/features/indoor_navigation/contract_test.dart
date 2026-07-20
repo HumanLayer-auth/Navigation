@@ -42,7 +42,10 @@ class FakeIndoorNavigation implements IndoorNavigationController {
   Future<void> stopGuidance() async => log.add('stop');
 
   @override
-  Future<void> confirmAnchorByPin({required PdrLocalPoint floorPointM}) async {
+  Future<void> confirmAnchorByPin({
+    required PdrLocalPoint floorPointM,
+    PdrToFloorAxes axes = const PdrToFloorAxes.identity(),
+  }) async {
     log.add('pin:${floorPointM.eastM},${floorPointM.northM}');
   }
 
@@ -138,6 +141,23 @@ void main() {
       final p = t.toFloor(const PdrLocalPoint(1, 0));
       expect(p.eastM, closeTo(0, 1e-9));
       expect(p.northM, closeTo(1, 1e-9));
+    });
+
+    test('남쪽으로 증가하는 floor y축으로 자북 PDR를 바꾼다', () {
+      final t = FloorCoordinateTransform(
+        anchor(),
+        axes: const PdrToFloorAxes(
+          eastToX: 1,
+          northToX: 0,
+          eastToY: 0,
+          northToY: -1,
+        ),
+      );
+
+      // PDR의 북쪽 +5m는 이 평면도에서는 y=-5m여야 한다.
+      final p = t.toFloor(const PdrLocalPoint(2, 5));
+      expect(p.eastM, closeTo(2, 1e-9));
+      expect(p.northM, closeTo(-5, 1e-9));
     });
 
     test('회전 후 평행이동 순서로 왕복이 성립한다', () {

@@ -14,7 +14,7 @@ class PdrDebugSessionRecorder {
   PdrDebugSessionRecorder({DateTime? startedAt})
     : _startedAt = startedAt ?? DateTime.now().toUtc();
 
-  static const schemaVersion = 1;
+  static const schemaVersion = 2;
   static const _maxQualitySamples = 900;
 
   final DateTime _startedAt;
@@ -75,10 +75,7 @@ class PdrDebugSessionRecorder {
               .toList(growable: false)
         : const <PdrLocalPoint>[];
     final matchedPath = hasMapContext
-        ? FloorMapMatcher(graph)
-              .matchPath(floorPath)
-              .map((match) => match.point)
-              .toList(growable: false)
+        ? FloorMapMatcher(graph).matchRoutedPath(floorPath)
         : const <PdrLocalPoint>[];
 
     return {
@@ -117,6 +114,12 @@ class PdrDebugSessionRecorder {
       'floor_id': anchor.floorId,
       'floor_local_m': _pointJson(anchor.anchorLocalM),
       'rotation_deg': anchor.rotationDeg,
+      'pdr_to_floor_axes': {
+        'east_to_x': anchor.axes.eastToX,
+        'north_to_x': anchor.axes.northToX,
+        'east_to_y': anchor.axes.eastToY,
+        'north_to_y': anchor.axes.northToY,
+      },
       'heading_reference': anchor.headingReference.name,
       'requires_manual_rotation_calibration':
           anchor.requiresManualRotationCalibration,

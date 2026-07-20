@@ -104,7 +104,7 @@ void main() {
     final matched = paths['map_matched_floor_local_m']! as List<Object?>;
     final finalMatched = matched.last! as Map<String, double>;
 
-    expect(json['schema_version'], 1);
+    expect(json['schema_version'], 2);
     expect(summary['confirmed_steps'], 4);
     expect(
       (summary['quality']! as Map<String, Object?>)['magnetic_accuracy'],

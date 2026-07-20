@@ -304,10 +304,12 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
       return const [];
     }
     final pdrToFloor = FloorCoordinateTransform(anchor);
-    return FloorMapMatcher(graph)
-        .matchPath(snapshot.path.map(pdrToFloor.toFloor))
-        .map((matched) => matched.point)
-        .toList(growable: false);
+    // 단순 스냅 점들을 직선으로 잇지 않는다. 간선이 바뀌는 경우에는 반드시
+    // 두 점 사이의 graph 경로(복도·교차점)를 펼쳐서 매장 내부를 가로지르는
+    // 녹색 선이 생기지 않게 한다.
+    return FloorMapMatcher(
+      graph,
+    ).matchRoutedPath(snapshot.path.map(pdrToFloor.toFloor));
   }
 
   ll.LatLng? get _pdrCurrentLocation {
@@ -389,7 +391,13 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
   }
 
   Future<void> _confirmPdrAnchor(PdrLocalPoint floorPoint) async {
-    await indoorNavigationDriver.confirmAnchorByPin(floorPointM: floorPoint);
+    final graph = _floorGraph;
+    await indoorNavigationDriver.confirmAnchorByPin(
+      floorPointM: floorPoint,
+      axes: graph == null
+          ? const PdrToFloorAxes.identity()
+          : fitPdrToFloorAxes(graph.nodes),
+    );
     if (!mounted) return;
     if (indoorNavigationDriver.currentCalibration.phase ==
         CalibrationPhase.awaitingHeading) {
