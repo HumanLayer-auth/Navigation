@@ -1,6 +1,6 @@
 """서버 상태와 건물 HTTP API 통합 테스트."""
 
-from tests.conftest import BUILDING_ID, FLOOR_NAME, FLOOR_NAMES
+from tests.conftest import BUILDING_ID, DEFAULT_FLOOR, FLOOR_NAME, FLOOR_NAMES
 
 
 # 서버 생존 확인 API가 정상 상태를 반환하는지 검증한다.
@@ -20,6 +20,7 @@ def test_건물_목록을_조회한다(api_client):
     assert isinstance(buildings, list)
     assert buildings[0]["id"] == BUILDING_ID
     assert buildings[0]["floors"] == FLOOR_NAMES
+    assert buildings[0]["default_floor"] == DEFAULT_FLOOR
 
 
 # Studio 건물 상세 API가 현재 제공하는 메타데이터를 검증한다.

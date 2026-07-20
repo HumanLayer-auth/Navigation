@@ -1,7 +1,7 @@
 """시드 DB 기준 building_queries 조회 결과의 식별자와 핵심 JSON 구조 검증."""
 
 from app.repositories import building_queries
-from tests.conftest import BUILDING_ID, FLOOR_NAME, FLOOR_NAMES
+from tests.conftest import BUILDING_ID, DEFAULT_FLOOR, FLOOR_NAME, FLOOR_NAMES
 
 
 # 건물 목록이 요약(JSON 키: id, name, floors)만 반환하는지 검증한다.
@@ -10,7 +10,8 @@ def test_건물_목록은_요약만_반환한다(db_session):
 
     assert [building["id"] for building in result] == [BUILDING_ID]
     assert result[0]["floors"] == FLOOR_NAMES
-    assert set(result[0]) == {"id", "name", "floors"}
+    assert result[0]["default_floor"] == DEFAULT_FLOOR
+    assert set(result[0]) == {"id", "name", "floors", "default_floor"}
 
 
 # 없는 건물 조회가 None으로 처리되는지 검증한다.

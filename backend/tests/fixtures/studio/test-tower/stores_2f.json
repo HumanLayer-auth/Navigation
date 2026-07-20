@@ -3,8 +3,8 @@
   "floor": {
     "id": "FL-TEST-2F",
     "name": "2F",
-    "level": 4,
-    "order": 4
+    "level": 2,
+    "order": 2
   },
   "coordinate_frame": "studio_local_m",
   "stores": [

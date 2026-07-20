@@ -127,18 +127,30 @@ def _find_floor(
 
 
 def _to_building_summary(building: Building) -> dict[str, Any]:
-    # level은 층 높이가 아니라 "위층부터 세는 표시 순서"다(6F=0 … 1F=5 … B1=6).
-    # 내림차순으로 정렬해 지상 저층이 앞에 오게 한다. 클라이언트가 floors.first를
-    # 초기 층으로 쓰기 때문에(indoor_map_screen) 1F가 먼저 와야 하고, 가로 층 칩도
-    # 1F→4F로 읽힌다.
-    # 주의: 지하층이 추가되면 level이 더 커서 B층이 앞으로 온다. 그때는 "기본 층"을
-    # 정렬 순서로 정하지 말고 별도로 표현해야 한다(응답에 default_floor 등).
+    # level은 실제 층 높이다 — 위로 갈수록 크고 지하는 음수다(6F=6 … 1F=1 … B6=-6).
+    # 내림차순 정렬은 엘리베이터 버튼판과 같은 순서(6F→B6)를 만든다.
+    #
+    # 기본 층은 정렬 순서와 분리해 default_floor로 따로 내려준다. 예전에는
+    # 클라이언트가 floors.first를 초기 층으로 썼는데, 지하층이 생기자 목록 첫
+    # 항목이 최상층(6F)이 되어 앱이 6F로 열렸다.
     floors = sorted(building.floors, key=lambda floor: floor.level, reverse=True)
     return {
         "id": building.id,
         "name": building.name,
         "floors": [floor.name for floor in floors],
+        "default_floor": _default_floor(floors),
     }
+
+
+# 앱이 처음 열 층. 출입구가 있는 지상 1층이 기준이고, 지상층이 없으면 가장 위층으로
+# 폴백한다(지하 전용 건물도 빈 값 없이 열리도록).
+def _default_floor(floors: list[Floor]) -> str | None:
+    if not floors:
+        return None
+    above_ground = [floor for floor in floors if floor.level >= 1]
+    if above_ground:
+        return min(above_ground, key=lambda floor: floor.level).name
+    return max(floors, key=lambda floor: floor.level).name
 
 
 def _to_node_dict(node: Node) -> dict[str, Any]:

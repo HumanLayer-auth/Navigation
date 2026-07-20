@@ -31,7 +31,8 @@ FIXTURE_DIR = Path(__file__).parent / "fixtures" / "studio" / "test-tower"
 # 합성 픽스처 식별자 — 동작 검증 테스트가 쓴다.
 BUILDING_ID = "test-tower"
 FLOOR_NAME = "1F"
-FLOOR_NAMES = ["1F", "2F"]  # 건물 목록은 지상 저층이 앞(_to_building_summary 참고)
+FLOOR_NAMES = ["2F", "1F"]  # 엘리베이터 버튼판 순서: 위층이 앞(_to_building_summary 참고)
+DEFAULT_FLOOR = "1F"  # 목록 순서와 무관하게 앱이 처음 여는 층
 FLOOR_ID = "FL-TEST-1F"
 
 # 실데이터 식별자 — 스모크 테스트가 쓴다.

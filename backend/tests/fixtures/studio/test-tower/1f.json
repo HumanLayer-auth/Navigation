@@ -4,8 +4,8 @@
   "floor": {
     "id": "FL-TEST-1F",
     "name": "1F",
-    "level": 5,
-    "order": 5
+    "level": 1,
+    "order": 1
   },
   "generated_from": {
     "provider": "synthetic",
