@@ -33,7 +33,6 @@ const _pdrConfirmedTrailSourceId = 'floor-pdr-confirmed-trail';
 const _debugGraphSourceId = 'floor-debug-graph';
 const _markersSourceId = 'floor-markers';
 const _highlightSourceId = 'floor-highlight';
-const _directionSourceId = 'floor-direction';
 const _storesFillLayerId = 'floor-stores-fill';
 
 /// POI `type` 속성(백엔드 실데이터 값)을 지도 위 아이콘에 매핑한다. 건물마다
@@ -60,6 +59,8 @@ String _poiIconImageName(IconData icon) => 'poi-icon-${icon.codePoint}';
 
 /// 목적지 핀 이미지의 addImage 등록 이름.
 const _destinationPinImageName = 'marker-destination-pin';
+const _currentLocationImageName = 'marker-current-location';
+const _currentLocationDotImageName = 'marker-current-location-dot';
 
 /// 지도 위에 얹을 현재 위치/목적지 점 마커. 종류에 따라 스타일이 달라진다
 /// (마커 색상은 [_markersGeoJson]의 circle-color data-driven 표현식이 결정).
@@ -278,12 +279,9 @@ class _FloorPlanViewState extends State<FloorPlanView> {
       _updateDebugGraphSource();
     }
     if (oldWidget.currentLocation != widget.currentLocation ||
+        oldWidget.currentHeadingDegrees != widget.currentHeadingDegrees ||
         oldWidget.destination != widget.destination) {
       _updateMarkersSource();
-    }
-    if (oldWidget.currentLocation != widget.currentLocation ||
-        oldWidget.currentHeadingDegrees != widget.currentHeadingDegrees) {
-      _updateDirectionSource();
     }
     if (oldWidget.highlightedStoreId != widget.highlightedStoreId) {
       _updateHighlightSource();
@@ -365,6 +363,14 @@ class _FloorPlanViewState extends State<FloorPlanView> {
     await controller.addImage(
       _destinationPinImageName,
       await _renderDestinationPinIcon(),
+    );
+    await controller.addImage(
+      _currentLocationImageName,
+      await _renderCurrentLocationIcon(showHeading: true),
+    );
+    await controller.addImage(
+      _currentLocationDotImageName,
+      await _renderCurrentLocationIcon(showHeading: false),
     );
     await controller.addSymbolLayer(
       _tileSourceId,
@@ -614,32 +620,30 @@ class _FloorPlanViewState extends State<FloorPlanView> {
       _emptyFeatureCollection,
     );
 
-    // 현재 위치는 실제 지도 앱의 "blue dot"처럼 바깥 흰 halo와 안쪽 파란
-    // 점으로 만든다. 방향 표시와 별개로 위치 중심이 보이므로, heading이 잠시
-    // 없거나 기기 값이 흔들려도 위치를 쉽게 읽을 수 있다.
-    await controller.addCircleLayer(
+    // 현재 위치와 heading을 하나의 심볼로 합친다. 미터 단위 GeoJSON 폴리곤은
+    // 확대할수록 화살표만 커지므로, 고정 픽셀 PNG를 회전시켜 점과 방향 표시가
+    // 언제나 같은 비율과 크기를 유지하게 한다. heading이 없을 때는 북쪽을
+    // 임의로 가리키지 않고 동일 디자인의 원형 점만 사용한다.
+    await controller.addSymbolLayer(
       _markersSourceId,
-      'floor-markers-current-halo',
-      const CircleLayerProperties(
-        circleRadius: 10,
-        circleColor: '#FFFFFF',
-        circleOpacity: 0.96,
-      ),
-      filter: [
-        '==',
-        ['get', 'kind'],
-        'current',
-      ],
-      enableInteraction: false,
-    );
-    await controller.addCircleLayer(
-      _markersSourceId,
-      'floor-markers-current-dot',
-      const CircleLayerProperties(
-        circleRadius: 6.5,
-        circleColor: '#1A73E8',
-        circleStrokeColor: '#FFFFFF',
-        circleStrokeWidth: 1.5,
+      'floor-markers-current',
+      const SymbolLayerProperties(
+        iconImage: [
+          'case',
+          ['has', 'heading'],
+          _currentLocationImageName,
+          _currentLocationDotImageName,
+        ],
+        iconSize: 1.15,
+        iconRotate: [
+          'coalesce',
+          ['get', 'heading'],
+          0,
+        ],
+        iconRotationAlignment: 'map',
+        iconPitchAlignment: 'viewport',
+        iconAllowOverlap: true,
+        iconIgnorePlacement: true,
       ),
       filter: [
         '==',
@@ -664,8 +668,7 @@ class _FloorPlanViewState extends State<FloorPlanView> {
     // iconSize/textSize는 zoom 16↔20 구간에서 같이 커지는 interpolate 식으로
     // 걸어, 축소했을 때 핀이 지도를 다 가리는 문제를 피한다.
     //
-    // 현재 위치는 이 소스에 함께 들어와 있어도 filter가 걸러내고, 화살표는
-    // 별도 _directionSourceId 레이어가 그린다.
+    // 현재 위치는 이 소스에 함께 들어와 있어도 filter가 걸러낸다.
     await controller.addSymbolLayer(
       _markersSourceId,
       'floor-markers-destination-pin',
@@ -707,30 +710,6 @@ class _FloorPlanViewState extends State<FloorPlanView> {
       enableInteraction: false,
     );
 
-    // 현재 위치의 진행 방향은 blue dot 위쪽에만 살짝 보이는 작은 포인터로
-    // 표시한다. 이전 보라색 큰 삼각형은 경로와 색/비율이 따로 놀아 실제 지도
-    // 마커처럼 보이지 않았으므로, 지도 기본 위치색과 같은 파랑으로 통일한다.
-    await controller.addGeoJsonSource(
-      _directionSourceId,
-      _emptyFeatureCollection,
-    );
-    await controller.addLineLayer(
-      _directionSourceId,
-      'floor-direction-arrow-outline',
-      const LineLayerProperties(
-        lineColor: '#FFFFFF',
-        lineWidth: 1.8,
-        lineJoin: 'round',
-      ),
-      enableInteraction: false,
-    );
-    await controller.addFillLayer(
-      _directionSourceId,
-      'floor-direction-arrow',
-      const FillLayerProperties(fillColor: '#1A73E8'),
-      enableInteraction: false,
-    );
-
     await controller.addGeoJsonSource(
       _highlightSourceId,
       _emptyFeatureCollection,
@@ -762,7 +741,6 @@ class _FloorPlanViewState extends State<FloorPlanView> {
     await _updatePdrConfirmedTrailSource();
     await _updatePdrTrailSource();
     await _updateMarkersSource();
-    await _updateDirectionSource();
     await _updateHighlightSource();
     if (widget.routePoints.length >= 2) {
       await _fitToRouteBounds(widget.routePoints);
@@ -997,6 +975,66 @@ class _FloorPlanViewState extends State<FloorPlanView> {
     final image = await recorder.endRecording().toImage(
       canvasWidth.toInt(),
       canvasHeight.toInt(),
+    );
+    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+    return byteData!.buffer.asUint8List();
+  }
+
+  /// 상용 지도 앱처럼 흰 테두리의 파란 현재 위치 점 뒤로 반투명 heading cone이
+  /// 퍼지는 하나의 고정 크기 심볼을 렌더링한다. MapLibre가 이 비트맵 전체를
+  /// 회전하므로 확대/축소해도 점과 방향 범위의 크기·간격이 흐트러지지 않는다.
+  static Future<Uint8List> _renderCurrentLocationIcon({
+    required bool showHeading,
+  }) async {
+    const canvasSize = 144.0;
+    const center = Offset(canvasSize / 2, canvasSize / 2);
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(
+      recorder,
+      const Rect.fromLTWH(0, 0, canvasSize, canvasSize),
+    );
+
+    if (showHeading) {
+      const coneRadius = 62.0;
+      const halfAngle = 31 * pi / 180;
+      final coneBounds = Rect.fromCircle(center: center, radius: coneRadius);
+      final headingCone = Path()
+        ..moveTo(center.dx, center.dy)
+        ..arcTo(coneBounds, -pi / 2 - halfAngle, halfAngle * 2, false)
+        ..close();
+      canvas.drawPath(
+        headingCone,
+        Paint()
+          ..shader = ui.Gradient.radial(
+            center,
+            coneRadius,
+            const [Color(0x8F1976D2), Color(0x451976D2), Color(0x001976D2)],
+            const [0, 0.58, 1],
+          )
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.5),
+      );
+    }
+
+    canvas.drawCircle(
+      center + const Offset(0, 2),
+      27,
+      Paint()
+        ..color = const Color(0x33000000)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
+    );
+    canvas.drawCircle(center, 24, Paint()..color = Colors.white);
+
+    const blue = Color(0xFF1976D2);
+    canvas.drawCircle(center, 18, Paint()..color = blue);
+    canvas.drawCircle(
+      center - const Offset(5, 5),
+      4.5,
+      Paint()..color = const Color(0x66FFFFFF),
+    );
+
+    final image = await recorder.endRecording().toImage(
+      canvasSize.toInt(),
+      canvasSize.toInt(),
     );
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
     return byteData!.buffer.asUint8List();
@@ -1296,7 +1334,13 @@ class _FloorPlanViewState extends State<FloorPlanView> {
     final current = widget.currentLocation;
     final destination = widget.destination;
     if (current != null) {
-      features.add(_markerFeature(current, MapMarkerKind.current));
+      features.add(
+        _markerFeature(
+          current,
+          MapMarkerKind.current,
+          headingDegrees: widget.currentHeadingDegrees,
+        ),
+      );
     }
     if (destination != null) {
       features.add(_markerFeature(destination, MapMarkerKind.destination));
@@ -1307,74 +1351,23 @@ class _FloorPlanViewState extends State<FloorPlanView> {
     });
   }
 
-  Map<String, dynamic> _markerFeature(ll.LatLng point, MapMarkerKind kind) {
+  Map<String, dynamic> _markerFeature(
+    ll.LatLng point,
+    MapMarkerKind kind, {
+    double? headingDegrees,
+  }) {
     return {
       'type': 'Feature',
-      'properties': {'kind': kind.name},
+      'properties': {
+        'kind': kind.name,
+        if (headingDegrees != null && headingDegrees.isFinite)
+          'heading': headingDegrees,
+      },
       'geometry': {
         'type': 'Point',
         'coordinates': [point.longitude, point.latitude],
       },
     };
-  }
-
-  /// 현재 위치 포인터(삼각형) 폴리곤을 [widget.currentHeadingDegrees] 방향으로
-  /// 그려 넣는다. heading이 없으면 북쪽을 임의로 가리키지 않고 숨긴다.
-  Future<void> _updateDirectionSource() async {
-    final controller = _controller;
-    if (controller == null) return;
-
-    final current = widget.currentLocation;
-    final heading = widget.currentHeadingDegrees;
-    if (current == null || heading == null) {
-      await controller.setGeoJsonSource(
-        _directionSourceId,
-        _emptyFeatureCollection,
-      );
-      return;
-    }
-
-    final headingRad = heading * pi / 180;
-    final forward = Offset(sin(headingRad), cos(headingRad));
-    final right = Offset(cos(headingRad), -sin(headingRad));
-
-    const tipMeters = 1.25;
-    const backMeters = 0.1;
-    const halfWidthMeters = 0.48;
-
-    ll.LatLng offsetPoint(Offset metersEastNorth) {
-      final cosLat = cos(current.latitude * pi / 180);
-      final dLat = metersEastNorth.dy / _metersPerDegreeLat;
-      final dLng = metersEastNorth.dx / (_metersPerDegreeLat * cosLat);
-      return ll.LatLng(current.latitude + dLat, current.longitude + dLng);
-    }
-
-    final tip = offsetPoint(forward * tipMeters);
-    final backLeft = offsetPoint(
-      -forward * backMeters - right * halfWidthMeters,
-    );
-    final backRight = offsetPoint(
-      -forward * backMeters + right * halfWidthMeters,
-    );
-    final ring = [tip, backRight, backLeft, tip];
-
-    await controller.setGeoJsonSource(_directionSourceId, {
-      'type': 'FeatureCollection',
-      'features': [
-        {
-          'type': 'Feature',
-          'properties': const <String, dynamic>{},
-          'geometry': {
-            'type': 'Polygon',
-            'coordinates': [
-              [
-                for (final p in ring) [p.longitude, p.latitude],
-              ],
-            ],
-          },
-        },
-      ],
-    });
   }
 
   Future<void> _handleMapClick(Point<double> point, LatLng coordinates) async {

@@ -1,8 +1,56 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:indoor_pdr_core/indoor_pdr_core.dart';
 import 'package:navigation_client/features/debug_mode/debug_mode.dart';
+import 'package:navigation_client/features/indoor_navigation/contract/calibration_state.dart';
+import 'package:navigation_client/features/indoor_navigation/contract/pdr_anchor.dart';
 import 'package:navigation_client/models/floor_graph.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+PdrSnapshot _snapshot() => const PdrSnapshot(
+  position: PdrLocalPoint(2, 0),
+  path: [PdrLocalPoint.zero, PdrLocalPoint(1, 0), PdrLocalPoint(2, 0)],
+  steps: 2,
+  distanceM: 2,
+  walkingHeadingDeg: 90,
+  hasHeading: true,
+  preview: PdrPreview(
+    position: PdrLocalPoint(2.2, 0),
+    path: [PdrLocalPoint.zero, PdrLocalPoint(1.1, 0), PdrLocalPoint(2.2, 0)],
+    steps: 2,
+    distanceM: 2.2,
+  ),
+  quality: PdrQuality(
+    state: PdrQualityState.healthy,
+    warnings: [],
+    features: PdrQualityFeatures(
+      greenOrangeDistanceDivergencePct: 10,
+      orangeStepRatio: 1,
+      orangeOvercountLikely: false,
+      pedometerUndercountSuspected: false,
+      pedometerFlaggedSpanS: 0,
+      headingStable: true,
+      headingSource: 'test',
+      magneticAccuracy: 'high',
+      rotationHeadingAccuracyDeg: 1,
+      cadenceHz: 1.5,
+      pitchDeg: 0,
+      rollDeg: 0,
+      headingReferenceIsMagneticNorth: true,
+      peakRejectHistogram: {},
+    ),
+  ),
+);
+
+const _anchor = PdrAnchor(
+  floorId: '1F',
+  anchorLocalM: PdrLocalPoint(10, 20),
+  rotationDeg: 0,
+  headingReference: HeadingReference.magneticNorth,
+  requiresManualRotationCalibration: false,
+  source: AnchorSource.userPin,
+  confidence: 1,
+);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -104,6 +152,59 @@ void main() {
       );
     },
   );
+
+  test('PDR trail survives stop calibration and clears on the next start', () {
+    final snapshot = _snapshot();
+    final state = DebugPdrTrailState()
+      ..recordSnapshot(snapshot)
+      ..recordCalibration(
+        const CalibrationStatus(
+          phase: CalibrationPhase.calibrated,
+          headingReference: HeadingReference.magneticNorth,
+          requiresManualRotationCalibration: false,
+          anchor: _anchor,
+        ),
+      );
+
+    // stopGuidance가 보내는 uncalibrated 상태는 마지막 선을 지우지 않는다.
+    state.recordCalibration(const CalibrationStatus.uncalibrated());
+    expect(state.snapshot, same(snapshot));
+    expect(state.anchor, same(_anchor));
+
+    // 다음 PDR 시작 시점에만 이전 세션 표시를 초기화한다.
+    state.beginNewSession();
+    expect(state.snapshot, isNull);
+    expect(state.anchor, isNull);
+  });
+
+  testWidgets('debug toast floats compactly above the map controls', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => showDebugToast(
+                context,
+                message: 'PDR 세션이 종료됐습니다.',
+                bottomOffset: 124,
+              ),
+              child: const Text('show'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('show'));
+    await tester.pump();
+
+    final toast = tester.widget<SnackBar>(find.byType(SnackBar));
+    expect(toast.behavior, SnackBarBehavior.floating);
+    expect((toast.margin! as EdgeInsets).bottom, 124);
+    expect(find.text('PDR 세션이 종료됐습니다.'), findsOneWidget);
+  });
 
   testWidgets('advanced options appear only after debug mode is enabled', (
     tester,

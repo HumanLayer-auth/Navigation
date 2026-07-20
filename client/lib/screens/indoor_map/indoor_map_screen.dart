@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart' as ll;
@@ -117,8 +118,7 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
   }
 
   String? _highlightedStoreId;
-  PdrSnapshot? _pdrSnapshot;
-  CalibrationStatus _pdrCalibration = indoorNavigationDriver.currentCalibration;
+  late final DebugPdrTrailState _pdrTrailState;
   StreamSubscription<PdrSnapshot>? _pdrSnapshotSub;
   StreamSubscription<CalibrationStatus>? _pdrCalibrationSub;
   bool _placingPdrAnchor = false;
@@ -150,16 +150,19 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
     super.initState();
     _debugModeController = DebugModeController()
       ..addListener(_onDebugModeChanged);
-    _pdrSnapshot = indoorNavigationDriver.currentSnapshot;
+    _pdrTrailState = DebugPdrTrailState.fromCurrent(
+      snapshot: indoorNavigationDriver.currentSnapshot,
+      calibration: indoorNavigationDriver.currentCalibration,
+    );
     _pdrSnapshotSub = indoorNavigationDriver.snapshots.listen((snapshot) {
       _pdrDebugRecorder?.recordSnapshot(snapshot);
-      if (mounted) setState(() => _pdrSnapshot = snapshot);
+      if (mounted) setState(() => _pdrTrailState.recordSnapshot(snapshot));
     });
     _pdrCalibrationSub = indoorNavigationDriver.calibration.listen((status) {
       if (mounted) {
         setState(() {
           _pdrDebugRecorder?.recordCalibration(status);
-          _pdrCalibration = status;
+          _pdrTrailState.recordCalibration(status);
           if (status.phase == CalibrationPhase.calibrated ||
               status.phase == CalibrationPhase.uncalibrated) {
             _placingPdrAnchor = false;
@@ -367,12 +370,11 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
   }
 
   List<PdrLocalPoint> get _pdrConfirmedFloorPath {
-    final snapshot = _pdrSnapshot;
-    final anchor = _pdrCalibration.anchor;
+    final snapshot = _pdrTrailState.snapshot;
+    final anchor = _pdrTrailState.anchor;
     final graph = _floorGraph;
     if (snapshot == null ||
         anchor == null ||
-        !_pdrCalibration.canRenderPosition ||
         anchor.floorId != _selectedFloor ||
         graph == null ||
         graph.nodes.isEmpty) {
@@ -383,12 +385,11 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
   }
 
   List<PdrLocalPoint> get _pdrRawFloorPath {
-    final snapshot = _pdrSnapshot;
-    final anchor = _pdrCalibration.anchor;
+    final snapshot = _pdrTrailState.snapshot;
+    final anchor = _pdrTrailState.anchor;
     final graph = _floorGraph;
     if (snapshot == null ||
         anchor == null ||
-        !_pdrCalibration.canRenderPosition ||
         anchor.floorId != _selectedFloor ||
         graph == null ||
         graph.nodes.isEmpty) {
@@ -414,10 +415,25 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
   Set<String> get _pdrMatchedEdgeIds {
     final graph = _floorGraph;
     final confirmed = _pdrConfirmedFloorPath;
-    if (graph == null || confirmed.isEmpty) return const {};
+    if (graph == null || !_hasMeaningfulPdrMovement(confirmed)) return const {};
     return FloorMapMatcher(
       graph,
     ).matchPath(confirmed).map((point) => point.edgeId).toSet();
+  }
+
+  /// 세션 시작 직후에는 원점 한 개만 가장 가까운 간선에 투영되면서, 사용자가
+  /// 아직 걷지 않았는데도 그 간선 전체가 청록색으로 강조될 수 있다. 실제 PDR
+  /// 이동이 생긴 뒤에만 활성 간선을 표시한다.
+  bool _hasMeaningfulPdrMovement(List<PdrLocalPoint> path) {
+    if (path.length < 2) return false;
+    var distanceM = 0.0;
+    for (var index = 1; index < path.length; index++) {
+      final dx = path[index].eastM - path[index - 1].eastM;
+      final dy = path[index].northM - path[index - 1].northM;
+      distanceM += math.sqrt(dx * dx + dy * dy);
+      if (distanceM >= 0.2) return true;
+    }
+    return false;
   }
 
   ll.LatLng? get _pdrCurrentLocation {
@@ -436,11 +452,8 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
   /// 현재 위치가 나타나지 않는다.
   ll.LatLng? get _pdrAnchorLocation {
     final graph = _floorGraph;
-    final anchor = _pdrCalibration.anchor;
-    if (graph == null ||
-        anchor == null ||
-        anchor.floorId != _selectedFloor ||
-        !_pdrCalibration.canRenderPosition) {
+    final anchor = _pdrTrailState.anchor;
+    if (graph == null || anchor == null || anchor.floorId != _selectedFloor) {
       return null;
     }
     final wgs84 = fitFloorGeoTransform(
@@ -496,6 +509,7 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
       }
       return;
     }
+    setState(() => _pdrTrailState.beginNewSession());
     _pdrDebugRecorder = PdrDebugSessionRecorder();
     _pdrDebugRecorder?.recordRuntime(
       indoorNavigationDriver.currentRuntimeStatus,
@@ -591,24 +605,28 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
 
   void _showPdrMessage(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+    showDebugToast(
+      context,
+      message: message,
+      bottomOffset:
+          _mapShellBottomChromePx +
+          (_route != null ? _etaCardHeightPx : 0) +
+          12,
+    );
   }
 
   void _showPdrMessageWithExport(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          content: Text(message),
-          action: SnackBarAction(
-            label: 'JSON 공유',
-            onPressed: () => unawaited(_exportPdrDebugJson()),
-          ),
-        ),
-      );
+    showDebugToast(
+      context,
+      message: message,
+      bottomOffset:
+          _mapShellBottomChromePx +
+          (_route != null ? _etaCardHeightPx : 0) +
+          12,
+      actionLabel: 'JSON 공유',
+      onAction: () => unawaited(_exportPdrDebugJson()),
+    );
   }
 
   Future<void> _exportPdrDebugJson() async {
@@ -668,20 +686,23 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
     return Stack(
       children: [
         Positioned.fill(child: body),
-        Positioned(
+        AnimatedPositioned(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
           left: 12,
-          bottom:
-              _mapShellBottomChromePx +
-              (_route != null ? _etaCardHeightPx : 0) +
-              12,
+          bottom: _route != null ? _bottomBarLiftPx : 0,
           child: SafeArea(
             top: false,
-            bottom: false,
-            child: DebugModeSettingsButton(
-              key: _debugModeSettingsKey,
-              controller: _debugModeController,
-              onPressed: () =>
-                  showDebugModeSettingsSheet(context, _debugModeController),
+            child: Padding(
+              padding: const EdgeInsets.only(
+                bottom: _bottomBarInnerBottomPaddingPx,
+              ),
+              child: DebugModeSettingsButton(
+                key: _debugModeSettingsKey,
+                controller: _debugModeController,
+                onPressed: () =>
+                    showDebugModeSettingsSheet(context, _debugModeController),
+              ),
             ),
           ),
         ),
@@ -769,7 +790,7 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
           currentLocation: current,
           currentHeadingDegrees: pdrCurrent == null
               ? null
-              : _pdrSnapshot?.walkingHeadingDeg,
+              : _pdrTrailState.snapshot?.walkingHeadingDeg,
           destination: routeDestination?.point,
           routePoints: route?.points ?? const [],
           pdrPathPoints:
@@ -821,41 +842,30 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
           ),
         ),
 
-        // PDR 버튼은 화면 좌하단, MapBottomBar의 홈/실내 버튼과 같은 baseline에
-        // 붙인다. route가 표시되면 홈/실내 세그먼트가 위로 lift되므로 PDR도
-        // 같은 값(_bottomBarLiftPx)만큼 함께 올려 세로 정렬을 유지한다.
+        // PDR 제어는 검색창 아래의 장소·층 선택 chip과 같은 줄에 둔다.
+        // 하단에는 디버그 설정 진입점만 남겨 일반 지도 chrome과 역할을 나눈다.
         if (debugEnabled)
-          AnimatedPositioned(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeOut,
-            left: 12,
-            bottom: route != null ? _bottomBarLiftPx : 0,
+          Positioned(
+            top: 78,
+            left: 92,
             child: SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  0,
-                  0,
-                  0,
-                  _bottomBarInnerBottomPaddingPx,
-                ),
-                child: _PdrMapControl(
-                  key: _pdrControlKey,
-                  active: pdrActive,
-                  onPressed: _togglePdr,
-                  canExport:
-                      !pdrActive && (_pdrDebugRecorder?.hasSnapshot ?? false),
-                  exporting: _exportingPdrDebugJson,
-                  onExport: _exportPdrDebugJson,
-                  shareButtonKey: _pdrShareButtonKey,
-                ),
+              bottom: false,
+              child: _PdrMapControl(
+                key: _pdrControlKey,
+                active: pdrActive,
+                onPressed: _togglePdr,
+                canExport:
+                    !pdrActive && (_pdrDebugRecorder?.hasSnapshot ?? false),
+                exporting: _exportingPdrDebugJson,
+                onExport: _exportPdrDebugJson,
+                shareButtonKey: _pdrShareButtonKey,
               ),
             ),
           ),
 
         if (debugEnabled && _placingPdrAnchor)
           Positioned(
-            top: 116,
+            top: 130,
             left: 12,
             right: 12,
             child: SafeArea(child: _PdrAnchorHint(onCancel: _cancelPdrAnchor)),
