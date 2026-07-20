@@ -1,9 +1,14 @@
-"""다층 적재 검증 — 좌표 정규화·수직 전이 간선 생성.
+"""다층 적재 검증 — 공통 좌표 프레임·수직 전이 간선 생성.
 
-합성 픽스처(test-tower)는 2F를 일부러 1F와 다른 프레임으로 만들어 뒀다:
-    2F_local = 2 * 1F_local + (5, 3)
-정규화가 제대로면 2F를 1F(건물) 프레임으로 정확히 되돌려야 하므로,
-층이 달라도 같은 자리인 엘리베이터가 정확히 겹쳐야 한다.
+전 층이 하나의 local_m 프레임을 공유한다는 것이 적재 파이프라인의 전제다
+(scripts/seed/studio_adapter.py 좌표계 항목). 합성 픽스처(test-tower)도 실제
+데이터와 같게 1F/2F가 한 프레임을 쓰므로, 층이 달라도 같은 자리인 엘리베이터는
+좌표가 정확히 겹쳐야 한다.
+
+예전에는 적재 단계에서 층마다 아핀을 피팅해 기준층 프레임으로 되돌렸고, 이
+파일이 그 복원을 검증했다. 다베오 데이터로 옮기면서 정렬 단계가 사라졌으므로
+이제는 "적재가 좌표를 건드리지 않는다"를 확인한다 — 조용히 변형이 끼어들면
+건물당 하나뿐인 wgs84 피팅이 무의미해진다.
 """
 
 from sqlalchemy import select
@@ -22,25 +27,24 @@ def _nodes_by_floor(session, floor_name):
     }
 
 
-# 2F는 1F와 다른 프레임으로 들어오지만, 적재 후에는 1F 프레임으로 복원돼야 한다.
-def test_다른_프레임의_층이_기준층_좌표로_정규화된다(db_session):
+# 층이 달라도 같은 자리인 엘리베이터는 같은 좌표로 적재돼야 한다.
+def test_층이_달라도_같은_자리는_같은_좌표다(db_session):
     first = _nodes_by_floor(db_session, "1F")
     second = _nodes_by_floor(db_session, "2F")
 
-    # 픽스처 2F 원본은 EV-A가 (25, 23)이지만, 정규화 후 1F와 같은 (10, 10)이 돼야 한다.
     for node_id in ("EV-A", "EV-B", "EV-C", "EV-D"):
         assert second[node_id].x_m == first[node_id].x_m
         assert second[node_id].y_m == first[node_id].y_m
     assert (second["EV-A"].x_m, second["EV-A"].y_m) == (10.0, 10.0)
 
 
-# 정규화는 엘리베이터뿐 아니라 매장 입구 등 모든 노드에 적용돼야 한다.
-def test_정규화가_모든_노드에_적용된다(db_session):
-    first = _nodes_by_floor(db_session, "1F")
+# 적재가 좌표를 변형하지 않는지 확인한다. 엘리베이터는 층끼리 겹쳐서 변형이
+# 있어도 눈에 안 띌 수 있으므로, 층마다 자리가 다른 매장 입구로 검증한다.
+def test_적재가_좌표를_변형하지_않는다(db_session):
     second = _nodes_by_floor(db_session, "2F")
 
+    # 픽스처 2F의 S-1 원본 좌표가 그대로 저장돼야 한다.
     assert (second["S-1"].x_m, second["S-1"].y_m) == (30.0, 40.0)
-    assert (second["J-N"].x_m, second["J-N"].y_m) == (first["J-N"].x_m, first["J-N"].y_m)
 
 
 # 기준층의 local_m -> wgs84 아핀으로 모든 층의 wgs84가 계산돼야 한다.

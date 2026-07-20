@@ -1,5 +1,6 @@
 # 개발 DB를 초기화하고 더현대 서울 Studio 데이터를 적재하는 CLI.
-# 적재 범위는 resources/studio/thehyundai-seoul에 있는 층 전부다(현재 1F~4F).
+# 적재 범위는 studio_adapter.STUDIO_DIR에 있는 층 전부다
+# (현재 resources/studio/thehyundai-seoul-dabeeo의 B6~6F 12개 층).
 # 층 목록은 studio_adapter가 디렉토리에서 찾는다.
 # 실행 방법 (backend/ 디렉토리에서):
 #   python -m scripts.seed.reset_and_seed

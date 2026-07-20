@@ -1,18 +1,19 @@
-# FloorGraph Studio 익스포트(다층)를 ORM 적재용 표준 dict로 변환한다.
-# 설계 근거: docs/floorgraph-studio-integration.md (§3 목표 구조, §6 결정 D1~D5)
+# 층 JSON(다층)을 ORM 적재용 표준 dict로 변환한다.
+# 입력은 scripts/transform/build_studio_from_dabeeo.py가 만든 층별 파일이다.
 # 변환 규칙:
 #   - floor(상단) → building 블록 합성. 건물명은 Studio 건물 ID의 정적 메타데이터로 보완한다.
-#   - nodes  → 좌표를 건물 공통 프레임으로 정규화한 뒤 사용(아래 좌표계 항목 참고).
+#   - nodes  → local_m을 그대로 쓰고 wgs84만 다시 계산한다(아래 좌표계 항목 참고).
 #   - edges  → 그대로 사용(seed_navigation.edge_geometry_and_length가 geometry.local_m 처리).
-#   - stores → 폴리곤이 포함된 stores_{층}.json을 seed 스키마로 reshape(D1/D4).
+#   - stores → 폴리곤이 포함된 stores_{층}.json을 seed 스키마로 reshape.
 #   - pois   → elevator/escalator 노드에서 자동 생성(지도 마커용).
 #   - 층 간   → 엘리베이터/에스컬레이터를 이어 수직 전이 간선 생성(vertical_transfers).
 # 좌표계(중요):
-#   Studio는 층마다 좌표 변환을 따로 피팅해 내보내므로 층별 local_m 스케일이 다르다.
-#   백엔드는 건물당 local_m->wgs84 변환을 하나만 피팅하므로(repositories/geo_transform.py),
-#   적재 전에 모든 층을 기준층(1F) 프레임으로 정규화한다(floor_alignment).
-#   wgs84는 정규화 후 기준층의 local_m_to_wgs84 아핀으로 다시 계산한다 — 3F/4F 익스포트에는
-#   wgs84가 아예 없기 때문이다.
+#   전 층이 하나의 local_m 프레임을 공유한다는 것이 이 어댑터의 전제다. 백엔드는
+#   건물당 local_m->wgs84 변환을 하나만 피팅하므로(repositories/geo_transform.py),
+#   층 프레임이 제각각이면 그 피팅이 무의미해진다. 다베오 변환기가 원본 좌표계를
+#   전 층에 그대로 물려주므로(build_studio_from_dabeeo.py) 이 전제가 성립한다.
+#   wgs84만 기준층의 local_m_to_wgs84 아핀으로 다시 계산한다 — 개별 층 익스포트에는
+#   wgs84가 아예 없는 경우가 있기 때문이다.
 # 실행 (backend/ 디렉토리에서):
 #   python -m scripts.seed.studio_adapter
 
@@ -27,13 +28,15 @@ from scripts.seed import seed_navigation
 from scripts.transform import floor_alignment, vertical_transfers
 
 API_ROOT = Path(__file__).resolve().parents[2]
-STUDIO_DIR = API_ROOT / "resources" / "studio" / "thehyundai-seoul"
+# 다베오 공식 payload에서 만든 12개 층(scripts/transform/build_studio_from_dabeeo.py).
+STUDIO_DIR = API_ROOT / "resources" / "studio" / "thehyundai-seoul-dabeeo"
 BUILDING_NAMES = {"thehyundai-seoul": "더현대 서울"}
 
-# 기준층: 건물 공통 프레임을 정의하고, 실측 wgs84 앵커를 가진 유일한 층이다.
+# 기준층: 건물 공통 프레임의 wgs84 앵커를 가진 층. 좌표 자체는 전 층이 공유하므로
+# 여기서 가져오는 것은 local_m -> wgs84 아핀뿐이다.
 REFERENCE_FLOOR = "1f"
 
-# 지도에 마커로 노출할 편의시설 노드 타입 → POI 로 승격(D-POI: 노드에서 자동 생성)
+# 지도에 마커로 노출할 편의시설 노드 타입 → POI 로 승격(노드에서 자동 생성)
 POI_NODE_TYPES = {"elevator", "escalator"}
 
 
@@ -59,7 +62,7 @@ def _building_name(building_id: str) -> str:
     return BUILDING_NAMES.get(building_id, building_id)
 
 
-# D6: 노드/엣지 ID를 층 스코프로 네임스페이싱한다(층 간 ID 재사용 충돌 방지).
+# 노드/엣지 ID를 층 스코프로 네임스페이싱한다(층 간 ID 재사용 충돌 방지).
 def _scoped(floor_id: str, raw_id: str | None) -> str | None:
     if raw_id is None:
         return None
@@ -82,16 +85,15 @@ def _wgs84_transform(reference: dict) -> floor_alignment.Affine | None:
     )
 
 
-# 노드 좌표를 건물 프레임으로 옮기고 wgs84를 다시 계산한다(ID도 층 스코프).
+# 노드의 wgs84를 건물 아핀으로 다시 계산한다(ID도 층 스코프).
 def _normalized_nodes(
     floor_id: str,
     nodes: list[dict],
-    align: floor_alignment.Affine,
     to_wgs84: floor_alignment.Affine | None,
 ) -> list[dict]:
     out: list[dict] = []
     for node in nodes:
-        local = floor_alignment.apply_point(align, node["position"]["local_m"])
+        local = node["position"]["local_m"]
         position = {**node["position"], "local_m": local}
         if to_wgs84 is not None:
             lng, lat = floor_alignment.apply(to_wgs84, local["x"], local["y"])
@@ -100,23 +102,14 @@ def _normalized_nodes(
     return out
 
 
-# 간선 ID를 층 스코프로 바꾸고 geometry 전체를 건물 프레임에 맞춘다. 양 끝점만
-# 남기면 향후 곡선/꺾인 복도의 실제 경로와 길이가 유실되므로 모든 점을 보존한다.
-def _scope_edges(
-    floor_id: str,
-    edges: list[dict],
-    align: floor_alignment.Affine,
-) -> list[dict]:
+# 간선 ID를 층 스코프로 바꾼다. geometry는 양 끝점만 남기면 향후 곡선/꺾인 복도의
+# 실제 경로와 길이가 유실되므로 모든 점을 보존한다.
+def _scope_edges(floor_id: str, edges: list[dict]) -> list[dict]:
     scoped = []
     for edge in edges:
-        raw_geometry = edge.get("geometry_local_m")
-        if raw_geometry is None and isinstance(edge.get("geometry"), dict):
-            raw_geometry = edge["geometry"].get("local_m")
-        geometry = (
-            [floor_alignment.apply_point(align, point) for point in raw_geometry]
-            if raw_geometry
-            else None
-        )
+        geometry = edge.get("geometry_local_m")
+        if geometry is None and isinstance(edge.get("geometry"), dict):
+            geometry = edge["geometry"].get("local_m")
         item = {k: v for k, v in edge.items() if k not in ("geometry", "geometry_local_m", "length_m")}
         item.update(
             {
@@ -139,7 +132,6 @@ def _scope_edges(
 def _reshape_stores(
     floor_code: str,
     floor_id: str,
-    align: floor_alignment.Affine,
     directory: Path = STUDIO_DIR,
 ) -> list[dict]:
     stores_path = directory / f"stores_{floor_code}.json"
@@ -162,13 +154,11 @@ def _reshape_stores(
                 "category": store.get("category"),
                 "subcategory": store.get("subcategory"),
                 # seed_navigation는 store["centroid"]["local_m"] 구조를 기대한다.
-                "centroid": {"local_m": floor_alignment.apply_point(align, centroid)},
-                "entrance_local_m": floor_alignment.apply_point(align, entrance) if entrance else None,
+                "centroid": {"local_m": centroid},
+                "entrance_local_m": entrance,
                 # entrance_node_id는 Node FK → 네임스페이싱한 노드 ID와 일치시켜야 한다.
                 "entrance_node_id": _scoped(floor_id, store.get("entrance_node_id")),
-                "polygon_local_m": (
-                    [floor_alignment.apply_point(align, p) for p in polygon] if polygon else None
-                ),
+                "polygon_local_m": polygon or None,
             }
         )
     return reshaped
@@ -197,41 +187,38 @@ def build_seed_dict(
 ) -> dict:
     studio = _load(floor_code, directory)
     reference = reference or _load(REFERENCE_FLOOR, directory)
-    align, stats = floor_alignment.alignment_to_reference(studio, reference)
     to_wgs84 = _wgs84_transform(reference)
 
     building_id = studio["building_id"]
     floor = studio["floor"]
     floor_id = floor["id"]
-    nodes = _normalized_nodes(floor_id, studio["nodes"], align, to_wgs84)
+    nodes = _normalized_nodes(floor_id, studio["nodes"], to_wgs84)
     footprint = studio.get("building_footprint_local_m") or None
-    aligned_footprint = (
-        [floor_alignment.apply_point(align, p) for p in footprint] if footprint else None
-    )
 
     return {
         "building": {
             "id": building_id,
             "name": _building_name(building_id),
-            "area_m2": None,  # D2: 좌표계 재투영 전까지 보류
+            # 절대 배율이 미검증이라(build_studio_from_dabeeo.SCALE_M_PER_UNIT)
+            # 면적·둘레는 신뢰할 수 없다. 배율이 확정되면 채운다.
+            "area_m2": None,
             "perimeter_m": None,
             # 건물 대표 외곽(기준층). 층별 윤곽은 floor.footprint_local_m에 따로 넣는다.
-            "footprint_local_m": aligned_footprint,
+            "footprint_local_m": footprint,
             "floor": {
                 "id": floor_id,
                 "name": floor["name"],
                 "level": floor["level"],
-                "footprint_local_m": aligned_footprint,
+                "footprint_local_m": footprint,
             },
             "map_calibration_version": studio.get("coordinate_system", {}).get(
                 "calibration_version", "unversioned"
             ),
         },
         "nodes": nodes,
-        "edges": _scope_edges(floor_id, studio["edges"], align),
-        "stores": _reshape_stores(floor_code, floor_id, align, directory),
+        "edges": _scope_edges(floor_id, studio["edges"]),
+        "stores": _reshape_stores(floor_code, floor_id, directory),
         "pois": _generate_pois(floor_id, nodes),
-        "_alignment": stats,
     }
 
 
@@ -244,7 +231,7 @@ def seed_studio(
 ) -> list[dict]:
     codes = floor_codes or discover_floor_codes(directory)
     if REFERENCE_FLOOR not in codes:
-        raise ValueError(f"기준층 {REFERENCE_FLOOR}.json이 있어야 좌표계를 맞출 수 있습니다.")
+        raise ValueError(f"기준층 {REFERENCE_FLOOR}.json이 있어야 wgs84를 계산할 수 있습니다.")
     reference = _load(REFERENCE_FLOOR, directory)
 
     own_session = session or SessionLocal()
@@ -272,7 +259,6 @@ def seed_studio(
                     "edges": len(data["edges"]),
                     "stores": len(data["stores"]),
                     "pois": len(data["pois"]),
-                    "alignment": data["_alignment"],
                 }
             )
 
@@ -297,11 +283,9 @@ def main() -> None:
         if "transfers" in row:
             print(f"[전이] 간선={row['transfers']} 미해결={row['unresolved']}")
             continue
-        a = row["alignment"]
-        note = "기준층" if a["identity"] else f"앵커={a['anchors']} 잔차 평균={a['mean']:.2f}m 최대={a['max']:.2f}m"
         print(
             f"[{row['name']}] nodes={row['nodes']} edges={row['edges']} "
-            f"stores={row['stores']} pois={row['pois']} · {note}"
+            f"stores={row['stores']} pois={row['pois']}"
         )
     print("Studio 데이터 적재 완료")
 

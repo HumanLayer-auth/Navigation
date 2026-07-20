@@ -122,5 +122,8 @@ def test_층지도는_그래프와_매장_폴리곤을_함께_응답한다(real_
     body = response.json()
     assert body["navigation_graph"]["nodes"] and body["navigation_graph"]["edges"]
     assert body["stores"]
-    assert all(store["polygon_local_m"] for store in body["stores"])
-    assert all(store["polygon_wgs84"] for store in body["stores"])
+    # 다베오 POI 중 연결된 도형 객체가 없는 것(호텔·설치 작품 같은 랜드마크)은
+    # 점으로만 존재한다. 폴리곤이 있는 매장은 wgs84 폴리곤도 함께 와야 한다.
+    with_polygon = [store for store in body["stores"] if store["polygon_local_m"]]
+    assert with_polygon
+    assert all(store["polygon_wgs84"] for store in with_polygon)
