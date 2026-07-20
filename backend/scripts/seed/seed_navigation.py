@@ -76,6 +76,9 @@ def add_dataset(session: Session, data: dict) -> None:
             building_id=building_id,
             name=floor_data["name"],
             level=floor_data["level"],
+            map_calibration_version=building_data.get(
+                "map_calibration_version", "unversioned"
+            ),
         )
     )
 

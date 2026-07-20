@@ -50,6 +50,7 @@ class PoiResponse(BaseModel):
 class FloorMapResponse(BaseModel):
     floor: FloorResponse
     navigation_coordinate_system: Literal["local_m"]
+    map_calibration_version: str
     footprint_local_m: list[PointResponse]
     footprint_wgs84: list[LatLngResponse] | None
     navigation_graph: FloorGraphResponse

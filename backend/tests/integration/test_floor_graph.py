@@ -35,6 +35,7 @@ def test_층_지도에_Studio_그래프와_매장_폴리곤을_응답한다(api_
     assert response.status_code == 200
     body = response.json()
     assert body["navigation_coordinate_system"] == "local_m"
+    assert body["map_calibration_version"] == "unversioned"
     assert len(body["navigation_graph"]["nodes"]) == FIXTURE_NODE_COUNT
     assert len(body["navigation_graph"]["edges"]) == FIXTURE_EDGE_COUNT
 

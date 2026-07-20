@@ -19,6 +19,7 @@
 from __future__ import annotations
 
 import json
+from math import hypot
 from pathlib import Path
 
 from app.core.database import SessionLocal
@@ -99,11 +100,23 @@ def _normalized_nodes(
     return out
 
 
-# 간선 ID를 층 스코프로 바꾼다. geometry는 버리고 양 끝 노드로 재생성하게 둔다.
-# (geometry는 정규화 전 층 좌표라 그대로 두면 노드와 어긋난다.)
-def _scope_edges(floor_id: str, edges: list[dict]) -> list[dict]:
+# 간선 ID를 층 스코프로 바꾸고 geometry 전체를 건물 프레임에 맞춘다. 양 끝점만
+# 남기면 향후 곡선/꺾인 복도의 실제 경로와 길이가 유실되므로 모든 점을 보존한다.
+def _scope_edges(
+    floor_id: str,
+    edges: list[dict],
+    align: floor_alignment.Affine,
+) -> list[dict]:
     scoped = []
     for edge in edges:
+        raw_geometry = edge.get("geometry_local_m")
+        if raw_geometry is None and isinstance(edge.get("geometry"), dict):
+            raw_geometry = edge["geometry"].get("local_m")
+        geometry = (
+            [floor_alignment.apply_point(align, point) for point in raw_geometry]
+            if raw_geometry
+            else None
+        )
         item = {k: v for k, v in edge.items() if k not in ("geometry", "geometry_local_m", "length_m")}
         item.update(
             {
@@ -112,6 +125,12 @@ def _scope_edges(floor_id: str, edges: list[dict]) -> list[dict]:
                 "to": _scoped(floor_id, edge["to"]),
             }
         )
+        if geometry:
+            item["geometry_local_m"] = geometry
+            item["length_m"] = sum(
+                hypot(current["x"] - previous["x"], current["y"] - previous["y"])
+                for previous, current in zip(geometry, geometry[1:])
+            )
         scoped.append(item)
     return scoped
 
@@ -198,9 +217,12 @@ def build_seed_dict(
                 [floor_alignment.apply_point(align, p) for p in footprint] if footprint else None
             ),
             "floor": {"id": floor_id, "name": floor["name"], "level": floor["level"]},
+            "map_calibration_version": studio.get("coordinate_system", {}).get(
+                "calibration_version", "unversioned"
+            ),
         },
         "nodes": nodes,
-        "edges": _scope_edges(floor_id, studio["edges"]),
+        "edges": _scope_edges(floor_id, studio["edges"], align),
         "stores": _reshape_stores(floor_code, floor_id, align, directory),
         "pois": _generate_pois(floor_id, nodes),
         "_alignment": stats,

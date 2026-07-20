@@ -75,6 +75,7 @@ def get_floor_map(
     return {
         "floor": {"id": floor.id, "name": floor.name, "level": floor.level},
         "navigation_coordinate_system": "local_m",
+        "map_calibration_version": floor.map_calibration_version,
         "footprint_local_m": (building.footprint_local_m or []) if building else [],
         "footprint_wgs84": _footprint_wgs84(building, transform),
         # Flutter는 최초 층 지도 응답에서 이 그래프를 캐시해 클라이언트 다익스트라를 실행한다.

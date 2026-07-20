@@ -40,6 +40,11 @@ class Floor(Base):
     )
     name: Mapped[str] = mapped_column(String, nullable=False)
     level: Mapped[int] = mapped_column(Integer, nullable=False)
+    map_calibration_version: Mapped[str] = mapped_column(
+        String,
+        nullable=False,
+        default="unversioned",
+    )
 
     building: Mapped["Building"] = relationship(back_populates="floors")
     nodes: Mapped[list["Node"]] = relationship(back_populates="floor")
