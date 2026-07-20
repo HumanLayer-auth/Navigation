@@ -33,6 +33,11 @@ const _mapShellBottomChromePx = 112.0;
 const _indoorInfoBarBottomPx = 30.0 + 78.0;
 const _etaCardHeightPx = 130.0;
 
+// 사용자가 매장 내부/건물 밖을 탭했을 때 멀리 떨어진 복도로 강제 스냅하지
+// 않기 위한 상한이다. 입구나 매장 앞을 누르는 정상적인 경우에는 충분히
+// 여유를 두되, 잘못 눌러 건물 반대편에서 PDR이 시작하는 일은 막는다.
+const _maxPdrAnchorSnapDistanceM = 12.0;
+
 /// 실내 지도 본문(층 평면도 + 경로/매장 오버레이). 검색창·길찾기·건물 전환 같은
 /// 공통 UI는 [MapShellScreen]이 상단/하단 바로 얹으므로 여기서는 다루지 않는다.
 class IndoorMapBody extends StatefulWidget {
@@ -247,7 +252,11 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
     final startNodeId =
         origin?.nodeId ??
         _pickStartNodeId(floorPlan, excludingNodeId: endNodeId);
-    if (endNodeId == null || startNodeId == null) return;
+    if (endNodeId == null) return;
+    if (startNodeId == null) {
+      _showPdrMessage('출발 위치를 먼저 지정해주세요. PDR 시작 후 입구 또는 복도를 탭하면 됩니다.');
+      return;
+    }
 
     final route = await buildingRepository.getShortestRoute(
       widget.buildingId,
@@ -260,11 +269,10 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
     widget.onRouteVisibleChanged?.call(route != null);
   }
 
-  /// PDR이 아직 없어 "현재 위치"를 알 수 없다. 임시로 층 평면도 중심에서
-  /// 가장 가까운 매장 입구 노드를 출발점으로 쓴다.
+  /// PDR anchor 또는 확정 PDR 위치에서 가장 가까운 매장 입구 노드를 고른다.
+  /// 위치를 모르는 상태에서 도면 중심을 출발점으로 추정하지 않는다.
   String? _pickStartNodeId(FloorPlan floorPlan, {String? excludingNodeId}) {
-    final origin =
-        _pdrCurrentLocation ?? floorPlan.approximateCurrentLocation();
+    final origin = _pdrCurrentLocation ?? _pdrAnchorLocation;
     if (origin == null) return null;
     StorePolygon? nearest;
     double? nearestDistance;
@@ -320,6 +328,24 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
     final wgs84 = fitFloorGeoTransform(
       graph.nodes,
     ).apply(current.eastM, current.northM);
+    return ll.LatLng(wgs84.$1, wgs84.$2);
+  }
+
+  /// 걸음이 아직 확정되지 않은 PDR 시작 직후에도, 사용자가 선택한 anchor를
+  /// 현재 위치 마커로 표시한다. PDR을 켜기 전에는 null이라 도면 중앙에 가짜
+  /// 현재 위치가 나타나지 않는다.
+  ll.LatLng? get _pdrAnchorLocation {
+    final graph = _floorGraph;
+    final anchor = _pdrCalibration.anchor;
+    if (graph == null ||
+        anchor == null ||
+        anchor.floorId != _selectedFloor ||
+        !_pdrCalibration.canRenderPosition) {
+      return null;
+    }
+    final wgs84 = fitFloorGeoTransform(
+      graph.nodes,
+    ).apply(anchor.anchorLocalM.eastM, anchor.anchorLocalM.northM);
     return ll.LatLng(wgs84.$1, wgs84.$2);
   }
 
@@ -386,7 +412,17 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
       _showPdrMessage('이 층 좌표를 계산하지 못했습니다.');
       return true;
     }
-    unawaited(_confirmPdrAnchor(PdrLocalPoint(local.$1, local.$2)));
+    final tappedPoint = PdrLocalPoint(local.$1, local.$2);
+    final snapped = FloorMapMatcher(graph).snapToWalkableNetwork(tappedPoint);
+    if (snapped == null) {
+      _showPdrMessage('이 층의 통로 위치를 찾지 못했습니다. 다시 시도해주세요.');
+      return true;
+    }
+    if (snapped.distanceToGraphM > _maxPdrAnchorSnapDistanceM) {
+      _showPdrMessage('입구 또는 복도에 더 가깝게 시작 위치를 탭해주세요.');
+      return true;
+    }
+    unawaited(_confirmPdrAnchor(snapped.point));
     return true;
   }
 
@@ -409,7 +445,7 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
     }
     if (!mounted) return;
     setState(() => _placingPdrAnchor = false);
-    _showPdrMessage('PDR 시작점이 설정됐습니다. 이동 경로는 통로 그래프에 맞춰 표시됩니다.');
+    _showPdrMessage('시작점을 통로에 맞췄습니다. 이동 경로는 통로 그래프를 따라 표시됩니다.');
   }
 
   Future<void> _cancelPdrAnchor() async {
@@ -558,11 +594,14 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
         indoorNavigationDriver.currentRuntimeStatus.state !=
         PdrRuntimeState.idle;
     final pdrCurrent = _pdrCurrentLocation;
+    // PDR anchor 또는 실제 route가 없을 때 도면 중심을 가짜 현재 위치로
+    // 그리지 않는다. 실내 PDR은 시작 위치를 모르면 절대 위치를 알 수 없다.
     final current =
         pdrCurrent ??
+        _pdrAnchorLocation ??
         ((route != null && route.points.isNotEmpty)
             ? route.points.first
-            : floorPlan.approximateCurrentLocation());
+            : null);
 
     // 지도가 화면 끝까지 그려지지만 위/아래 UI에 실제로 가려지는 두께를 계산해
     // FloorPlanView에 넘긴다. 축소 하한이 이 "가려지지 않는 세로 영역"에 맞춰
@@ -798,7 +837,7 @@ class _PdrAnchorHint extends StatelessWidget {
             const SizedBox(width: 8),
             const Expanded(
               child: Text(
-                '현재 위치를 지도에서 탭하세요',
+                '입구 또는 복도에 시작점을 탭하세요',
                 maxLines: 2,
                 style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
               ),

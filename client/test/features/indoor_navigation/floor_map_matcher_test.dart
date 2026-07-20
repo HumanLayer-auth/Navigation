@@ -53,6 +53,20 @@ void main() {
       expect(matched.distanceToGraphM, closeTo(1.2, 1e-9));
     });
 
+    test('시작점 스냅은 matcher 상태를 만들지 않고 가장 가까운 통로를 고른다', () {
+      final matcher = FloorMapMatcher(_testGraph());
+
+      final snapped = matcher.snapToWalkableNetwork(
+        const PdrLocalPoint(4, 1.2),
+      );
+
+      expect(snapped, isNotNull);
+      expect(snapped!.edgeId, 'ab');
+      expect(snapped.point, const PdrLocalPoint(4, 0));
+      // snap 뒤 첫 PDR 점은 이전 위치 제약 없이 다시 매칭돼야 한다.
+      expect(matcher.match(const PdrLocalPoint(10, 4))!.edgeId, 'bc');
+    });
+
     test('분기 뒤에는 다음 graph 간선 위로 자연스럽게 전환한다', () {
       final matcher = FloorMapMatcher(_testGraph());
       final path = matcher.matchPath(const [

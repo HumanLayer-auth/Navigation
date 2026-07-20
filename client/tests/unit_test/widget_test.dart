@@ -290,12 +290,12 @@ void main() {
     expect(find.text('데모 건물 · 1F'), findsOneWidget);
     expect(find.byType(FloorPlanView), findsOneWidget);
 
-    // PDR이 아직 없어도, 실내 지도 진입 시 층 평면도 근사 위치가
-    // FloorPlanView로 전달돼야 한다.
+    // PDR anchor 또는 실제 경로가 아직 없으면, 도면 중앙을 현재 위치로
+    // 가장하지 않는다. 사용자가 PDR 시작점을 지정한 뒤에만 위치를 표시한다.
     final floorPlanView = tester.widget<FloorPlanView>(
       find.byType(FloorPlanView),
     );
-    expect(floorPlanView.currentLocation, isNotNull);
+    expect(floorPlanView.currentLocation, isNull);
   });
 
   testWidgets('indoor map switches floor via the floor tabs', (

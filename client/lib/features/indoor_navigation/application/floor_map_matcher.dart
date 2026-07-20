@@ -46,15 +46,22 @@ class FloorMapMatcher {
   _MatchedCandidate? _last;
   PdrLocalPoint? _lastRaw;
 
+  /// 시작점처럼 아직 직전 PDR 상태가 없는 좌표를 통행 가능한 graph 위로
+  /// 투영한다. 이 호출은 matcher의 시간 상태를 바꾸지 않으므로, 사용자가
+  /// 찍은 anchor를 보정할 때 안전하게 쓸 수 있다.
+  MapMatchedFloorPoint? snapToWalkableNetwork(PdrLocalPoint point) {
+    if (_edges.isEmpty) return null;
+    final nearest = _candidatesFor(point).firstOrNull;
+    return nearest?.publicResult;
+  }
+
   /// raw 한 점의 graph 위 매칭 결과다. 간선 전환은 현재 raw 점이 더 가깝다는
   /// 사실만으로 허용하지 않고, 직전 매칭점에서 graph를 따라 도달 가능한지도
   /// 함께 확인한다.
   MapMatchedFloorPoint? match(PdrLocalPoint raw) {
     if (_edges.isEmpty) return null;
 
-    final candidates = <_MatchedCandidate>[
-      for (final edge in _edges) edge.project(raw),
-    ]..sort((a, b) => a.distanceToGraphM.compareTo(b.distanceToGraphM));
+    final candidates = _candidatesFor(raw);
     if (candidates.isEmpty) return null;
 
     final previous = _last;
@@ -96,6 +103,10 @@ class FloorMapMatcher {
     _lastRaw = raw;
     return selected.publicResult;
   }
+
+  List<_MatchedCandidate> _candidatesFor(PdrLocalPoint point) =>
+      <_MatchedCandidate>[for (final edge in _edges) edge.project(point)]
+        ..sort((a, b) => a.distanceToGraphM.compareTo(b.distanceToGraphM));
 
   /// raw 점마다 선택된 간선만 돌려준다. 진단이나 간선 전환 테스트에 쓴다.
   List<MapMatchedFloorPoint> matchPath(Iterable<PdrLocalPoint> rawPath) => [
