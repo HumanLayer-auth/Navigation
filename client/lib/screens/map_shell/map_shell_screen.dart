@@ -4,9 +4,12 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../core/api_config.dart';
 import '../../core/service_locator.dart';
 import '../../models/favorite_place.dart';
+import '../../models/floor_plan.dart';
 import '../../models/poi_search_result.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/building_switcher_sheet.dart';
+import '../../widgets/category_list_sheet.dart';
+import '../../widgets/category_stores_sheet.dart';
 import '../../widgets/directions_sheet.dart';
 import '../../widgets/favorites_sheet.dart';
 import '../../widgets/map_bottom_bar.dart';
@@ -47,7 +50,31 @@ class _MapShellScreenState extends State<MapShellScreen> {
   // 까지 새어들어가는 문제를 여기서 함께 막는다.
   final _topBarKey = GlobalKey();
   final _favoritesPillKey = GlobalKey();
+  final _categoryPillKey = GlobalKey();
   final _bottomBarKey = GlobalKey();
+
+  /// 시트 X 버튼이 눌리면 true가 된다. 시트 체인의 어떤 시점에서든 이 값이
+  /// true면 부모 loop(_openFavorites, _openCategoryStores, _showStoreInfo)는
+  /// 이전 시트를 다시 열지 않고 즉시 종료해서 전체 chain이 한 번에 닫힌다.
+  /// 최상위 호출자가 값을 consume한 뒤 반드시 false로 되돌린다.
+  bool _closeSheetChainRequested = false;
+
+  void _requestCloseSheetChain() {
+    _closeSheetChainRequested = true;
+  }
+
+  /// 시트 chain을 여는 최상위 진입 지점(장소 pill 탭, 매장 폴리곤 탭,
+  /// 검색으로 매장 매치 등)에서 감싸 쓴다. 시작 시 플래그를 초기화하고
+  /// 끝나면 다시 리셋한다 — nested loop들이 값을 읽는 동안에는 리셋하지
+  /// 않으므로, X 신호가 chain 전체까지 온전히 전파된다.
+  Future<T> _runSheetChain<T>(Future<T> Function() body) async {
+    _closeSheetChainRequested = false;
+    try {
+      return await body();
+    } finally {
+      _closeSheetChainRequested = false;
+    }
+  }
 
   @override
   void initState() {
@@ -132,7 +159,7 @@ class _MapShellScreenState extends State<MapShellScreen> {
       return;
     }
 
-    await _showStoreInfo(match);
+    await _runSheetChain(() => _showStoreInfo(match));
   }
 
   /// 매장 정보 시트를 띄운다. 검색 결과를 탭했을 때와 지도 위 매장 폴리곤을
@@ -153,12 +180,22 @@ class _MapShellScreenState extends State<MapShellScreen> {
         title: match.name,
         subtitle: match.floor,
         favorite: favorite,
+        category: match.category,
+        subcategory: match.subcategory,
+        onCloseAll: _requestCloseSheetChain,
       ),
     );
     if (!mounted) return false;
     // 시트가 어떻게 닫혔든(선택 없이 닫힘 포함) 지도 위 강조 표시도 같이 지운다.
     _indoorKey.currentState?.clearHighlight();
+    // X로 chain 전체를 닫으라는 신호가 왔다면, 여기서 곧장 종료해 부모 loop가
+    // 다음 시트를 다시 열지 못하게 한다.
+    if (_closeSheetChainRequested) return true;
     if (action == null) return false;
+
+    if (action == StoreInfoAction.viewCategory && match.category != null) {
+      return _openCategoryStores(match.category!);
+    }
 
     final candidate = DirectionsCandidate(
       title: match.name,
@@ -169,10 +206,33 @@ class _MapShellScreenState extends State<MapShellScreen> {
     );
     if (action == StoreInfoAction.setOrigin) {
       await _openDirections(presetOrigin: candidate);
-    } else {
+    } else if (action == StoreInfoAction.setDestination) {
       await _openDirections(presetDestination: candidate);
     }
     return true;
+  }
+
+  /// 카테고리 chip을 눌렀을 때 같은 카테고리의 매장 목록 시트를 연다. 항목을
+  /// 탭하면 그 매장의 매장 정보 시트로 넘어가고, 정보 시트에서 뒤로 돌아
+  /// 오면(=출발/도착 액션 없이 닫힘) 다시 카테고리 목록으로 돌아온다 —
+  /// 사용자가 여러 매장을 훑어보는 흐름을 위해 저장한 장소와 동일한 loop
+  /// 패턴을 쓴다.
+  Future<bool> _openCategoryStores(String category) async {
+    while (mounted) {
+      final picked = await _withMapsLocked(
+        () => CategoryStoresSheet.show(
+          context,
+          buildingId: _buildingId,
+          category: category,
+          onCloseAll: _requestCloseSheetChain,
+        ),
+      );
+      if (_closeSheetChainRequested || picked == null || !mounted) return false;
+      final tookAction = await _showStoreInfo(picked);
+      if (_closeSheetChainRequested || !mounted) return false;
+      if (tookAction) return true;
+    }
+    return false;
   }
 
   Future<List<DirectionsCandidate>> _searchDirectionsCandidates(String query) async {
@@ -260,12 +320,73 @@ class _MapShellScreenState extends State<MapShellScreen> {
   /// 매장 정보 시트에서 출발/도착을 고르지 않고 뒤로 닫으면 다시 저장된 장소
   /// 시트로 돌아온다 — 사용자가 여러 저장 항목을 훑어보다 잘못 눌렀거나
   /// 다른 항목을 다시 고르려는 경우를 위한 흐름이다.
+  /// "카테고리" pill을 눌렀을 때 대분류 목록 → 매장 목록 → 매장 정보로
+  /// 이어지는 chain을 연다. 저장한 장소 흐름과 동일한 loop 패턴:
+  /// - 매장 정보에서 뒤로 돌아오면 다시 매장 목록으로
+  /// - 매장 목록에서 뒤로 돌아오면 다시 카테고리 목록으로
+  /// - 어느 시트든 X/바깥 탭이면 전체 chain 종료
+  Future<void> _openCategoryList() async {
+    await _runSheetChain(() async {
+      while (mounted) {
+        final category = await _withMapsLocked(
+          () => CategoryListSheet.show(
+            context,
+            buildingId: _buildingId,
+            onCloseAll: _requestCloseSheetChain,
+          ),
+        );
+        if (_closeSheetChainRequested || category == null || !mounted) return;
+        final tookAction = await _openCategoryStores(category);
+        if (_closeSheetChainRequested || !mounted) return;
+        if (tookAction) return;
+      }
+    });
+  }
+
   Future<void> _openFavorites() async {
-    while (mounted) {
-      final picked = await _withMapsLocked(() => FavoritesSheet.show(context));
-      if (picked == null || !mounted) return;
-      final tookAction = await _showStoreInfo(picked.toPoiSearchResult());
-      if (tookAction) return;
+    await _runSheetChain(() async {
+      while (mounted) {
+        final picked = await _withMapsLocked(
+          () => FavoritesSheet.show(
+            context,
+            onCloseAll: _requestCloseSheetChain,
+          ),
+        );
+        if (_closeSheetChainRequested || picked == null || !mounted) return;
+        final enriched = await _favoriteWithCategory(picked);
+        if (_closeSheetChainRequested || !mounted) return;
+        final tookAction = await _showStoreInfo(enriched.toPoiSearchResult());
+        if (_closeSheetChainRequested || !mounted) return;
+        if (tookAction) return;
+      }
+    });
+  }
+
+  /// 저장된 항목에 카테고리 필드가 비어 있으면(이 필드가 도입되기 전에 저장
+  /// 된 경우), 그 매장을 실시간 매장 데이터에서 찾아 category/subcategory를
+  /// 채워 넣는다. 이렇게 해야 저장한 장소를 통해 열린 매장 정보 시트에서도
+  /// 지도에서 직접 탭한 것과 똑같이 카테고리 chip이 뜬다.
+  Future<FavoritePlace> _favoriteWithCategory(FavoritePlace favorite) async {
+    if (favorite.category != null) return favorite;
+    try {
+      final json = await buildingRepository.getFloorGeoJson(
+        favorite.buildingId,
+        favorite.floor,
+      );
+      if (json == null) return favorite;
+      final plan = FloorPlan.fromJson(json);
+      final match = plan.stores.where((s) {
+        if (favorite.nodeId != null) return s.entranceNodeId == favorite.nodeId;
+        return s.name == favorite.name;
+      }).firstOrNull;
+      if (match == null || match.category == null) return favorite;
+      return favorite.copyWithCategory(
+        category: match.category,
+        subcategory: match.subcategory,
+      );
+    } catch (_) {
+      // enrich 실패는 표시 품질만 낮출 뿐 흐름을 막지 않는다.
+      return favorite;
     }
   }
 
@@ -311,10 +432,13 @@ class _MapShellScreenState extends State<MapShellScreen> {
                 buildingId: _buildingId,
                 onRouteVisibleChanged: (visible) =>
                     setState(() => _indoorRouteVisible = visible),
-                onStoreTap: _showStoreInfo,
+                onStoreTap: (match) {
+                  _runSheetChain(() => _showStoreInfo(match));
+                },
                 outerOverlayKeys: [
                   _topBarKey,
                   _favoritesPillKey,
+                  _categoryPillKey,
                   _bottomBarKey,
                 ],
               ),
@@ -339,7 +463,14 @@ class _MapShellScreenState extends State<MapShellScreen> {
             left: 16,
             child: SafeArea(
               bottom: false,
-              child: _FavoritesPill(key: _favoritesPillKey, onTap: _openFavorites),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _FavoritesPill(key: _favoritesPillKey, onTap: _openFavorites),
+                  const SizedBox(width: 8),
+                  _CategoryPill(key: _categoryPillKey, onTap: _openCategoryList),
+                ],
+              ),
             ),
           ),
 
@@ -400,6 +531,47 @@ class _FavoritesPill extends StatelessWidget {
               SizedBox(width: 6),
               Text(
                 '장소',
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.text,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 검색창 바로 아래에 뜨는 작은 "카테고리" 칩. 저장한 장소 pill과 시각적
+/// 형제로 나란히 놓여, 매장 대분류(패션·뷰티 등)를 훑어 매장 목록으로 갈
+/// 수 있는 지름길이다.
+class _CategoryPill extends StatelessWidget {
+  const _CategoryPill({super.key, required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      elevation: 3,
+      shadowColor: Colors.black.withValues(alpha: 0.15),
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.category_outlined, size: 16, color: AppColors.primary),
+              SizedBox(width: 6),
+              Text(
+                '카테고리',
                 style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w700,

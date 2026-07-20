@@ -835,6 +835,8 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
                 floor: _selectedFloor!,
                 point: selected.centroid,
                 nodeId: selected.entranceNodeId,
+                category: selected.category,
+                subcategory: selected.subcategory,
               ),
             );
           },
