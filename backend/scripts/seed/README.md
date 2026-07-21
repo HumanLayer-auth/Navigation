@@ -35,6 +35,18 @@ reset_and_seed.reset_and_seed_studio()
 
 ---
 
+## 적재 시 보강 (`studio_adapter._reshape_stores`)
+
+Studio 원본 매장 데이터에는 빠진 값이 있어, 적재 시점에 두 가지를 채운다.
+
+- **입구 노드 연결 (`entrance_node_id`)** — 원본은 매장에 `entrance_local_m`(입구 좌표)만 주고 `entrance_node_id`(그래프 노드 FK)는 비워둔다. 이대로면 클라이언트가 도착 노드를 찾지 못해 **온디바이스 Dijkstra가 아예 돌지 않는다.** `_nearest_node_id`가 입구 좌표를 가장 가까운 `junction` 노드에 스냅해 채운다(교차점 우선 → 엘리베이터/에스컬레이터 오연결 방지). 원본이 이미 노드를 지정했으면 그대로 스코프한다.
+- **카테고리 분류 (`category` / `subcategory`)** — 원본은 리테일 매장을 전부 `category="매장"`으로 뭉갠다(`build_studio`가 dabeeo `categoryCode`를 버림). 실제 카테고리를 별도 매핑으로 주입한다:
+  - `resources/store_categories.json` — 매장 **id** 기준. `category_code`가 repo에 남아 있는 매장(1F 일부)을 정확히 분류. **우선 적용.**
+  - `resources/store_category_by_name.json` — 매장 **명** 기준. `category_code`가 없는 나머지를 브랜드명으로 분류(전층 커버). id 매핑이 없을 때 폴백.
+  - 둘 다 없으면 원본 `category`를 유지한다. 두 파일이 없어도 오류 없이 동작한다.
+
+---
+
 ## 의존성 방향
 
 ```
@@ -57,3 +69,4 @@ seed/seed_navigation  ──►  app.models
 | 적재 요약/정합 잔차 보기 | `python -m scripts.seed.studio_adapter` (층별 nodes/edges/정합 오차 출력) |
 | 스키마 바꾼 뒤 반영 | 마이그레이션 없음 → `reset_and_seed`로 drop & create |
 | 새 건물 데이터 추가 | `resources/studio/<building>/`에 층 JSON 배치 + `studio_adapter`의 `STUDIO_DIR`/`BUILDING_NAMES` 조정 |
+| 매장 카테고리 수정 | `resources/store_categories.json`(id) 또는 `store_category_by_name.json`(매장명) 편집 후 `reset_and_seed` |

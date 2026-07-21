@@ -12,7 +12,6 @@
 | 파일 | 종류 | 역할 |
 |---|---|---|
 | `build_studio_from_dabeeo.py` | 파일→파일 (CLI) | 다베오 공식 payload → 12개 층 `{층}.json` + `stores_{층}.json` |
-| `export_studio_stores.py` | 파일→파일 (CLI) | 층 JSON에서 매장 목록 추출 |
 | `make_glyphs.js` | 파일→파일 (Node) | 폰트(.ttf) → MapLibre 글리프 `.pbf` (`resources/fonts/`) |
 | `floor_alignment.py` | dict→dict (순수) | `local_m` 좌표에 2D 아핀 적용 |
 | `vertical_transfers.py` | dict→dict (순수) | 인접 층의 엘리베이터/에스컬레이터를 이어 수직 전이 간선 생성 |

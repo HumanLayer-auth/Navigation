@@ -36,7 +36,9 @@ backend/
 │   └── transform/       # 데이터 가공 (글리프 생성, 층 정렬 등)
 ├── resources/           # 정적 리소스
 │   ├── fonts/           # MapLibre SDF 글리프 (Noto Sans KR)
-│   └── studio/          # 스튜디오 원본 데이터
+│   ├── studio/          # 스튜디오 원본 데이터
+│   ├── store_categories.json          # 매장 id → 카테고리 (category_code 근거)
+│   └── store_category_by_name.json    # 매장명 → 카테고리 (브랜드명 분류, 폴백)
 ├── data/                # 런타임 SQLite DB (gitignore, 재생성 가능)
 └── tests/               # 테스트
     ├── unit/            # 단위 테스트 (좌표 변환·타일·시드)
