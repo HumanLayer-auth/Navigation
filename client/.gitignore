@@ -33,6 +33,16 @@ migrate_working_dir/
 /build/
 /coverage/
 
+# flutter run/build/pub get 시 자동 생성되는 플러그인 레지스트런트 (재생성되므로 추적 안 함)
+**/flutter/generated_plugin_registrant.cc
+**/flutter/generated_plugin_registrant.h
+**/flutter/generated_plugins.cmake
+**/Flutter/GeneratedPluginRegistrant.swift
+**/Flutter/GeneratedPluginRegistrant.h
+**/Flutter/GeneratedPluginRegistrant.m
+**/GeneratedPluginRegistrant.java
+lib/generated_plugin_registrant.dart
+
 # Symbolication related
 app.*.symbols
 
