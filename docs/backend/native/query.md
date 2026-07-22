@@ -34,16 +34,18 @@
     "match": {
       "store_id": "…",
       "name": "MLB",
-      "category": "매장",
-      "subcategory": "매장",
+      "category": "패션",
+      "subcategory": "캐주얼·스트리트",
       "floor_id": "…",
       "floor_name": "B2",
       "entrance_node_id": "…",
-      "centroid_local_m": { "x": 0.0, "y": 0.0 }
+      "centroid_local_m": { "x": 0.0, "y": 0.0 },
+      "centroid_wgs84": { "lat": 0.0, "lng": 0.0 }
     }
   }
   ```
   - `entrance_node_id`·`floor_name`은 클라이언트 경로 계산·화면 전환에 필요하다.
+  - `centroid_wgs84`는 지도 표시용 실좌표(건물에 wgs84 앵커 없으면 null).
   - 필드는 기존 `_to_store_dict` 출력에서 필요한 것만 추린다(재사용).
 
 ### `POST /query/info`
@@ -96,18 +98,20 @@
 
 ## 7. 검증 기준 (수용 기준)
 
-구현이 아래를 모두 만족하면 완료로 본다. 테스트는 기존 `backend/tests`의 Given/When/Then·fixture 관례를 따른다.
+구현이 아래를 모두 만족하면 완료로 본다. 테스트는 기존 `backend/tests`의 Given/When/Then·fixture 관례를 따른다. **(전 항목 완료 — 백엔드 66개 테스트 통과, B2 실데이터로 라이브 확인)**
 
-- [ ] 매장명 질의("MLB")가 그 매장 1건 + `entrance_node_id`를 반환한다.
-- [ ] 카테고리 질의("편의시설")가 해당 카테고리 매장 1건을 반환한다.
-- [ ] 동의어 질의("엠엘비"→"MLB")가 대응 매장을 반환한다.
-- [ ] info 질의("화장실")가 대표 1건 + 있는 층 목록(`floors`)을 반환한다.
-- [ ] 매칭 없는 질의가 `200` + `status:"no_match"`(예외 아님)를 반환한다.
-- [ ] 없는 `building_id`가 `404`를 반환한다.
-- [ ] 동점 입력이 **항상 같은 결과**를 반환한다(결정적).
-- [ ] `entrance_node_id`가 없는 매장이 매칭될 때 `ok_no_route`로 구분된다.
-- [ ] 응답 스키마가 Pydantic 모델(`response_model`)로 고정된다.
-- [ ] `backend/tests` 단위/통합 테스트 통과.
+- [x] 매장명 질의("MLB")가 그 매장 1건 + `entrance_node_id`를 반환한다. — 통합 테스트 + 라이브(MLB@B2)
+- [x] 카테고리 질의("편의시설")가 해당 카테고리 매장 1건을 반환한다. — 단위 `test_카테고리로_매칭한다`
+- [x] 동의어 질의("엠엘비"→"MLB")가 대응 매장을 반환한다. — 단위 + 동의어 커버리지 테스트
+- [x] info 질의("화장실")가 대표 1건 + 있는 층 목록(`floors`)을 반환한다. — 통합 + 라이브(11개 층 목록)
+- [x] 매칭 없는 질의가 `200` + `status:"no_match"`(예외 아님)를 반환한다. — 통합 테스트
+- [x] 없는 `building_id`가 `404`를 반환한다. — 통합 테스트
+- [x] 동점 입력이 **항상 같은 결과**를 반환한다(결정적). — 단위 `test_동점은_level_id_순으로_결정적이다`
+- [x] `entrance_node_id`가 없는 매장이 매칭될 때 `ok_no_route`로 구분된다. — 단위 `test_입구노드_없으면_ok_no_route`
+- [x] 응답 스키마가 Pydantic 모델(`response_model`)로 고정된다. — `dto/query.py` + 라우터 `response_model=`
+- [x] `backend/tests` 단위/통합 테스트 통과. — 66개 통과
+
+> 참고: 백엔드 완료. **클라이언트 연동(목업→실 HTTP, 새 계약 파싱, 지도 표시)** 은 별도 클라이언트 작업이다.
 
 ## 8. 확정된 결정
 
