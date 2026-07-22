@@ -42,6 +42,27 @@ Building 1──N Floor 1──N ┬─ Node ─┐
 
 ---
 
+## 식별자 설계 — `id`는 String 자연 키
+
+모든 엔티티의 `id`가 `String`이다. DB가 매기는 auto-increment `Long`이 **아니라**, 원천 데이터(다베오 스튜디오)가 이미 부여한 **자연 키(natural key)를 그대로 PK로 쓴다.**
+
+| 엔티티 | 실제 id 예시 |
+|---|---|
+| Building | `thehyundai-seoul` (슬러그) |
+| Floor | `FL-1ibh3iudjt4ro0414` (소스 내부 식별자) |
+| Node | `{floor_id}:{원본id}` (층 스코프 합성) |
+| Store / Poi | 소스 부여 id / `poi_{노드id}` |
+
+왜 auto-increment `Long`이 아닌가:
+
+- **소스가 id를 소유한다.** 노드·간선·매장이 소스 JSON에서 서로를 이 id로 참조한다(`Edge.from/to`, `Store.entrance_node_id`). 새 정수 id를 생성하면 시드 때 **모든 참조를 번역**해야 한다.
+- **재시드 안정성.** 개발 DB는 `reset_and_seed`로 통째로 재생성한다. 문자열 자연 키는 재시드해도 그대로지만, auto-increment 정수는 순서가 바뀌어 외부 참조(클라이언트가 저장한 매장 id 등)가 깨질 수 있다.
+- **디버깅·역추적.** 로그·API에서 `thehyundai-seoul:node_12`가 `48213`보다 읽기 쉽고, 다베오 원본과 1:1로 이어진다.
+
+트레이드오프: 문자열 PK는 정수보다 인덱스·조인이 약간 무겁지만 이 규모(층당 노드 수백 개)에선 무의미하다. **정렬·산술이 필요한 값은 문자열 id에 얹지 않고 별도 정수 컬럼으로 둔다** — 예: 층 순서는 `Floor.level`(정수), 표시 라벨은 `Floor.name`(문자열, "B2"/"1F")로 분리.
+
+---
+
 ## 의존성 방향
 
 ```

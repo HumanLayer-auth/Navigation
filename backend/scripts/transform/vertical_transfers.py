@@ -32,8 +32,8 @@ def _by_type(nodes: list[dict], node_type: str) -> list[dict]:
 # 인접한 층끼리 같은 수직 통로를 이어 전이 간선을 만든다.
 # floors: [{"code","floor_id","name","level","nodes"}] — nodes는 건물 공통 프레임으로
 # 정규화된 뒤여야 한다.
-# 인접 판단은 level 정렬로 한다. 이 데이터의 level은 위층일수록 작다(1F=5, 2F=4 …)는
-# 점에 주의. 어느 쪽이 위인지는 전이 간선이 양방향이라 결과에 영향이 없고,
+# 인접 판단은 level 정렬로 한다. level은 위층일수록 크다(6F=6 … 1F=1 … B6=-6).
+# 어느 쪽이 위인지는 전이 간선이 양방향이라 결과에 영향이 없고,
 # "정렬상 이웃한 두 층"만 이으면 된다.
 # 반환: (전이 간선 목록, 짝을 못 찾은 노드 목록)
 def build_transfers(floors: list[dict]) -> tuple[list[dict], list[dict]]:
