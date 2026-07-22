@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
+import threading
 import time
 from datetime import datetime
 from pathlib import Path
@@ -14,6 +16,8 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 from app.core.config import API_ROOT
 
 _SENSITIVE_MARKERS = ("password", "secret", "token", "apikey", "api_key", "authorization")
+_LOG_DIRS = (API_ROOT / "app" / "sql", API_ROOT / "app" / "args")
+_capture_enabled = True
 
 
 def _is_sensitive(key: str) -> bool:
@@ -37,28 +41,34 @@ def _json_body(raw: bytes, content_type: str) -> Any | None:
         return {"_unparsed_json_bytes": len(raw)}
 
 
-def _headers(scope_headers: list[tuple[bytes, bytes]]) -> dict[str, str]:
-    result = {key.decode("latin-1"): value.decode("latin-1") for key, value in scope_headers}
-    return {key: "***" if _is_sensitive(key) else value for key, value in result.items()}
-
-
 class RequestCaptureMiddleware:
-    """API JSON만 기록하고, 타일/글꼴 같은 바이너리 응답 본문은 기록하지 않는다."""
+    """실제 요청 인자와 상태 코드만 기록하는 선택형 ASGI 미들웨어."""
 
     def __init__(self, app: ASGIApp) -> None:
         self.app = app
-        log_root = API_ROOT.parent if API_ROOT.name == "backend" else API_ROOT
-        self.log_dir = log_root / "args"
+        self.log_dir = API_ROOT / "app" / "args"
+        self._health_logged = False
+        self._health_lock = threading.Lock()
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
             await self.app(scope, receive, send)
             return
 
+        # Docker healthcheck는 주기적으로 호출되므로 시작 확인용 첫 한 건만 남긴다.
+        capture_request = True
+        if scope["path"] == "/health":
+            with self._health_lock:
+                if self._health_logged:
+                    capture_request = False
+                else:
+                    self._health_logged = True
+        if not capture_request:
+            await self.app(scope, receive, send)
+            return
+
         request_chunks: list[bytes] = []
-        response_chunks: list[bytes] = []
         response_status = 500
-        response_content_type = ""
 
         async def receive_and_capture() -> Message:
             message = await receive()
@@ -67,31 +77,26 @@ class RequestCaptureMiddleware:
             return message
 
         async def send_and_capture(message: Message) -> None:
-            nonlocal response_status, response_content_type
+            nonlocal response_status
             if message["type"] == "http.response.start":
                 response_status = message["status"]
-                response_headers = _headers(message.get("headers", []))
-                response_content_type = response_headers.get("content-type", "")
-            elif message["type"] == "http.response.body" and "application/json" in response_content_type.lower():
-                response_chunks.append(message.get("body", b""))
             await send(message)
 
         try:
             await self.app(scope, receive_and_capture, send_and_capture)
         finally:
-            self._write(scope, b"".join(request_chunks), response_status, response_content_type, b"".join(response_chunks))
+            self._write(scope, b"".join(request_chunks), response_status)
 
     def _write(
         self,
         scope: Scope,
         request_body: bytes,
         response_status: int,
-        response_content_type: str,
-        response_body: bytes,
     ) -> None:
+        if not _capture_enabled:
+            return
         try:
             self.log_dir.mkdir(parents=True, exist_ok=True)
-            request_headers = _headers(scope.get("headers", []))
             query_string = scope.get("query_string", b"").decode("utf-8", errors="replace")
             record = {
                 "timestamp": datetime.now().astimezone().isoformat(timespec="milliseconds"),
@@ -99,14 +104,19 @@ class RequestCaptureMiddleware:
                     "method": scope["method"],
                     "path": scope["path"],
                     "query_string": query_string,
-                    "headers": request_headers,
-                    "json": _json_body(request_body, request_headers.get("content-type", "")),
+                    "json": _json_body(
+                        request_body,
+                        next(
+                            (
+                                value.decode("latin-1")
+                                for key, value in scope.get("headers", [])
+                                if key.lower() == b"content-type"
+                            ),
+                            "",
+                        ),
+                    ),
                 },
-                "response": {
-                    "status": response_status,
-                    "content_type": response_content_type,
-                    "json": _json_body(response_body, response_content_type),
-                },
+                "response_status": response_status,
             }
             safe_path = re.sub(r"[^a-zA-Z0-9_-]+", "-", scope["path"].strip("/")) or "root"
             filename = f"{time.time_ns()}-{scope['method'].lower()}-{safe_path}.json"
@@ -116,3 +126,35 @@ class RequestCaptureMiddleware:
         except OSError:
             # 진단 로그 저장 실패가 실제 API 응답을 막으면 안 된다.
             pass
+
+
+def start_runtime_logs() -> None:
+    """새 서버 실행의 진단 세션을 시작하고 이전 파일을 비운다."""
+    global _capture_enabled
+    _capture_enabled = True
+    _delete_runtime_log_files()
+
+
+def clear_runtime_logs() -> None:
+    """서버 시작·정상 종료 시 진단 파일을 전부 지운다.
+
+    Docker bind mount 자체는 삭제할 수 없으므로 폴더는 남기고 내부 파일만 비운다.
+    """
+    global _capture_enabled
+    # 종료 직전 이미 들어온 healthcheck가 삭제 뒤 파일을 다시 쓰지 못하게 한다.
+    _capture_enabled = False
+    _delete_runtime_log_files()
+
+
+def _delete_runtime_log_files() -> None:
+    for log_dir in _LOG_DIRS:
+        if not log_dir.exists():
+            continue
+        for entry in log_dir.iterdir():
+            try:
+                if entry.is_dir():
+                    shutil.rmtree(entry)
+                else:
+                    entry.unlink()
+            except OSError as error:
+                print(f"진단 로그를 삭제하지 못했습니다: {error}")

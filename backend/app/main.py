@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.core.request_capture import RequestCaptureMiddleware
+from app.core.request_capture import RequestCaptureMiddleware, clear_runtime_logs, start_runtime_logs
 from app.dto.health import HealthResponse
 
 
@@ -28,6 +28,15 @@ def create_app() -> FastAPI:
     )
     if settings.http_capture:
         app.add_middleware(RequestCaptureMiddleware)
+
+        @app.on_event("startup")
+        def clear_previous_development_logs() -> None:
+            # 새 서버 실행은 새 진단 세션이므로 이전 실행의 로그를 남기지 않는다.
+            start_runtime_logs()
+
+        @app.on_event("shutdown")
+        def clear_development_logs() -> None:
+            clear_runtime_logs()
 
     app.include_router(buildings.router)  # 건물/지도/그래프/경로 API
     app.include_router(fonts.router)      # MapLibre 심볼 레이어용 글리프

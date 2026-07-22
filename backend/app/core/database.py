@@ -33,9 +33,8 @@ def _mask_sql_parameters(parameters: object) -> object:
 
 
 def _write_sql(statement: str, parameters: object) -> None:
-    # backend/가 아닌 저장소 루트에 두어 개발자가 PowerShell에서 바로 확인한다.
-    log_root = API_ROOT.parent if API_ROOT.name == "backend" else API_ROOT
-    log_dir = log_root / "sql"
+    # VS Code에서 백엔드 app 아래에 바로 보이도록 소스 패키지 기준으로 저장한다.
+    log_dir = API_ROOT / "app" / "sql"
     try:
         log_dir.mkdir(parents=True, exist_ok=True)
         timestamp = datetime.now().astimezone().isoformat(timespec="milliseconds")

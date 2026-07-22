@@ -10,11 +10,11 @@ services:
       NAV_SQL_ECHO: ${NAV_SQL_ECHO:-1}
       NAV_HTTP_CAPTURE: ${NAV_HTTP_CAPTURE:-1}
     volumes:
-      - ./sql:/app/sql
-      - ./args:/app/args
+      - ./backend/app/sql:/app/app/sql
+      - ./backend/app/args:/app/app/args
     command: >
       sh -c "python -m scripts.seed.reset_and_seed &&
-             uvicorn app.main:app --host 0.0.0.0 --port 8001"
+             exec uvicorn app.main:app --host 0.0.0.0 --port 8001"
     healthcheck:
       test:
         [

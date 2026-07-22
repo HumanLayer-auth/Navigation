@@ -16,7 +16,7 @@
   - 쉘 버전(PowerShell 5.1/7, bash/zsh)에 따라 `&&`·`;` 체이닝이 깨질 수 있으므로 **명령은 체이닝하지 말고 한 줄씩 순서대로 실행한다.** `cd A && B` 대신 창을 해당 폴더에서 연 뒤 명령만 실행한다. (파이프 `|`는 버전 무관하게 동작하므로 tee에는 파이프를 쓴다.)
 
   **1) 창 먼저 연다 (해당 작업 폴더에서 + UTF-8 고정)**
-    - **저장소 위치를 하드코딩하지 않는다.** 먼저 현재 저장소의 루트를 찾아 이후 창의 작업 폴더와 `sql/`·`args/` 로그 위치의 기준으로 쓴다. 다른 로컬에서는 이 값이 예를 들어 `C:\work\Navigation` 또는 `~/src/Navigation`일 수 있다.
+    - **저장소 위치를 하드코딩하지 않는다.** 먼저 현재 저장소의 루트를 찾아 이후 창의 작업 폴더와 `backend/app/sql/`·`backend/app/args/` 로그 위치의 기준으로 쓴다. 다른 로컬에서는 이 값이 예를 들어 `C:\work\Navigation` 또는 `~/src/Navigation`일 수 있다.
     ```powershell
     # Windows PowerShell — 저장소 안에서 실행
     $repoRoot = git rev-parse --show-toplevel
@@ -40,7 +40,7 @@
     ```
 
   **2) 백엔드 창에서 순서대로 실행 — Docker (`docker info`가 정상일 때)**
-    - SQL·HTTP JSON 진단은 개발 실행의 기본값이다. Compose가 `NAV_SQL_ECHO=1`·`NAV_HTTP_CAPTURE=1`과 `sql/`·`args/` 볼륨을 자동 설정하므로, 사람이 환경변수를 따로 입력하지 않는다.
+    - SQL·HTTP JSON 진단은 개발 실행의 기본값이다. Compose가 `NAV_SQL_ECHO=1`·`NAV_HTTP_CAPTURE=1`과 `backend/app/sql/`·`backend/app/args/` 볼륨을 자동 설정하므로, 사람이 환경변수를 따로 입력하지 않는다.
     ```powershell
     # Windows — UTF-8 로그. PS 5.1의 Tee-Object는 파일을 UTF-16으로 쓰므로 패스스루로 tee한다.
     docker compose up --build backend 2>&1 | ForEach-Object { $_; $_ | Out-File backend.log -Append -Encoding utf8 }
@@ -86,7 +86,8 @@
   - Docker 사용 가능 여부는 `docker info`가 정상 응답하는지로 판단한다. 실패하면 위 로컬 Python 대체 경로로 백엔드를 띄운다.
   - **백엔드·프론트 창 모두 UTF-8로 실행한다.** Windows는 (a) 창 프렐류드로 콘솔 인코딩을 UTF-8로 고정하고(콘솔 표시·네이티브 출력 디코딩), (b) 로그 파일은 `Tee-Object` 대신 **패스스루 `... | ForEach-Object { $_; $_ | Out-File <log> -Append -Encoding utf8 }`** 로 쓴다(PS 5.1 Tee-Object는 파일을 UTF-16으로 씀). 소스 파일·리소스 JSON도 UTF-8로 저장한다. 한글 로그가 UTF-16/깨짐으로 남으면 에이전트가 로그를 못 읽는다.
   - 사용자는 창에서 실시간 로그를 보고, 에이전트는 `backend.log`·`frontend.log`를 읽어 추적한다. (두 로그 파일은 `.gitignore`에 둔다.)
-  - 백엔드 개발 실행 뒤에는 에이전트가 `sql/queries.sql`과 `args/*.json`도 함께 확인한다. 두 디렉터리도 `.gitignore`에 두며, 로그를 위한 파일/환경변수를 사용자에게 수동으로 만들거나 설정하게 하지 않는다.
+  - 백엔드 개발 실행 뒤에는 에이전트가 `backend/app/sql/queries.sql`과 `backend/app/args/*.json`도 함께 확인한다. 두 디렉터리도 `.gitignore`에 두며, 로그를 위한 파일/환경변수를 사용자에게 수동으로 만들거나 설정하게 하지 않는다.
+  - `/health`는 진단 파일에 서버 기동 후 첫 한 건만 남는다. 백엔드를 종료하면 `backend/app/sql/`·`backend/app/args/`가 자동 삭제되므로, 필요한 검증은 종료 전에 수행한다.
 
 - **경로 계산은 클라이언트 온디바이스(Dijkstra, `client/lib/domain/dijkstra.dart`)가 담당한다.** 서버는 그래프(nodes·edges)만 제공하며, 최단 경로 로직을 서버로 옮기지 않는다.
 - **API 계약(JSON)은 Flutter 클라이언트가 소비하는 형태를 우선으로 유지한다.** 백엔드 응답 스키마를 바꾸면 클라이언트의 모델·파싱도 함께 확인한다.
