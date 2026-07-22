@@ -834,7 +834,13 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
           currentHeadingDegrees: pdrCurrent == null
               ? null
               : _pdrCurrentHeadingDeg,
-          destination: routeDestination?.point,
+          // 핀은 매장 중심(centroid)이 아니라 실제 도착 노드(경로의 마지막
+          // 점 = 매장 입구)에 찍는다. 경로가 아직 계산되기 전 짧은 순간에는
+          // 경로 정보가 없으므로 centroid로 폴백해 핀이 아예 안 보이는
+          // 상태를 만들지 않는다.
+          destination: (route != null && route.points.isNotEmpty)
+              ? route.points.last
+              : routeDestination?.point,
           routePoints: route?.points ?? const [],
           pdrPathPoints:
               debugEnabled && _debugModeController.showMapMatchedPdrPath

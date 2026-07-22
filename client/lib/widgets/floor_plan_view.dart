@@ -648,7 +648,20 @@ class _FloorPlanViewState extends State<FloorPlanView> {
           _currentLocationImageName,
           _currentLocationDotImageName,
         ],
-        iconSize: 1.15,
+        // 도착 핀(iconSize 0.115→0.25, 캔버스 128px, 머리 108px)과 화면상
+        // 파란 원의 크기가 대략 맞도록 zoom 기반 interpolate으로 맞춘다.
+        // 현재 위치 캔버스는 144px에 파란 도트는 48px 지름이라 축척비
+        // (108/48 ≈ 2.25)를 곱한 값을 각 stop에 넣어 축소해도 도트가 지도를
+        // 덮지 않고, 확대해도 도착 핀 머리와 비슷한 크기로 커진다.
+        iconSize: [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          16,
+          0.26,
+          20,
+          0.56,
+        ],
         iconRotate: [
           'coalesce',
           ['get', 'heading'],
