@@ -3,10 +3,10 @@
 DB를 시드하지 않고 `resources/studio/stores_*.json`에서 **이름만** 읽어 순수 함수를 돌린다.
 전수라도 1~2초면 끝나고, Studio 데이터가 바뀌어도 목록이 낡지 않는다.
 
-왜 `_rank`가 아니라 `_normalize_query`를 보는가:
-    `_tier`의 정확 이름 일치(tier 0) 조건이 곧 `_normalize_query(질의) == _norm(매장명)` 이다.
+왜 `_rank`가 아니라 `_query_candidates`를 보는가:
+    `_tier`의 정확 이름 일치(tier 0)는 정규화 후보 중 하나가 `_norm(매장명)`이면 성립한다.
     전 매장 × 전 변형을 `_rank`로 돌리면 매 질의가 1531건을 훑어 O(n²)가 되지만,
-    정규화 결과를 직접 비교하면 같은 것을 증명하면서 선형에 끝난다.
+    후보 포함 여부를 직접 비교하면 같은 것을 증명하면서 선형에 끝난다.
     실제 매칭 경로는 `test_query_morph.py`와 실데이터 스모크 테스트가 따로 덮는다.
 
 이 테스트가 잡아낸 실제 회귀(구현 중):
@@ -84,9 +84,9 @@ def _failures(label: str, with_batchim: str, without_batchim: str) -> list[tuple
         if batchim is None and with_batchim != without_batchim:
             continue  # 영문·숫자로 끝나는 이름엔 조사를 붙이지 않는다
         suffix = with_batchim if batchim else without_batchim
-        got = query_search._normalize_query(name + suffix)
-        if got != query_search._norm(name):
-            failed.append((name, got))
+        candidates = query_search._query_candidates(name + suffix)
+        if query_search._norm(name) not in candidates:
+            failed.append((name, " | ".join(candidates)))
     return failed
 
 

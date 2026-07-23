@@ -64,6 +64,34 @@ def test_동점은_level_id_순으로_결정적이다():
     assert [row[3].id for row in scored] == ["s-1f", "s-2f"]
 
 
+def test_ai_확정판단은_같은_구두점_후보의_부분일치만_비교한다():
+    floor = _floor()
+    rows = [
+        (_store("s-raw", "My Foo. Shop"), floor),
+        (_store("s-stripped", "Foo Market"), floor),
+    ]
+
+    raw_scored = query_search._rank_with_candidate(rows, "Foo.")
+    stripped_scored = query_search._rank_with_candidate(rows, "Foo")
+
+    assert query_search._is_confident_light_match(raw_scored) is True
+    assert query_search._is_confident_light_match(stripped_scored) is False
+
+
+def test_info_층목록은_대표와_이름이_같은_매장만_포함한다():
+    exact_floor = _floor("3F", 3)
+    partial_floor = _floor("4F", 4)
+    rows = [
+        (_store("s-partial", "A.P.C 골프"), partial_floor),
+        (_store("s-exact", "A.P.C."), exact_floor),
+    ]
+
+    scored = query_search._rank(rows, "A.P.C.")
+    floors = query_search._floor_names_for_match(scored, scored[0][3].name)
+
+    assert floors == ["3F"]
+
+
 # 입구 노드가 없으면 ok_no_route로 구분된다.
 def test_입구노드_없으면_ok_no_route():
     assert query_search._status(_store("s", "가게A", entrance=None)) == "ok_no_route"

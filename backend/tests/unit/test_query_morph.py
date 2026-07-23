@@ -10,6 +10,7 @@ import pytest
 
 from app.repositories import query_morph, query_search
 
+
 @pytest.fixture
 def kiwi_unavailable(monkeypatch):
     """Kiwi 로드 실패를 주입한다 — 미설치 환경 재현.
@@ -26,8 +27,15 @@ def kiwi_unavailable(monkeypatch):
     ("query", "expected"),
     [
         ("화장실이 어디야", "화장실"),
+        ("화장실이 어디야?", "화장실"),
+        ("화장실이 어디야!", "화장실"),
+        ("화장실이 어디야.", "화장실"),
+        ("화장실이 어디야,", "화장실"),
+        ("화장실이 어디야?????", "화장실"),
         ("스타벅스는 몇 층이야", "스타벅스"),
+        ("스타벅스는 몇 층이야?", "스타벅스"),
         ("엘리베이터까지 가고 싶어", "엘리베이터"),
+        ("엘리베이터까지 가고 싶어.", "엘리베이터"),
         ("화장실 급해", "화장실"),
         ("MLB는", "mlb"),
     ],
@@ -46,6 +54,8 @@ def test_조사와_어미가_붙어도_정규화된다(query, expected):
         ("스벅", "스벅"),  # 동의어 키
         ("화장실", "화장실"),
         ("가게A 어디야", "가게a"),  # 한글+영문 붙은 이름 — 공백이 끼면 안 된다
+        ("A.P.C. 어디야?", "a.p.c."),
+        ("We,pet", "we,pet"),  # 내부 쉼표는 실제 매장명의 일부
         ("  화장실 몇 층이야 ", "화장실"),
         ("여자 화장실", "여자 화장실"),
     ],
@@ -60,7 +70,9 @@ def test_기존_질의는_그대로_유지된다(query, expected):
     [
         ("MLB", "mlb"),
         ("TAX REFUND", "tax refund"),
+        ("TAX REFUND.", "tax refund"),
         ("가게A 어디야", "가게a"),
+        ("가게A 어디야?", "가게a"),
         ("  화장실 몇 층이야 ", "화장실"),
     ],
 )
@@ -122,3 +134,52 @@ def test_조사가_붙은_질의로_매장이_매칭된다():
     )
     scored = query_search._rank([(store, floor)], "화장실이 어디야")
     assert scored and scored[0][3].id == "s1"
+
+
+def test_마침표가_상호의_일부면_원문_정확일치가_우선한다():
+    from app.models import Floor, Store
+
+    floor = Floor(id="F1", building_id="B", name="1F", level=1)
+    exact = Store(
+        id="s-exact",
+        floor_id="F1",
+        name="A.P.C.",
+        centroid_x_m=0.0,
+        centroid_y_m=0.0,
+        entrance_node_id="N-1",
+    )
+    partial = Store(
+        id="s-partial",
+        floor_id="F1",
+        name="A.P.C 골프",
+        centroid_x_m=1.0,
+        centroid_y_m=1.0,
+        entrance_node_id="N-2",
+    )
+
+    for query in ("A.P.C.", "A.P.C.?"):
+        scored = query_search._rank([(partial, floor), (exact, floor)], query)
+        assert scored[0][0] == 0
+        assert scored[0][3].id == "s-exact"
+
+
+def test_구두점뿐인_질의는_빈_카테고리와_일치하지_않는다():
+    from app.models import Floor, Store
+
+    floor = Floor(id="F1", building_id="B", name="1F", level=1)
+    store = Store(
+        id="s1",
+        floor_id="F1",
+        name="가게",
+        category=None,
+        subcategory=None,
+        centroid_x_m=0.0,
+        centroid_y_m=0.0,
+        entrance_node_id="N-1",
+    )
+
+    assert query_search._rank([(store, floor)], "?") == []
+
+
+def test_저장소를_직접_호출해도_질의_길이_상한을_지킨다():
+    assert query_search._query_candidates("?" * 201) == ()
