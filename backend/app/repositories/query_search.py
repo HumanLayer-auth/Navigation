@@ -109,6 +109,9 @@ def _status(store: Store) -> str:
     return "ok" if store.entrance_node_id else "ok_no_route"
 
 
+# current_floor_id는 층 라벨("B2")과 내부 id("FL-...")를 모두 받는다. 클라이언트는
+# 사용자가 보는 라벨만 들고 있고, building_id로 스코프가 잡혀 있어 uq_floors_building_name이
+# 건물 안에서 라벨의 유일성을 보장한다. id도 받는 건 기존 호출부 호환용.
 def _load_stores(
     session: Session,
     building_id: str,
@@ -121,7 +124,9 @@ def _load_stores(
         .where(Floor.building_id == building_id)
     )
     if current_floor_id is not None:
-        statement = statement.where(Floor.id == current_floor_id)
+        statement = statement.where(
+            (Floor.name == current_floor_id) | (Floor.id == current_floor_id)
+        )
     return session.execute(statement).all()
 
 

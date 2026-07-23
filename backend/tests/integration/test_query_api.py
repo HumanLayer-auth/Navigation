@@ -3,7 +3,7 @@
 1F/2F에 각각 가게A(입구 노드 있음)·가게B가 있다.
 """
 
-from tests.conftest import BUILDING_ID, FLOOR_ID
+from tests.conftest import BUILDING_ID, FLOOR_ID, FLOOR_NAME
 
 
 # 목적지 질의가 매장 1건과 입구 노드를 반환한다.
@@ -137,3 +137,64 @@ def test_ai_질의_없는_건물은_404를_반환한다(api_client):
     response = api_client.post("/query/ai", json=payload)
 
     assert response.status_code == 404
+
+
+# 클라이언트는 내부 id가 아니라 사용자가 보는 층 라벨("1F")을 보낸다.
+def test_현재_층을_층라벨로_지정해도_그_층의_대상만_반환한다(api_client):
+    payload = {
+        "text": "가게A",
+        "building_id": BUILDING_ID,
+        "current_floor_id": FLOOR_NAME,  # "1F" — 내부 id가 아니라 사람이 보는 라벨
+    }
+
+    response = api_client.post("/query/destination", json=payload)
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "ok"
+    assert body["match"]["floor_id"] == FLOOR_ID
+    assert body["match"]["name"] == "가게A"
+
+
+# 라벨/id 어느 쪽을 보내도 같은 결과여야 한다 — 이 동치가 깨져서 층 검색이 죽었었다.
+def test_층라벨과_내부id는_같은_결과를_준다(api_client):
+    base = {"text": "가게A", "building_id": BUILDING_ID}
+
+    by_name = api_client.post(
+        "/query/destination", json={**base, "current_floor_id": FLOOR_NAME}
+    ).json()
+    by_id = api_client.post(
+        "/query/destination", json={**base, "current_floor_id": FLOOR_ID}
+    ).json()
+
+    assert by_name == by_id
+
+
+# 정보 질의도 층 라벨을 받는다. 다른 층의 동명 매장은 섞이지 않는다.
+def test_현재_층을_층라벨로_지정한_정보_질의는_그_층만_반환한다(api_client):
+    payload = {
+        "text": "가게A",
+        "building_id": BUILDING_ID,
+        "current_floor_id": FLOOR_NAME,
+    }
+
+    response = api_client.post("/query/info", json=payload)
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "ok"
+    assert body["floors"] == [FLOOR_NAME]  # 다른 층의 동명 매장은 섞이지 않는다
+
+
+# 없는 층 라벨은 404가 아니라 no_match다(층 필터는 매칭 범위일 뿐).
+def test_없는_층_라벨은_no_match다(api_client):
+    payload = {
+        "text": "가게A",
+        "building_id": BUILDING_ID,
+        "current_floor_id": "B99",
+    }
+
+    response = api_client.post("/query/destination", json=payload)
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "no_match"

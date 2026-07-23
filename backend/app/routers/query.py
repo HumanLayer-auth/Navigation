@@ -20,6 +20,7 @@ router = APIRouter(prefix="/query", tags=["query"])
 
 
 # POST /query/destination 요청 Body. 예: {"text": "MLB", "building_id": "thehyundai-seoul"}
+# current_floor_id는 층 라벨("B2")·내부 id 모두 받는다(근거: query_search._load_stores).
 class DestinationRequest(BaseModel):
     text: str = Field(min_length=1)  # 빈 문자열은 422
     building_id: str

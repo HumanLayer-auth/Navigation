@@ -150,7 +150,9 @@ def semantic_search(
         if pair is None:
             continue  # 인덱스 빌드 후 삭제된 매장 방어
         store, floor = pair
-        if current_floor_id is not None and floor.id != current_floor_id:
+        # 라벨("B2")·내부 id("FL-...") 둘 다 허용 — query_search._load_stores와 같은 규칙.
+        # 두 경로가 다른 기준을 쓰면 같은 요청이 경량/의미 검색에서 다르게 걸러진다.
+        if current_floor_id is not None and current_floor_id not in (floor.name, floor.id):
             continue
         if float(score) < SIMILARITY_THRESHOLD:
             return None  # 최상위(온-층) 후보가 미달이면 이후도 미달 → no_match
