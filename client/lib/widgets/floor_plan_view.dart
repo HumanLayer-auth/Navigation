@@ -345,6 +345,12 @@ class _FloorPlanViewState extends State<FloorPlanView> {
     // 바로 위, 라벨/POI 아이콘보다 아래에 깔아서 초록 아이콘과 한 덩어리로
     // 읽히게 한다. 필터가 어긋나면(백엔드 name 변경 등) 이 레이어만 비고
     // 아래 일반 매장 스타일로 자연스럽게 폴백된다.
+    //
+    // 필터는 이 파일의 다른 레이어(_debugGraphSourceId 등)와 같은 ['any',
+    // ['==', ...], ...] 형태를 쓴다 — ['match', [get, name], <배열>, ...]도
+    // 스펙상은 유효하지만 MapLibre GL Native(Android/iOS)에서 label 위치의
+    // 배열이 항상 안정적으로 파싱되지 않아 조용히 필터 매치가 0건이 되던
+    // 케이스가 있었다. ==는 이 파일 전반에서 검증된 경로라 그 쪽으로 통일한다.
     await controller.addFillLayer(
       _tileSourceId,
       _verticalTransportFillLayerId,
@@ -354,11 +360,13 @@ class _FloorPlanViewState extends State<FloorPlanView> {
       ),
       sourceLayer: 'stores',
       filter: [
-        'match',
-        ['get', 'name'],
-        _verticalTransportStoreNames,
-        true,
-        false,
+        'any',
+        for (final name in _verticalTransportStoreNames)
+          [
+            '==',
+            ['get', 'name'],
+            name,
+          ],
       ],
       enableInteraction: false,
     );
