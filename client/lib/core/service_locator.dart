@@ -11,7 +11,7 @@ import '../repositories/building_repository.dart';
 import '../repositories/destination_repository.dart';
 import '../repositories/directions_repository.dart';
 import '../repositories/http_building_repository.dart';
-import '../repositories/mock_destination_repository.dart';
+import '../repositories/http_destination_repository.dart';
 import '../repositories/mock_directions_repository.dart';
 import '../repositories/tmap_directions_repository.dart';
 import '../state/favorites_controller.dart';
@@ -35,12 +35,12 @@ final IndoorNavigationDriver indoorNavigationDriver = IndoorNavigationDriver(
 /// MockBuildingRepository()로 교체해 실제 HTTP 호출 없이 동작을 검증한다.
 BuildingRepository buildingRepository = HttpBuildingRepository();
 
-/// 백엔드 RAG가 준비되면 이 한 줄만 [HttpDestinationRepository]로 바꾼다.
-/// buildingRepository를 감싸므로, 테스트에서 buildingRepository를 교체했다면
-/// 이 변수도 같은 인스턴스로 다시 만들어 줘야 한다.
-DestinationRepository destinationRepository = MockDestinationRepository(
-  buildingRepository,
-);
+/// 목적지 자연어 질의는 백엔드의 POST /query/destination(라우터 하나로
+/// 최적 매장 1건을 반환)을 그대로 호출한다. 테스트나 백엔드가 아직
+/// 없을 때만 [MockDestinationRepository](buildingRepository)로 되돌린다 —
+/// 기본은 실제 API를 붙여야 상단 검색·길찾기 시트가 서버의 정규화/동의어
+/// 사전을 함께 쓴다.
+DestinationRepository destinationRepository = HttpDestinationRepository();
 
 /// --dart-define=TMAP_APP_KEY=... 로 키를 넘기면 자동으로 실제 API를 쓰고,
 /// 안 넘기면(테스트·키 미발급 상태) 직선 경로로 동작하는 Mock을 쓴다.
