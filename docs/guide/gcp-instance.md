@@ -43,15 +43,16 @@
 
 ## 아키텍처 특성
 
-- **DB는 휘발성 SQLite**입니다. 컨테이너가 시작될 때마다 `scripts.seed.reset_and_seed`로 더현대 서울 데이터(1F~4F)를 다시 적재합니다. 이 앱은 읽기 위주라 데모에 문제없습니다.
+- **DB는 휘발성 SQLite**입니다. 컨테이너가 시작될 때마다 `scripts.seed.reset_and_seed`로 더현대 서울 데이터(B6~6F, 12개 층)를 다시 적재합니다. 이 앱은 읽기 위주라 데모에 문제없습니다.
 - 시드 후 데이터가 사라지는 쓰기 작업이 필요해지면 Cloud SQL 등 외부 DB로 전환해야 합니다.
 
 ## 재배포
 
 로컬 코드 기준으로 이미지를 다시 빌드(Cloud Build)하고 배포합니다. 로컬 Docker 불필요.
+저장소 루트에서 실행합니다.
 
 ```powershell
-cd D:\Navigation\backend
+Set-Location backend
 gcloud run deploy navigation-api `
   --source . `
   --region asia-northeast3 `

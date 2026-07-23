@@ -20,28 +20,29 @@
 - 치수 기준: 가로 `126/167 ≈ 0.75`, 세로 `68/98 ≈ 0.69` → 약 ×0.7
 - 정밀값은 georeferencing 4개 코너로 다시 풀어 확정할 것(아래 "주의" 참고).
 
-## 적용 절차 (도커 서빙 기준)
+## 적용 절차 (로컬 Python 기준)
 
 ```bash
 cd backend
 # 1) 배율 상수 수정: SCALE_M_PER_UNIT 값을 목표값으로 변경
 
-# 2) resources JSON 재생성 (이 단계만 수동 — 자동 안 됨)
-python -m scripts.transform.build_studio_from_dabeeo
+# 2) resources JSON 재생성 (payload 경로 필수)
+python -m scripts.transform.build_studio_from_dabeeo path/to/dabeeo-payload.json
 
-# 3) 이미지 재빌드 + 기동 (기동 커맨드가 reset_and_seed를 자동 실행)
-docker compose up -d --build backend
+# 3) 로컬 DB 재시드
+python -m scripts.seed.reset_and_seed
+
+# 4) 로컬 서버 기동
+python -m uvicorn app.main:app --reload --reload-dir app --host 0.0.0.0 --port 8001 2>&1 | tee ../backend-local.log
 ```
 
 ### 왜 이 순서인가
 - **`build_studio_from_dabeeo`는 자동 실행되지 않는다.** `resources/studio/*.json`을 다시 만드는
   생성 단계라 배율을 바꾼 뒤 반드시 직접 돌려야 한다.
-- **`reset_and_seed`는 도커에서 자동이다.** compose command(`sh -c "python -m scripts.seed.reset_and_seed && uvicorn ..."`)에
-  들어 있어 컨테이너가 뜰 때마다 실행된다. 별도로 칠 필요 없음.
-- **`--build`가 필요한 이유:** 생성된 JSON이 이미지에 구워져 들어가고 볼륨 마운트가 없으므로,
-  재빌드하지 않으면 새 JSON이 컨테이너에 반영되지 않는다.
-
-로컬(비도커) 실행이라면 2단계 뒤에 `python -m scripts.seed.reset_and_seed`를 직접 실행.
+- **`reset_and_seed`는 변환 결과를 SQLite에 반영한다.** 재시드하지 않으면 서버가 이전 DB를
+  계속 읽으므로 바뀐 배율이 API 응답에 나타나지 않는다.
+- Docker 이미지는 일상 검증에 쓰지 않는다. 배포 환경 호환성을 확인할 때만 생성된 JSON을
+  포함해 이미지를 다시 빌드한다.
 
 ## 주의 — wgs84 정합 재확인
 

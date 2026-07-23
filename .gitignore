@@ -4,6 +4,7 @@ tmp/
 
 # Dev run logs (Start-Process/osascript + Tee-Object)
 backend.log
+backend-local.log
 client/frontend.log
 *.log
 
@@ -13,6 +14,9 @@ __pycache__/
 *.egg-info/
 .venv/
 venv/
+
+# Jupyter — 노트북(backend/notebooks/*.ipynb)은 커밋하고 체크포인트만 제외한다
+.ipynb_checkpoints/
 
 # Node / frontend
 node_modules/

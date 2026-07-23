@@ -3,6 +3,8 @@
 1F/2F에 각각 가게A(입구 노드 있음)·가게B가 있다.
 """
 
+import pytest
+
 from tests.conftest import BUILDING_ID, FLOOR_ID, FLOOR_NAME
 
 
@@ -51,6 +53,51 @@ def test_빈_질의는_422를_반환한다(api_client):
     response = api_client.post("/query/destination", json=payload)
 
     assert response.status_code == 422
+
+
+@pytest.mark.parametrize("path", ["/query/destination", "/query/info", "/query/ai"])
+@pytest.mark.parametrize("text", ["   ", "\t", "\n  "])
+def test_공백뿐인_질의는_모든_엔드포인트에서_422다(api_client, path, text):
+    response = api_client.post(path, json={"text": text, "building_id": BUILDING_ID})
+
+    assert response.status_code == 422
+
+
+@pytest.mark.parametrize("path", ["/query/destination", "/query/info", "/query/ai"])
+def test_질의가_200자를_넘으면_모든_엔드포인트에서_422다(api_client, path):
+    response = api_client.post(
+        path,
+        json={"text": "가" * 201, "building_id": BUILDING_ID},
+    )
+
+    assert response.status_code == 422
+
+
+@pytest.mark.parametrize("path", ["/query/destination", "/query/info", "/query/ai"])
+@pytest.mark.parametrize(
+    "text",
+    ["가게A?", "가게A 어디야?", "가게A 어디야!", "가게A 어디야.", "가게A 어디야,"],
+)
+def test_문장끝_구두점이_붙어도_모든_엔드포인트에서_매칭된다(
+    api_client, path, text
+):
+    response = api_client.post(path, json={"text": text, "building_id": BUILDING_ID})
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "ok"
+    assert body["match"]["name"] == "가게A"
+
+
+def test_공백_검증은_통과한_질의의_원문을_보존한다(api_client):
+    text = "  가게A  "
+    response = api_client.post(
+        "/query/destination",
+        json={"text": text, "building_id": BUILDING_ID},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["query"] == text
 
 
 # 정보 질의는 대표 1건과 대상이 존재하는 층 목록(level 오름차순)을 반환한다.
