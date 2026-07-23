@@ -79,6 +79,34 @@ def test_브랜드_신조어가_쪼개지지_않는다():
     assert query_search._normalize_query("마뗑킴 어디야") == "마뗑킴"
 
 
+# uvicorn은 요청을 스레드풀에서 처리하므로, 첫 요청들이 겹치면 사전 추가와 분석이 동시에 일어난다.
+#
+# 이 테스트가 증명하는 것: 락이 데드락을 만들지 않고, 사전이 바뀌는 도중에도 결과가 흔들리지 않는다.
+# 증명하지 못하는 것: 락이 실제로 **필요한지**. 락을 무력화한 음성 대조군에서도 실패가
+# 재현되지 않았다(kiwipiepy는 스레드 안전성을 문서화하지 않는다). query_morph._lock 주석 참고.
+def test_사전_추가와_분석이_동시에_일어나도_안전하다():
+    from concurrent.futures import ThreadPoolExecutor
+
+    # 실데이터와 겹치지 않는 이름 — 다른 테스트의 매칭에 영향을 주지 않는다.
+    batches = [[f"동시성시험매장{group}_{i}" for i in range(100)] for group in range(4)]
+
+    def add(group: int) -> None:
+        query_morph.register_words(batches[group])
+
+    def normalize_repeatedly(_: int) -> set[str]:
+        return {query_search._normalize_query("화장실이 어디야") for _ in range(200)}
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        writers = [pool.submit(add, group) for group in range(4)]
+        readers = [pool.submit(normalize_repeatedly, i) for i in range(4)]
+        for future in writers:
+            future.result()  # 예외가 났으면 여기서 터진다
+        results = [future.result() for future in readers]
+
+    # 사전이 바뀌는 도중에도 분석 결과가 흔들리지 않아야 한다.
+    assert results == [{"화장실"}] * 4
+
+
 # 실제 매칭까지 연결되는지 — 조사가 붙은 질의로 매장이 잡힌다.
 def test_조사가_붙은_질의로_매장이_매칭된다():
     from app.models import Floor, Store
