@@ -23,6 +23,7 @@ import 'package:navigation_client/screens/map_shell/map_shell_screen.dart';
 import 'package:navigation_client/screens/outdoor_map/outdoor_map_screen.dart';
 import 'package:navigation_client/screens/route_guide/route_guide_screen.dart';
 import 'package:navigation_client/widgets/floor_plan_view.dart';
+import 'package:navigation_client/widgets/map_bottom_bar.dart';
 
 // 1x1 흰색 PNG (base64). 배경지도 타일을 흉내내되 실제 네트워크 요청은 하지
 // 않는다 - flutter_map 자체 테스트 스위트도 같은 방식을 쓴다.
@@ -308,24 +309,40 @@ void main() {
   });
 
   testWidgets(
-    'debug settings stays at bottom while PDR control sits below search',
+    'PDR control sits beside the bottom mode segment without overlap',
     (WidgetTester tester) async {
       // ignore: invalid_use_of_visible_for_testing_member
       SharedPreferences.setMockInitialValues({'debug_mode.enabled': true});
+
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       await tester.pumpWidget(
-        const MaterialApp(home: IndoorMapBody(buildingId: demoBuildingId)),
+        const MaterialApp(home: MapShellScreen(initialMode: MapMode.indoor)),
       );
       await tester.pumpAndSettle();
 
-      final logicalHeight =
-          tester.view.physicalSize.height / tester.view.devicePixelRatio;
       final debugButtonY = tester
           .getCenter(find.byIcon(Icons.bug_report_outlined))
           .dy;
-      final pdrButtonY = tester.getCenter(find.text('PDR 시작')).dy;
+      final pdrTextRect = tester.getRect(find.text('PDR 시작'));
+      final homeTextRect = tester.getRect(find.text('홈'));
 
-      expect(debugButtonY, greaterThan(logicalHeight - 100));
-      expect(pdrButtonY, lessThan(180));
+      expect(
+        (pdrTextRect.center.dy - homeTextRect.center.dy).abs(),
+        lessThan(2),
+      );
+      expect(pdrTextRect.right, lessThan(homeTextRect.left));
+      expect(
+        (debugButtonY - pdrTextRect.center.dy).abs(),
+        lessThanOrEqualTo(2),
+      );
+      expect(
+        tester.getRect(find.byIcon(Icons.bug_report_outlined)).right,
+        lessThan(pdrTextRect.left),
+      );
     },
   );
 
