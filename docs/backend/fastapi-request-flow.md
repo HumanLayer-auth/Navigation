@@ -171,6 +171,7 @@ flowchart TD
     bq["building_queries"]
     tq["tile_queries"]
     qs["query_search<br/>경량 매칭"]
+    mo["query_morph<br/>형태소 정규화"]
     sem["query_semantic<br/>FAISS 임베딩"]
     gt["geo_transform"]
 
@@ -178,13 +179,14 @@ flowchart TD
     g3 --> tq --> bq
     p1 & p3 --> qs
     p2 --> qs
+    qs --> mo
     qs -. "경량이 0건일 때만" .-> sem
     sem -. "매장 로딩만" .-> qs
     bq & tq & qs --> gt
 
     classDef q fill:#2a9d8f,color:#fff,stroke:none
     classDef shared fill:#e9c46a,color:#212529,stroke:none
-    class bq,tq,qs,sem q
+    class bq,tq,qs,mo,sem q
     class gt shared
 ```
 
@@ -232,6 +234,7 @@ flowchart TD
 ```mermaid
 flowchart TD
     req["POST /query/ai<br/>{text, building_id, current_floor_id?}"]
+    norm["정규화: 꼬리 제거 → 형태소(Kiwi)<br/>'화장실이 어디야' → '화장실'"]
     rank["1차: _rank() — 정확 이름·동의어·부분 매칭"]
     hit{"걸렸나?"}
     ok1["status=ok<br/>임베딩까지 안 감 (torch 로드 회피)"]
@@ -241,7 +244,7 @@ flowchart TD
     ok2["status=ok"]
     no["status=no_match<br/>엉뚱한 매장 반환 금지"]
 
-    req --> rank --> hit
+    req --> norm --> rank --> hit
     hit -->|Yes| ok1
     hit -->|No| imp --> sem --> th
     th -->|Yes| ok2
@@ -254,6 +257,9 @@ flowchart TD
 ```
 
 - **브랜드명은 문자열 일치가 임베딩보다 정확하고 안전하다.** 그래서 1차가 먼저다.
+- **정규화는 1차에만 적용된다.** 2차에는 질의 **원문**이 그대로 전달된다 — 문장 임베딩은 조사·어미가
+  붙은 문장을 그대로 처리하는 게 낫고, 인덱스 텍스트를 바꾸면 임계값 튜닝 근거가 무효가 된다.
+  형태소 정규화 설계는 [`docs/backend/native/KIWI.md`](native/KIWI.md).
 - **임계값 0.50은 정밀도 우선 선택이다.** 길찾기에서는 틀린 매장을 안내하는 것이
   "다시 말해 주세요"보다 나쁘다. 근거는 [`docs/backend/native/FAISS.md`](native/FAISS.md) 11-1절.
 - `current_floor_id`는 **층 라벨("B2")과 내부 id("FL-…") 둘 다** 받는다. 클라이언트는

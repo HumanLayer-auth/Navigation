@@ -50,6 +50,12 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
 Invoke-RestMethod http://127.0.0.1:8001/health
 ```
 
+**분석 노트북 (선택)** — `backend/notebooks/`의 평가 노트북을 돌릴 때만 필요합니다.
+
+```powershell
+python -m pip install -r requirements-dev.txt
+```
+
 **Flutter 앱 — Android 에뮬레이터 예시**
 
 ```powershell
