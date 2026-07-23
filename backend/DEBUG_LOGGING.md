@@ -5,11 +5,20 @@
 ```powershell
 $env:NAV_SQL_ECHO = '1'
 $env:NAV_HTTP_CAPTURE = '1'
-uvicorn app.main:app --reload --reload-dir app --host 0.0.0.0 --port 8001
+python -m uvicorn app.main:app --reload --reload-dir app --host 0.0.0.0 --port 8001 2>&1 | ForEach-Object { $_; $_ | Out-File ..\backend-local.log -Append -Encoding utf8 }
+```
+
+macOS/Linux:
+
+```bash
+export NAV_SQL_ECHO=1
+export NAV_HTTP_CAPTURE=1
+python -m uvicorn app.main:app --reload --reload-dir app --host 0.0.0.0 --port 8001 2>&1 | tee ../backend-local.log
 ```
 
 - `backend/app/sql/queries.sql`: SQLAlchemy가 DB에 전달한 SQL과 바인딩 파라미터
 - `backend/app/args/*.json`: API의 실제 GET/POST 요청 경로·쿼리·JSON 인자와 응답 상태 코드
+- `backend-local.log`: 사용자가 창에서 본 Uvicorn 로그와 같은 UTF-8 출력
 
 `args` 로그의 GET 요청은 `query_string`에 쿼리 파라미터가 남고 `json`은 `null`이다. 응답 본문과
 헤더는 저장하지 않는다. 필요한 값은 실제 요청 인자(예: 매장명·건물 ID·현재 층)와 상태 코드뿐이다.

@@ -20,58 +20,64 @@
     ```powershell
     # Windows PowerShell — 저장소 안에서 실행
     $repoRoot = git rev-parse --show-toplevel
+    $backendRoot = Join-Path $repoRoot 'backend'
     $clientRoot = Join-Path $repoRoot 'client'
     ```
     ```bash
     # macOS/Linux shell — 저장소 안에서 실행
     repo_root="$(git rev-parse --show-toplevel)"
+    backend_root="$repo_root/backend"
     client_root="$repo_root/client"
     ```
-    - docker/flutter/uvicorn 출력에 한글이 섞이므로 **콘솔·출력·로그 인코딩을 UTF-8로 고정**한다. 안 하면 로그가 UTF-16이나 깨진 문자로 남는다. 창을 열 때 프렐류드로 박아 둔다.
+    - Python/flutter/uvicorn 출력에 한글이 섞이므로 **콘솔·출력·로그 인코딩을 UTF-8로 고정**한다. 안 하면 로그가 UTF-16이나 깨진 문자로 남는다. 창을 열 때 프렐류드로 박아 둔다.
     ```powershell
-    # Windows — 백엔드 창(저장소 루트), 프론트 창(client). -Command로 UTF-8 고정 후 -NoExit로 남는다.
-    Start-Process powershell -ArgumentList '-NoExit','-Command','[Console]::OutputEncoding=[Text.Encoding]::UTF8; $OutputEncoding=[Text.Encoding]::UTF8; $PSDefaultParameterValues[''Out-File:Encoding'']=''utf8''' -WorkingDirectory $repoRoot
+    # Windows — 백엔드 창(backend), 프론트 창(client). -Command로 UTF-8 고정 후 -NoExit로 남는다.
+    Start-Process powershell -ArgumentList '-NoExit','-Command','[Console]::OutputEncoding=[Text.Encoding]::UTF8; $OutputEncoding=[Text.Encoding]::UTF8; $PSDefaultParameterValues[''Out-File:Encoding'']=''utf8''' -WorkingDirectory $backendRoot
     Start-Process powershell -ArgumentList '-NoExit','-Command','[Console]::OutputEncoding=[Text.Encoding]::UTF8; $OutputEncoding=[Text.Encoding]::UTF8; $PSDefaultParameterValues[''Out-File:Encoding'']=''utf8''' -WorkingDirectory $clientRoot
     ```
     ```bash
     # macOS — Terminal 창 2개 (macOS 터미널은 기본 UTF-8이라 별도 설정 불필요)
-    osascript -e "tell app \"Terminal\" to do script \"cd '$repo_root'\""
+    osascript -e "tell app \"Terminal\" to do script \"cd '$backend_root'\""
     osascript -e "tell app \"Terminal\" to do script \"cd '$client_root'\""
     ```
 
-  **2) 백엔드 창에서 순서대로 실행 — Docker (`docker info`가 정상일 때)**
-    - SQL·HTTP JSON 진단은 개발 실행의 기본값이다. Compose가 `NAV_SQL_ECHO=1`·`NAV_HTTP_CAPTURE=1`과 `backend/app/sql/`·`backend/app/args/` 볼륨을 자동 설정하므로, 사람이 환경변수를 따로 입력하지 않는다.
+  **2) 백엔드 창에서 순서대로 실행 — 로컬 Python이 기본**
+    - Docker 이미지 콜드 빌드·기동 비용을 피하기 위해 **일상 개발과 기능 검증은 로컬 가상환경으로 실행한다.**
+    - 최초 1회 또는 `requirements*.txt`가 바뀌었을 때:
     ```powershell
-    # Windows — UTF-8 로그. PS 5.1의 Tee-Object는 파일을 UTF-16으로 쓰므로 패스스루로 tee한다.
-    docker compose up --build backend 2>&1 | ForEach-Object { $_; $_ | Out-File backend.log -Append -Encoding utf8 }
-    ```
-    ```bash
-    # macOS — tee는 UTF-8
-    docker compose up --build backend 2>&1 | tee backend.log
-    ```
-
-  **2') Docker가 없거나 실행 중이 아니면 — 로컬 Python 대체 (백엔드 폴더에서 한 줄씩)**
-    ```powershell
-    # Windows (backend 폴더로 연 창에서)
-    python -m venv .venv
+    # Windows (backend 폴더)
+    py -3.12 -m venv .venv
     .\.venv\Scripts\Activate.ps1
     python -m pip install -r requirements.txt
+    ```
+    ```bash
+    # macOS (backend 폴더)
+    python3 -m venv .venv
+    source .venv/bin/activate
+    python -m pip install -r requirements.txt
+    ```
+    - 검증할 때마다:
+    ```powershell
+    # Windows — UTF-8 로그. PS 5.1의 Tee-Object는 파일을 UTF-16으로 쓰므로 패스스루로 tee한다.
+    .\.venv\Scripts\Activate.ps1
     python -m scripts.seed.reset_and_seed
     $env:NAV_SQL_ECHO = '1'
     $env:NAV_HTTP_CAPTURE = '1'
-    uvicorn app.main:app --reload --reload-dir app --host 0.0.0.0 --port 8001 2>&1 | ForEach-Object { $_; $_ | Out-File ..\backend.log -Append -Encoding utf8 }
+    python -m uvicorn app.main:app --reload --reload-dir app --host 0.0.0.0 --port 8001 2>&1 | ForEach-Object { $_; $_ | Out-File ..\backend-local.log -Append -Encoding utf8 }
     ```
     ```bash
-    # macOS (backend 폴더로 연 창에서)
-    python3 -m venv .venv
+    # macOS — tee는 UTF-8
     source .venv/bin/activate
-    pip install -r requirements.txt
     python -m scripts.seed.reset_and_seed
     export NAV_SQL_ECHO=1
     export NAV_HTTP_CAPTURE=1
-    uvicorn app.main:app --reload --reload-dir app --host 0.0.0.0 --port 8001 2>&1 | tee ../backend.log
+    python -m uvicorn app.main:app --reload --reload-dir app --host 0.0.0.0 --port 8001 2>&1 | tee ../backend-local.log
     ```
-    - `--reload-dir app`으로 **감시 범위를 `app/` 코드로만 한정**한다. 안 그러면 `tests/`·`resources/` 편집도 리로드를 트리거해 서버가 리로드되다 죽는다(Windows에서 특히). Docker 백엔드는 `--reload`가 없어 이 문제가 없다.
+    - `--reload-dir app`으로 **감시 범위를 `app/` 코드로만 한정**한다. 안 그러면 `tests/`·`resources/` 편집도 리로드를 트리거해 서버가 리로드되다 죽는다(Windows에서 특히).
+
+  **2') Docker는 배포 준비 때만 사용**
+    - 배포 이미지·컨테이너 환경 호환성을 명시적으로 확인할 때만 저장소 루트에서 `docker compose up --build backend`를 실행한다.
+    - 평소 기능 검증에서는 Docker 가용 여부를 확인하지 않고 위 로컬 Python 경로를 사용한다. 실제 Cloud Run 배포 절차는 `docs/guide/gcp-instance.md`를 따른다.
 
   **3) 프론트 창에서 실행 (client 폴더에서)**
     ```powershell
@@ -83,10 +89,9 @@
     flutter run -d chrome 2>&1 | tee frontend.log
     ```
 
-  - Docker 사용 가능 여부는 `docker info`가 정상 응답하는지로 판단한다. 실패하면 위 로컬 Python 대체 경로로 백엔드를 띄운다.
   - **백엔드·프론트 창 모두 UTF-8로 실행한다.** Windows는 (a) 창 프렐류드로 콘솔 인코딩을 UTF-8로 고정하고(콘솔 표시·네이티브 출력 디코딩), (b) 로그 파일은 `Tee-Object` 대신 **패스스루 `... | ForEach-Object { $_; $_ | Out-File <log> -Append -Encoding utf8 }`** 로 쓴다(PS 5.1 Tee-Object는 파일을 UTF-16으로 씀). 소스 파일·리소스 JSON도 UTF-8로 저장한다. 한글 로그가 UTF-16/깨짐으로 남으면 에이전트가 로그를 못 읽는다.
-  - 사용자는 창에서 실시간 로그를 보고, 에이전트는 `backend.log`·`frontend.log`를 읽어 추적한다. (두 로그 파일은 `.gitignore`에 둔다.)
-  - 백엔드 개발 실행 뒤에는 에이전트가 `backend/app/sql/queries.sql`과 `backend/app/args/*.json`도 함께 확인한다. 두 디렉터리도 `.gitignore`에 두며, 로그를 위한 파일/환경변수를 사용자에게 수동으로 만들거나 설정하게 하지 않는다.
+  - 사용자는 창에서 실시간 로그를 보고, 에이전트는 `backend-local.log`·`frontend.log`를 읽어 추적한다. (두 로그 파일은 `.gitignore`에 둔다.)
+  - 백엔드 개발 실행 뒤에는 에이전트가 `backend/app/sql/queries.sql`과 `backend/app/args/*.json`도 함께 확인한다. 두 디렉터리도 `.gitignore`에 두며, 에이전트가 실행 명령 안에서 진단 환경변수와 로그 출력을 설정한다.
   - `/health`는 진단 파일에 서버 기동 후 첫 한 건만 남는다. 백엔드를 종료하면 `backend/app/sql/`·`backend/app/args/`가 자동 삭제되므로, 필요한 검증은 종료 전에 수행한다.
 
 - **경로 계산은 클라이언트 온디바이스(Dijkstra, `client/lib/domain/dijkstra.dart`)가 담당한다.** 서버는 그래프(nodes·edges)만 제공하며, 최단 경로 로직을 서버로 옮기지 않는다.

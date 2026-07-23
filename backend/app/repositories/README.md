@@ -14,7 +14,7 @@ Session으로 DB를 읽어 **기존 API 응답과 같은 모양의 순수 dict**
 | `building_queries.py` | 건물/층/매장/지도/그래프 조회 + dict 조립 | `list_buildings`, `get_building`, `search_stores`, `get_floor_map`, `get_floor_graph` |
 | `query_search.py` | 자연어 질의 경량 매칭(이름·카테고리·동의어) | `match_destination`, `match_info`, `match_ai_destination` |
 | `query_morph.py` | 질의 형태소 정규화(Kiwi). 조사·어미 제거 | `normalize` |
-| `query_semantic.py` | 임베딩 의미 검색(FAISS). 경량이 놓친 자연어 보완 | `semantic_search`, `reset_indexes` |
+| `query_semantic.py` | 임베딩 의미 검색(FAISS). 경량 미스·모호한 부분 일치 보완 | `semantic_search`, `reset_indexes` |
 | `geo_transform.py` | 건물 `local_m → wgs84` 변환을 요청 시점에 피팅 | `fit_building_geo_transform` |
 | `tile_queries.py` | 층 지도를 MVT 바이트로 렌더링 | `render_floor_tile` |
 | `__init__.py` | 패키지 표식 | — |
@@ -42,7 +42,7 @@ flowchart LR
 
     QS --> MO
     MO -. "동의어 사전만 빌려 씀" .-> QS
-    QS -. "경량 실패 시에만" .-> SEM
+    QS -. "경량 0건 또는 모호한 tier 2" .-> SEM
     SEM --> QS
     TQ --> BQ
     BQ --> GT
@@ -99,30 +99,37 @@ flowchart TD
 flowchart TD
     mDest["match_destination()"] --> rank["_rank()"] & toMatch["_to_match()"]
     mInfo["match_info()"] --> rank & toMatch
-    mAI["match_ai_destination()"] --> rank
-    mAI -. "경량이 0건일 때만" .-> SEM["query_semantic<br/>semantic_search()"]
+    mAI["match_ai_destination()"] --> rankCore["_rank_with_candidate()"] & toMatch & status["_status()"]
+    mAI -. "경량 0건 또는 모호한 tier 2" .-> SEM["query_semantic<br/>semantic_search()"]
 
-    rank --> loadS["_load_stores()"] & normQ["_normalize_query()"] & tier["_tier()"] & syn["_synonyms()"]
-    normQ --> norm["_norm()"] & tail["_strip_tail()"] & MO["query_morph<br/>normalize()"]
-    mDest --> status["_status()"]
+    rank --> rankCore
+    rankCore --> loadS["_load_stores()"] & candidates["_query_candidates()"] & tier["_tier()"] & syn["_synonyms()"]
+    candidates --> norm["_norm()"] & tail["_strip_tail()"] & MO["query_morph<br/>normalize()"]
+    mDest --> status
 
     SEM -. "매장 로딩만 빌려 씀" .-> loadS
     MO -. "사용자 사전 구성 시" .-> syn
 
     mDest -.-> GT["geo_transform"]
     mInfo -.-> GT
+    mAI -.-> GT
 
     classDef pub fill:#2a9d8f,color:#fff,stroke:none
     classDef priv fill:#e9ecef,color:#212529,stroke:#adb5bd
     classDef ext fill:#e9c46a,color:#212529,stroke:none
     class mDest,mInfo,mAI pub
-    class rank,loadS,toMatch,normQ,tier,syn,norm,tail,status priv
+    class rank,rankCore,loadS,toMatch,candidates,tier,syn,norm,tail,status priv
     class GT,SEM,MO ext
 ```
 
 - **`_load_stores()`가 이 계층의 허브다.** 세 공개 함수와 의미 검색이 전부 이걸 통해 매장을 읽으므로, 여기 걸린 층 필터가 모든 경로에 동시에 적용된다.
-- **점선은 조건부**다. 1차 경량 매칭이 걸리면 임베딩까지 가지 않는다 — 브랜드명은 문자열 일치가 더 정확하고, `torch` 로드를 피할 수 있다.
-- **`_normalize_query()`는 2단계다.** `_strip_tail()`(의문형 꼬리) → `query_morph.normalize()`(조사·어미). 순서가 중요하다 — "몇 층이야"의 "층"은 형태소 분석기가 일반명사로 보기 때문에 꼬리를 먼저 떼야 한다. Kiwi가 없으면 1단계 결과만 쓴다.
+- **점선은 조건부**다. 정확 이름·카테고리 또는 단일 매장명 부분 일치는 1차에서 끝난다.
+  최상위 `(tier, 구두점 후보 순서)`에 서로 다른 매장명이 여럿이면 ID순 후보를 임의 확정하지 않고
+  의미 검색으로 넘긴다. 일반 검색용 `_rank()`는 같은 내부 순위를 쓰되 후보 순서 필드만 감춘다.
+- **`_query_candidates()`는 원문을 보존하면서 끝 구두점을 단계적으로 제거한다.**
+  각 후보는 `_strip_tail()`(의문형 꼬리) → `query_morph.normalize()`(조사·어미) 순으로
+  정규화한다. `"A.P.C."`는 원문 정확 일치를 유지하고 `"화장실이 어디야?"`도 잡는다.
+  Kiwi가 없으면 꼬리 제거 결과를 쓴다.
 
 ---
 

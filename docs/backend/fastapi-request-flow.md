@@ -180,7 +180,7 @@ flowchart TD
     p1 & p3 --> qs
     p2 --> qs
     qs --> mo
-    qs -. "경량이 0건일 때만" .-> sem
+    qs -. "경량 0건 또는 모호한 tier 2" .-> sem
     sem -. "매장 로딩만" .-> qs
     bq & tq & qs --> gt
 
@@ -228,15 +228,15 @@ flowchart TD
 
 ### 4-2. 자연어 질의 — 하이브리드 2단 경로
 
-`POST /query/ai`는 경량 문자열 매칭을 먼저 시도하고, 0건일 때만 임베딩 의미 검색으로
-넘어간다.
+`POST /query/ai`는 경량 문자열 매칭을 먼저 시도한다. 0건이거나 최상위 tier 2가
+서로 다른 매장명을 여럿 잡으면 임베딩 의미 검색으로 넘어간다.
 
 ```mermaid
 flowchart TD
     req["POST /query/ai<br/>{text, building_id, current_floor_id?}"]
-    norm["정규화: 꼬리 제거 → 형태소(Kiwi)<br/>'화장실이 어디야' → '화장실'"]
+    norm["정규화: 구두점 후보 → 꼬리 제거 → Kiwi<br/>'화장실이 어디야?' → '화장실'"]
     rank["1차: _rank() — 정확 이름·동의어·부분 매칭"]
-    hit{"걸렸나?"}
+    hit{"경량에서 확정 가능한가?"}
     ok1["status=ok<br/>임베딩까지 안 감 (torch 로드 회피)"]
     imp["지연 import: query_semantic<br/>(AI 경로만 torch를 로드)"]
     sem["2차: semantic_search()<br/>FAISS IndexFlatIP 코사인 검색"]
@@ -245,8 +245,8 @@ flowchart TD
     no["status=no_match<br/>엉뚱한 매장 반환 금지"]
 
     req --> norm --> rank --> hit
-    hit -->|Yes| ok1
-    hit -->|No| imp --> sem --> th
+    hit -->|"Yes: 정확·카테고리·단일 이름 tier 2"| ok1
+    hit -->|"No: 0건·서로 다른 이름 tier 2 다수"| imp --> sem --> th
     th -->|Yes| ok2
     th -->|No| no
 
@@ -379,7 +379,8 @@ def get_db() -> Iterator[Session]:
 | `Depends(...)` | DI | `@Autowired` |
 
 검증 실패는 핸들러 실행 전에 **422**로 차단된다. 예: `/query/destination`의
-`text: str = Field(min_length=1)`은 빈 문자열을 핸들러 도달 전에 막는다.
+`QueryText`의 `Field(min_length=1, max_length=200)`와 `AfterValidator(_reject_blank_text)`는
+빈 문자열·공백-only·과도하게 긴 질의를 핸들러 도달 전에 막는다. 세 `/query` 요청 모델이 같은 타입을 쓴다.
 ORM 엔티티(`models/`)와 HTTP 계약(`dto/`)을 분리하는 이유는 Entity/DTO 분리 이유와 같다.
 
 ### 6단계. ★ sync vs async (가장 중요)
