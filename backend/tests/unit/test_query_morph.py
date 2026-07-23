@@ -10,20 +10,13 @@ import pytest
 
 from app.repositories import query_morph, query_search
 
-pytestmark = pytest.mark.usefixtures("_reset_kiwi")
-
-
-@pytest.fixture
-def _reset_kiwi():
-    # 모듈 전역 싱글턴을 테스트마다 초기화 — 폴백 테스트가 다른 테스트를 오염시키지 않게.
-    yield
-    query_morph._kiwi = None
-    query_morph._load_failed = False
-
-
 @pytest.fixture
 def kiwi_unavailable(monkeypatch):
-    """Kiwi 로드 실패를 주입한다 — 미설치 환경 재현."""
+    """Kiwi 로드 실패를 주입한다 — 미설치 환경 재현.
+
+    monkeypatch가 테스트 종료 시 원래 싱글턴을 되돌려 주므로 따로 초기화하지 않는다.
+    직접 `_kiwi = None`으로 리셋하면 다음 테스트마다 Kiwi를 재로드해(약 2초) 스위트가 느려진다.
+    """
     monkeypatch.setattr(query_morph, "_kiwi", None)
     monkeypatch.setattr(query_morph, "_load_failed", True)
 
