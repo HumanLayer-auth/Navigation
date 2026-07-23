@@ -7,6 +7,8 @@ pytest
 httpx
 numpy>=1.26
 mapbox-vector-tile>=2.2.0,<3.0.0
+# 질의 형태소 정규화(경량 1차 매칭) — 순수 pip 휠, JVM 불필요. 설계: docs/backend/native/KIWI.md
+kiwipiepy==0.23.*
 # AI 자연어 질의(하이브리드 2차) — 문장 임베딩 + FAISS 의미 검색. 설계: docs/backend/native/FAISS.md
 faiss-cpu==1.14.*
 sentence-transformers==5.6.*  # torch를 전이 의존성으로 끌어온다(CPU 휠)

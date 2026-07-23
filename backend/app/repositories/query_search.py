@@ -1,5 +1,6 @@
 # 자연어 질의 매칭.
 # 매장 이름·카테고리·동의어를 텍스트로 매칭해 최적 1건을 고른다(경량, 임베딩 없음).
+# 질의는 꼬리 제거 + 형태소 정규화(query_morph)를 거쳐 조사·어미가 붙어도 매칭된다.
 # - match_destination:    최적 매장 1건 + 입구 노드(온디바이스 경로용).
 # - match_info:           최적 1건 + 대상이 존재하는 층 목록.
 # - match_ai_destination: 하이브리드 — 1차 경량 매칭, 실패 시 2차 임베딩 의미 검색(query_semantic).
@@ -18,6 +19,7 @@ from sqlalchemy.orm import Session
 from app.core.config import API_ROOT
 from app.geo.georeference import GeoTransform
 from app.models import Building, Floor, Store
+from app.repositories import query_morph
 from app.repositories.geo_transform import fit_building_geo_transform
 
 _SYNONYMS_PATH = API_ROOT / "resources" / "query_synonyms.json"
@@ -43,8 +45,16 @@ def _synonyms() -> dict[str, str]:
     return {_norm(k): _norm(v) for k, v in raw.items()}
 
 
+# 2단계 정규화. 꼬리 제거 → 형태소 정규화.
+# 꼬리 제거를 먼저 하는 이유: "몇 층이야"의 "층"은 Kiwi가 일반명사(NNG)로 보기 때문에
+# 형태소만으로는 "화장실 몇 층이야" → "화장실 층"이 되어 이름 일치가 깨진다.
+# 형태소는 그다음 남은 조사·어미를 뗀다("화장실이" → "화장실"). Kiwi가 없으면 1단계 결과만 쓴다.
 def _normalize_query(text: str) -> str:
-    t = _norm(text)
+    t = _strip_tail(_norm(text))
+    return query_morph.normalize(t) or t
+
+
+def _strip_tail(t: str) -> str:
     for tail in _TAILS:
         if t.endswith(tail):
             return t[: -len(tail)].strip()
