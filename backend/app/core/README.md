@@ -43,8 +43,9 @@ settings = Settings()   # import 시 1회 생성, 프로세스 전역 재사용
 
 - **`settings`는 모듈 전역 싱글턴이다.** 다른 모듈은 `from app.core.config import settings`로 가져다 쓴다.
 - **환경변수 접두사는 `NAV_`.** `database_url` 필드는 환경변수 `NAV_DATABASE_URL`로 덮어쓴다 (`case_sensitive=False`라 대소문자 무관).
-- **진단 로그 둘은 기본이 꺼짐(False)이다.** 개발 실행에서만 켠다 — Docker Compose가
-  `NAV_SQL_ECHO=1`·`NAV_HTTP_CAPTURE=1`을 자동 주입하므로 사람이 따로 설정하지 않는다.
+- **진단 로그 둘은 기본이 꺼짐(False)이다.** 로컬 개발 실행에서만
+  `NAV_SQL_ECHO=1`·`NAV_HTTP_CAPTURE=1`로 켠다. 실행 명령은
+  [`DEBUG_LOGGING.md`](../../DEBUG_LOGGING.md)를 따른다.
 - **기본 DB는 `backend/data/navigation.db`** (SQLite 파일). `API_ROOT`는 이 파일(`app/core/config.py`) 기준 두 단계 위 = `backend/`.
   - `parents[0]=core`, `parents[1]=app`, `parents[2]=backend`.
   - ⚠️ 이 파일을 다른 깊이로 옮기면 `parents[2]`도 같이 고쳐야 한다.

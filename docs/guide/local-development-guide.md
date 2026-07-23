@@ -10,17 +10,58 @@
 
 ## 백엔드 실행
 
-저장소 루트에서 Docker Desktop을 실행한 뒤 다음 명령만 실행한다.
+일상 개발과 기능 검증은 Docker 대신 `backend/`의 로컬 Python 가상환경을 사용한다.
+프로젝트 기준 버전은 Python 3.12다.
+아래 PowerShell 블록은 각각 저장소 루트에서 시작한다.
+
+최초 1회 또는 `requirements*.txt`가 바뀌었을 때:
 
 ```powershell
-docker compose up
+Set-Location backend
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
 ```
 
-API는 `http://127.0.0.1:8001`에서 실행되며, 컨테이너 시작 시 개발 DB와 기본 지도 데이터가 적재된다.
+macOS:
+
+```bash
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+```
+
+검증할 때마다 DB를 다시 적재하고 Uvicorn을 실행한다.
+
+```powershell
+Set-Location backend
+.\.venv\Scripts\Activate.ps1
+python -m scripts.seed.reset_and_seed
+$env:NAV_SQL_ECHO = '1'
+$env:NAV_HTTP_CAPTURE = '1'
+python -m uvicorn app.main:app --reload --reload-dir app --host 0.0.0.0 --port 8001 2>&1 | ForEach-Object { $_; $_ | Out-File ..\backend-local.log -Append -Encoding utf8 }
+```
+
+macOS에서도 저장소 루트에서 `backend/`로 이동하고 같은 순서로 실행한다.
+
+```bash
+cd backend
+source .venv/bin/activate
+python -m scripts.seed.reset_and_seed
+export NAV_SQL_ECHO=1
+export NAV_HTTP_CAPTURE=1
+python -m uvicorn app.main:app --reload --reload-dir app --host 0.0.0.0 --port 8001 2>&1 | tee ../backend-local.log
+```
+
+API는 `http://127.0.0.1:8001`에서 실행된다.
 
 ```powershell
 Invoke-RestMethod http://127.0.0.1:8001/health
 ```
+
+Docker Compose는 일상 개발 실행에 사용하지 않는다. 배포 이미지·컨테이너 환경 호환성을 확인할
+때만 사용하며, 실제 Cloud Run 배포는 [GCP 배포 문서](gcp-instance.md)를 따른다.
 
 ## Flutter 실행
 
@@ -56,7 +97,7 @@ flutter run -d <device-id>
 flutter run --dart-define=API_BASE_URL=http://192.168.0.10:8001
 ```
 
-실기기 연결이 안 되면 PC 방화벽에서 Docker Desktop의 개인 네트워크 수신을 허용한다. 외부 공개 환경에서는 HTTP 대신 HTTPS 주소를 사용한다.
+실기기 연결이 안 되면 PC 방화벽에서 Python/Uvicorn 또는 TCP 8001의 개인 네트워크 수신을 허용한다. 외부 공개 환경에서는 HTTP 대신 HTTPS 주소를 사용한다.
 
 ## API 키 주입
 
@@ -70,7 +111,7 @@ flutter run --dart-define=TMAP_APP_KEY=<TMAP_KEY> --dart-define=VWORLD_API_KEY=<
 
 | 증상 | 먼저 확인할 것 |
 |---|---|
-| 앱에서 API 연결 실패 | `docker compose up` 실행 여부, `/health`, 포트 `8001`, `API_BASE_URL` |
+| 앱에서 API 연결 실패 | Uvicorn 실행 여부, `/health`, 포트 `8001`, `API_BASE_URL` |
 | Android 에뮬레이터가 `localhost`를 못 찾음 | `localhost` 대신 기본값 `10.0.2.2` 사용 |
 | Android 실기기에서 연결 실패 | 같은 Wi-Fi, PC LAN IP, 방화벽, HTTP cleartext 정책 |
-| Docker 연결 실패 | Docker Desktop 실행 여부 |
+| `ModuleNotFoundError` 또는 명령을 못 찾음 | `.venv` 활성화 여부, `python -m pip install -r requirements.txt` |

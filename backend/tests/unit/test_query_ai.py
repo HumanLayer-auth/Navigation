@@ -20,11 +20,85 @@ def test_1차_경량이_맞으면_임베딩을_호출하지_않는다(db_session
 
     monkeypatch.setattr(query_semantic, "semantic_search", spy)
 
-    result = query_search.match_ai_destination(db_session, BUILDING_ID, "가게A")
+    result = query_search.match_ai_destination(
+        db_session, BUILDING_ID, "가게A 어디야?"
+    )
 
     assert result["status"] in ("ok", "ok_no_route")
     assert result["match"]["name"] == "가게A"
     assert calls["n"] == 0  # 1차에서 확정 → 2차 미호출
+
+
+def test_서로_다른_부분일치가_여럿이면_원문과_현재층을_2차에_전달한다(
+    db_session, monkeypatch
+):
+    store, floor = next(
+        (store, floor)
+        for store, floor in _load_stores(
+            db_session, BUILDING_ID, current_floor_id="1F"
+        )
+        if store.name == "가게B"
+    )
+    captured = {}
+
+    def semantic_spy(session, building_id, text, *, current_floor_id=None):
+        captured.update(
+            {
+                "session": session,
+                "building_id": building_id,
+                "text": text,
+                "current_floor_id": current_floor_id,
+            }
+        )
+        return 0.71, store, floor
+
+    monkeypatch.setattr(query_semantic, "semantic_search", semantic_spy)
+
+    result = query_search.match_ai_destination(
+        db_session,
+        BUILDING_ID,
+        "가게",
+        current_floor_id="1F",
+    )
+
+    assert result["match"]["store_id"] == store.id
+    assert captured == {
+        "session": db_session,
+        "building_id": BUILDING_ID,
+        "text": "가게",
+        "current_floor_id": "1F",
+    }
+
+
+def test_부분일치여도_최상위_매장명이_하나면_1차에서_확정한다(
+    db_session, monkeypatch
+):
+    calls = {"n": 0}
+
+    def spy(*_args, **_kwargs):
+        calls["n"] += 1
+        return None
+
+    monkeypatch.setattr(query_semantic, "semantic_search", spy)
+
+    result = query_search.match_ai_destination(
+        db_session,
+        BUILDING_ID,
+        "게A",
+        current_floor_id="1F",
+    )
+
+    assert result["match"]["name"] == "가게A"
+    assert calls["n"] == 0
+
+
+def test_모호한_부분일치에서_2차도_실패하면_no_match다(db_session, monkeypatch):
+    monkeypatch.setattr(query_semantic, "semantic_search", lambda *a, **k: None)
+
+    result = query_search.match_ai_destination(db_session, BUILDING_ID, "가게")
+
+    assert result["status"] == "no_match"
+    assert result["match"] is None
 
 
 # 경량이 놓친 자연어는 2차 임베딩 결과로 확정된다.

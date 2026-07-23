@@ -7,6 +7,7 @@
 
 import json
 
+import pytest
 from sqlalchemy import select
 
 from app.core.config import API_ROOT
@@ -131,6 +132,26 @@ def test_동의어_사전은_실존_장소로_매칭된다(real_db_session):
         is None
     ]
     assert dead == [], f"매칭되지 않는 동의어(죽은 항목): {dead}"
+
+
+# 전 층에 깔린 편의시설이 조사·의문형이 붙은 질의로도 DB 경로에서 잡히는지 확인한다.
+# 정규화 자체의 전수 검사는 tests/unit/test_query_coverage.py가 하고, 여기서는
+# 실제 세션·조인·층 목록까지 이어지는지만 본다.
+@pytest.mark.parametrize(
+    ("facility", "min_floors"),
+    [("엘리베이터", 12), ("에스컬레이터", 12), ("화장실", 11)],
+)
+@pytest.mark.parametrize("suffix", ["", " 어디야", "까지 가고 싶어", " 몇 층이야"])
+def test_편의시설은_조사가_붙어도_여러_층에서_매칭된다(
+    real_db_session, facility, min_floors, suffix
+):
+    result = query_search.match_info(real_db_session, REAL_BUILDING_ID, facility + suffix)
+
+    assert result is not None
+    assert result["status"] == "ok", f"{facility + suffix!r} 매칭 실패"
+    assert result["match"]["name"] == facility
+    # "화장실"은 부분 일치로 "장애인화장실"의 층까지 모으므로 하한만 본다.
+    assert len(result["floors"]) >= min_floors, f"{facility} 층 목록: {result['floors']}"
 
 
 # 실데이터로 층 지도 API가 그래프와 매장 폴리곤을 함께 응답하는지 확인한다.

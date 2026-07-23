@@ -171,6 +171,7 @@ flowchart TD
     bq["building_queries"]
     tq["tile_queries"]
     qs["query_search<br/>경량 매칭"]
+    mo["query_morph<br/>형태소 정규화"]
     sem["query_semantic<br/>FAISS 임베딩"]
     gt["geo_transform"]
 
@@ -178,13 +179,14 @@ flowchart TD
     g3 --> tq --> bq
     p1 & p3 --> qs
     p2 --> qs
-    qs -. "경량이 0건일 때만" .-> sem
+    qs --> mo
+    qs -. "경량 0건 또는 모호한 tier 2" .-> sem
     sem -. "매장 로딩만" .-> qs
     bq & tq & qs --> gt
 
     classDef q fill:#2a9d8f,color:#fff,stroke:none
     classDef shared fill:#e9c46a,color:#212529,stroke:none
-    class bq,tq,qs,sem q
+    class bq,tq,qs,mo,sem q
     class gt shared
 ```
 
@@ -226,14 +228,15 @@ flowchart TD
 
 ### 4-2. 자연어 질의 — 하이브리드 2단 경로
 
-`POST /query/ai`는 경량 문자열 매칭을 먼저 시도하고, 0건일 때만 임베딩 의미 검색으로
-넘어간다.
+`POST /query/ai`는 경량 문자열 매칭을 먼저 시도한다. 0건이거나 최상위 tier 2가
+서로 다른 매장명을 여럿 잡으면 임베딩 의미 검색으로 넘어간다.
 
 ```mermaid
 flowchart TD
     req["POST /query/ai<br/>{text, building_id, current_floor_id?}"]
+    norm["정규화: 구두점 후보 → 꼬리 제거 → Kiwi<br/>'화장실이 어디야?' → '화장실'"]
     rank["1차: _rank() — 정확 이름·동의어·부분 매칭"]
-    hit{"걸렸나?"}
+    hit{"경량에서 확정 가능한가?"}
     ok1["status=ok<br/>임베딩까지 안 감 (torch 로드 회피)"]
     imp["지연 import: query_semantic<br/>(AI 경로만 torch를 로드)"]
     sem["2차: semantic_search()<br/>FAISS IndexFlatIP 코사인 검색"]
@@ -241,9 +244,9 @@ flowchart TD
     ok2["status=ok"]
     no["status=no_match<br/>엉뚱한 매장 반환 금지"]
 
-    req --> rank --> hit
-    hit -->|Yes| ok1
-    hit -->|No| imp --> sem --> th
+    req --> norm --> rank --> hit
+    hit -->|"Yes: 정확·카테고리·단일 이름 tier 2"| ok1
+    hit -->|"No: 0건·서로 다른 이름 tier 2 다수"| imp --> sem --> th
     th -->|Yes| ok2
     th -->|No| no
 
@@ -254,6 +257,9 @@ flowchart TD
 ```
 
 - **브랜드명은 문자열 일치가 임베딩보다 정확하고 안전하다.** 그래서 1차가 먼저다.
+- **정규화는 1차에만 적용된다.** 2차에는 질의 **원문**이 그대로 전달된다 — 문장 임베딩은 조사·어미가
+  붙은 문장을 그대로 처리하는 게 낫고, 인덱스 텍스트를 바꾸면 임계값 튜닝 근거가 무효가 된다.
+  형태소 정규화 설계는 [`docs/backend/native/KIWI.md`](native/KIWI.md).
 - **임계값 0.50은 정밀도 우선 선택이다.** 길찾기에서는 틀린 매장을 안내하는 것이
   "다시 말해 주세요"보다 나쁘다. 근거는 [`docs/backend/native/FAISS.md`](native/FAISS.md) 11-1절.
 - `current_floor_id`는 **층 라벨("B2")과 내부 id("FL-…") 둘 다** 받는다. 클라이언트는
@@ -373,7 +379,8 @@ def get_db() -> Iterator[Session]:
 | `Depends(...)` | DI | `@Autowired` |
 
 검증 실패는 핸들러 실행 전에 **422**로 차단된다. 예: `/query/destination`의
-`text: str = Field(min_length=1)`은 빈 문자열을 핸들러 도달 전에 막는다.
+`QueryText`의 `Field(min_length=1, max_length=200)`와 `AfterValidator(_reject_blank_text)`는
+빈 문자열·공백-only·과도하게 긴 질의를 핸들러 도달 전에 막는다. 세 `/query` 요청 모델이 같은 타입을 쓴다.
 ORM 엔티티(`models/`)와 HTTP 계약(`dto/`)을 분리하는 이유는 Entity/DTO 분리 이유와 같다.
 
 ### 6단계. ★ sync vs async (가장 중요)
