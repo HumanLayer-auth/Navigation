@@ -9,6 +9,7 @@ FastAPI 기반 실내 내비게이션 API 서버.
 
 | 계층 | 디렉터리 | 역할 |
 |---|---|---|
+| 앱 목차 | [`app/`](app/README.md) | FastAPI 애플리케이션 전체 계층 안내 |
 | 진입점 | [`app/main.py`](app/main.py) | FastAPI 앱 팩토리 · 라우터 등록 · `/health` |
 | 경계 | [`app/routers/`](app/routers/README.md) | HTTP 엔드포인트, 상태 코드 번역 |
 | 계약 | [`app/dto/`](app/dto/README.md) | Pydantic 요청/응답 스키마 |
@@ -16,8 +17,24 @@ FastAPI 기반 실내 내비게이션 API 서버.
 | 데이터 | [`app/models/`](app/models/README.md) | SQLAlchemy ORM 엔티티 (테이블) |
 | 순수 로직 | [`app/geo/`](app/geo/README.md) | 좌표 변환 · 지도 타일 |
 | 인프라 | [`app/core/`](app/core/README.md) | 설정 · DB 엔진/세션 |
+| 스크립트 목차 | [`scripts/`](scripts/README.md) | 시드 · 변환 · 검색 평가 · 모델 워밍 |
 | 스크립트 | [`scripts/seed/`](scripts/seed/README.md) | DB 초기화 · 시드 (DB 접근) |
 | 스크립트 | [`scripts/transform/`](scripts/transform/README.md) | 순수 변환 (파일→파일 / dict→dict) |
+| 평가 | [`notebooks/`](notebooks/README.md) | FAISS·Kiwi 품질 분석 노트북 |
+| 리소스 | [`resources/`](resources/README.md) | Studio 입력 · 글리프 · 검색 분류 사전 |
+| 테스트 | [`tests/`](tests/README.md) | 합성/실데이터 픽스처 기반 단위·통합 테스트 |
+
+## 처음 읽는 순서
+
+처음 보는 사람은 아래 순서대로 읽는다. 각 문서 맨 아래의 **다음 읽기** 링크가 이 순서를
+그대로 이어 주므로, 목차로 돌아오지 않아도 된다.
+
+```text
+backend README
+→ app → core → models → dto → geo → repositories → routers
+→ scripts → transform → resources → studio → fonts → seed
+→ notebooks → tests → fixtures → unit → integration
+```
 
 ## 디렉터리 구조
 
@@ -32,14 +49,19 @@ backend/
 │   ├── geo/             # 지리 계산 (georeference, tiling)
 │   └── routers/         # HTTP 엔드포인트 (buildings, query, fonts)
 ├── scripts/             # 오프라인 실행용 스크립트
+│   ├── evaluate_query_hybrid.py  # 최종 AI 경로 29개 실데이터 평가
 │   ├── seed/            # DB 초기화·시드 (reset_and_seed 등)
 │   └── transform/       # 데이터 가공 (글리프 생성, 층 정렬 등)
+├── notebooks/           # FAISS·Kiwi 품질 평가 (선택 개발 의존성)
 ├── resources/           # 정적 리소스
 │   ├── fonts/           # MapLibre SDF 글리프 (Noto Sans KR)
 │   ├── studio/          # 스튜디오 원본 데이터
+│   ├── query_synonyms.json             # 자연어 질의 별칭 → 표준어
 │   ├── store_categories.json          # 매장 id → 카테고리 (category_code 근거)
 │   └── store_category_by_name.json    # 매장명 → 카테고리 (브랜드명 분류, 폴백)
 ├── data/                # 런타임 SQLite DB (gitignore, 재생성 가능)
+├── requirements.txt     # 서버·테스트 필수 의존성
+├── requirements-dev.txt # 평가 노트북 전용 선택 의존성
 └── tests/               # 테스트
     ├── unit/            # 단위 테스트 (좌표 변환·타일·시드)
     └── integration/     # 통합 테스트 (API·DB)
@@ -79,29 +101,48 @@ backend/
 
 ## 실행
 
-### Docker Compose (권장)
-
-저장소 루트(`docker-compose.yml` 위치)에서:
-
-```bash
-docker compose up
-```
-
-컨테이너가 DB 시드(`scripts.seed.reset_and_seed`)를 먼저 돌린 뒤 서버를 띄운다.
-`http://localhost:8001`에서 응답하며, `/health`로 상태를 확인할 수 있다.
-
-### 로컬 실행 (venv)
+### 로컬 실행 (권장)
 
 `backend/`에서:
 
-```bash
-# 최초 1회 DB 적재
+```text
+# 최초 1회 또는 의존성 변경 시
+python -m venv .venv
+# Windows: .\.venv\Scripts\Activate.ps1
+# macOS: source .venv/bin/activate
+python -m pip install -r requirements.txt
+
+# 검증할 때마다 DB 적재
 python -m scripts.seed.reset_and_seed
-# 서버 실행
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
 # 테스트
-pytest
+python -m pytest
+```
+
+서버는 진단 환경변수를 켜고 보이는 창에서 실행하며, 같은 출력을 `backend-local.log`에 남긴다.
+
+```powershell
+# Windows PowerShell
+$env:NAV_SQL_ECHO = '1'
+$env:NAV_HTTP_CAPTURE = '1'
+python -m uvicorn app.main:app --reload --reload-dir app --host 0.0.0.0 --port 8001 2>&1 | ForEach-Object { $_; $_ | Out-File ..\backend-local.log -Append -Encoding utf8 }
+```
+
+```bash
+# macOS
+export NAV_SQL_ECHO=1
+export NAV_HTTP_CAPTURE=1
+python -m uvicorn app.main:app --reload --reload-dir app --host 0.0.0.0 --port 8001 2>&1 | tee ../backend-local.log
 ```
 
 DB 위치·종류는 환경변수 `NAV_DATABASE_URL`로 바꾼다(기본: `backend/data/navigation.db`,
 Compose는 컨테이너의 `/app/data/navigation.db`). 자세한 건 [`app/core/README.md`](app/core/README.md).
+
+### Docker Compose (배포 환경 확인용)
+
+Docker는 일상 개발 실행에 쓰지 않는다. 배포 이미지·컨테이너 환경 호환성을 명시적으로 확인할
+때만 저장소 루트에서 `docker compose up --build backend`를 사용한다. 실제 Cloud Run 배포 절차는
+[`../docs/guide/gcp-instance.md`](../docs/guide/gcp-instance.md)를 따른다.
+
+---
+
+> **다음 읽기:** [`backend/app` — FastAPI 애플리케이션](app/README.md)

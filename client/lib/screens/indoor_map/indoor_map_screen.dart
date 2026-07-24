@@ -49,6 +49,10 @@ const _bottomBarLiftPx = 92.0;
 // 같은 하단 여백으로 붙여야 두 버튼이 시각적으로 같은 baseline에 놓인다.
 const _bottomBarInnerBottomPaddingPx = 14.0;
 
+// 홈/실내 세그먼트의 왼쪽에 8px 간격으로 PDR 제어를 붙이는 right inset.
+// iPhone 13 Pro 기준 세그먼트 폭(160px) + 화면 우측 여백(16px) + 간격(8px)이다.
+const _pdrControlRightInsetPx = 184.0;
+
 /// 실내 지도 본문(층 평면도 + 경로/매장 오버레이). 검색창·길찾기·건물 전환 같은
 /// 공통 UI는 [MapShellScreen]이 상단/하단 바로 얹으므로 여기서는 다루지 않는다.
 class IndoorMapBody extends StatefulWidget {
@@ -1039,23 +1043,31 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
           ),
         ),
 
-        // PDR 제어는 검색창 아래의 장소·층 선택 chip과 같은 줄에 둔다.
-        // 하단에는 디버그 설정 진입점만 남겨 일반 지도 chrome과 역할을 나눈다.
+        // PDR 제어는 하단 홈/실내 세그먼트 바로 왼쪽에 같은 baseline으로 둔다.
+        // 상단의 장소·카테고리·층 chip과 분리해 좁은 화면에서도 겹치지 않으며,
+        // 경로 ETA가 나타나면 홈/실내 바와 함께 같은 높이만큼 올라간다.
         if (debugEnabled)
-          Positioned(
-            top: 78,
-            left: 92,
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+            right: _pdrControlRightInsetPx,
+            bottom: route != null ? _bottomBarLiftPx : 0,
             child: SafeArea(
-              bottom: false,
-              child: _PdrMapControl(
-                key: _pdrControlKey,
-                active: pdrActive,
-                onPressed: _togglePdr,
-                canExport:
-                    !pdrActive && (_pdrDebugRecorder?.hasSnapshot ?? false),
-                exporting: _exportingPdrDebugJson,
-                onExport: _exportPdrDebugJson,
-                shareButtonKey: _pdrShareButtonKey,
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.only(
+                  bottom: _bottomBarInnerBottomPaddingPx,
+                ),
+                child: _PdrMapControl(
+                  key: _pdrControlKey,
+                  active: pdrActive,
+                  onPressed: _togglePdr,
+                  canExport:
+                      !pdrActive && (_pdrDebugRecorder?.hasSnapshot ?? false),
+                  exporting: _exportingPdrDebugJson,
+                  onExport: _exportPdrDebugJson,
+                  shareButtonKey: _pdrShareButtonKey,
+                ),
               ),
             ),
           ),
@@ -1137,7 +1149,7 @@ class _PdrMapControl extends StatelessWidget {
               onTap: onPressed,
               customBorder: const StadiumBorder(),
               child: Padding(
-                padding: EdgeInsets.fromLTRB(10, 8, canExport ? 7 : 13, 8),
+                padding: EdgeInsets.fromLTRB(10, 9, canExport ? 7 : 13, 9),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -1177,6 +1189,11 @@ class _PdrMapControl extends StatelessWidget {
                 key: shareButtonKey,
                 tooltip: 'PDR 디버그 JSON 공유',
                 onPressed: exporting ? null : onExport,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints.tightFor(
+                  width: 40,
+                  height: 44,
+                ),
                 icon: exporting
                     ? const SizedBox(
                         width: 17,
