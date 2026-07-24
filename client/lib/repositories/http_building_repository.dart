@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../core/api_config.dart';
 import '../domain/floor_router.dart';
 import '../models/building.dart';
+import '../models/building_graph.dart';
 import '../models/floor_graph.dart';
 import '../models/indoor_route.dart';
 import 'building_repository.dart';
@@ -24,6 +25,7 @@ class HttpBuildingRepository implements BuildingRepository {
   final Map<String, Map<String, dynamic>> _floorGeoJsonCache = {};
   final Map<String, FloorGraph> _floorGraphCache = {};
   final Map<String, IndoorRoute> _routeCache = {};
+  final Map<String, BuildingGraph> _buildingGraphCache = {};
 
   @override
   Future<List<Building>> getAllBuildings() async {
@@ -142,5 +144,26 @@ class HttpBuildingRepository implements BuildingRepository {
 
     _routeCache[cacheKey] = route;
     return route;
+  }
+
+  @override
+  Future<BuildingGraph?> getBuildingGraph(
+    String buildingId, {
+    String vertical = 'auto',
+  }) async {
+    final cacheKey = '$buildingId/$vertical';
+    final cached = _buildingGraphCache[cacheKey];
+    if (cached != null) return cached;
+
+    final response = await _client.get(
+      Uri.parse('$apiBaseUrl/buildings/$buildingId/graph?vertical=$vertical'),
+    );
+    if (response.statusCode == 404) return null;
+
+    final graph = BuildingGraph.fromJson(
+      jsonDecode(response.body) as Map<String, dynamic>,
+    );
+    _buildingGraphCache[cacheKey] = graph;
+    return graph;
   }
 }

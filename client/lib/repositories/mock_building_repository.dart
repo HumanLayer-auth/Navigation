@@ -4,6 +4,7 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:latlong2/latlong.dart';
 
 import '../models/building.dart';
+import '../models/building_graph.dart';
 import '../models/floor_plan.dart';
 import '../models/indoor_route.dart';
 import 'building_repository.dart';
@@ -79,6 +80,16 @@ class MockBuildingRepository implements BuildingRepository {
     for (final store in floorPlan.stores) {
       if (store.entranceNodeId == nodeId) return store.centroid;
     }
+    return null;
+  }
+
+  @override
+  Future<BuildingGraph?> getBuildingGraph(
+    String buildingId, {
+    String vertical = 'auto',
+  }) async {
+    // mock 데이터엔 층 간 그래프가 없다. 층 간 경로 기능은 HTTP 리포지토리로만
+    // 검증한다 — mock에서 null을 돌려주면 호출자가 단일 층 경로로 폴백한다.
     return null;
   }
 }
