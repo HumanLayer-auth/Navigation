@@ -8,7 +8,7 @@ import '../../models/floor_plan.dart';
 import '../../models/poi_search_result.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/building_switcher_sheet.dart';
-import '../../widgets/category_list_sheet.dart';
+import '../../widgets/category_icon.dart';
 import '../../widgets/category_stores_sheet.dart';
 import '../../widgets/directions_sheet.dart';
 import '../../widgets/favorites_sheet.dart';
@@ -60,7 +60,7 @@ class _MapShellScreenState extends State<MapShellScreen> {
   // 까지 새어들어가는 문제를 여기서 함께 막는다.
   final _topBarKey = GlobalKey();
   final _favoritesPillKey = GlobalKey();
-  final _categoryPillKey = GlobalKey();
+  final _categoryRowKey = GlobalKey();
   final _bottomBarKey = GlobalKey();
 
   /// 시트 X 버튼이 눌리면 true가 된다. 시트 체인의 어떤 시점에서든 이 값이
@@ -249,12 +249,16 @@ class _MapShellScreenState extends State<MapShellScreen> {
   /// 패턴을 쓴다.
   Future<bool> _openCategoryStores(String category) async {
     while (mounted) {
+      final currentFloor = _mode == MapMode.indoor
+          ? _indoorKey.currentState?.currentFloor
+          : null;
       final picked = await _withMapsLocked(
         () => CategoryStoresSheet.show(
           context,
           buildingId: _buildingId,
           category: category,
           onCloseAll: _requestCloseSheetChain,
+          currentFloor: currentFloor,
         ),
       );
       if (_closeSheetChainRequested || picked == null || !mounted) return false;
@@ -361,13 +365,10 @@ class _MapShellScreenState extends State<MapShellScreen> {
       );
       return;
     }
-    // 실내 다익스트라는 층별로 돌아가므로 출발지가 목적지와 다른 층에 있으면
-    // 그 node ID를 이 층 그래프에서 찾지 못해 route가 조용히 null이 된다.
-    // 이런 경우엔 명시적 출발지를 버리고 null로 넘겨, showRouteTo가 이 층의
-    // PDR 위치에서 가장 가까운 노드를 자동으로 골라 라우팅하도록 한다 —
-    // 사용자가 "왜 아무 것도 안 그려지지" 하고 헷갈리는 상태를 만들지 않는다.
-    final sameFloorOrigin =
-        origin != null && origin.floor == destination.floor ? origin : null;
+    // 실내는 IndoorMapBody.showRouteTo가 층이 다르면 건물 전체 그래프로
+    // 층 간 경로(엘리베이터·에스컬레이터 포함)를 계산한다. 여기서는 origin/
+    // destination을 다듬지 않고 그대로 넘긴다 — 층이 다르면 다층 경로,
+    // 같으면 단일 층 경로로 자동 분기된다.
     await _indoorKey.currentState?.showRouteTo(
       PoiSearchResult(
         name: destination.title,
@@ -375,13 +376,13 @@ class _MapShellScreenState extends State<MapShellScreen> {
         point: destination.point,
         nodeId: destination.nodeId,
       ),
-      origin: sameFloorOrigin == null
+      origin: origin == null
           ? null
           : PoiSearchResult(
-              name: sameFloorOrigin.title,
-              floor: sameFloorOrigin.floor ?? '',
-              point: sameFloorOrigin.point,
-              nodeId: sameFloorOrigin.nodeId,
+              name: origin.title,
+              floor: origin.floor ?? '',
+              point: origin.point,
+              nodeId: origin.nodeId,
             ),
     );
   }
@@ -392,29 +393,6 @@ class _MapShellScreenState extends State<MapShellScreen> {
   /// 매장 정보 시트에서 출발/도착을 고르지 않고 뒤로 닫으면 다시 저장된 장소
   /// 시트로 돌아온다 — 사용자가 여러 저장 항목을 훑어보다 잘못 눌렀거나
   /// 다른 항목을 다시 고르려는 경우를 위한 흐름이다.
-  /// "카테고리" pill을 눌렀을 때 대분류 목록 → 매장 목록 → 매장 정보로
-  /// 이어지는 chain을 연다. 저장한 장소 흐름과 동일한 loop 패턴:
-  /// - 매장 정보에서 뒤로 돌아오면 다시 매장 목록으로
-  /// - 매장 목록에서 뒤로 돌아오면 다시 카테고리 목록으로
-  /// - 어느 시트든 X/바깥 탭이면 전체 chain 종료
-  Future<void> _openCategoryList() async {
-    await _runSheetChain(() async {
-      while (mounted) {
-        final category = await _withMapsLocked(
-          () => CategoryListSheet.show(
-            context,
-            buildingId: _buildingId,
-            onCloseAll: _requestCloseSheetChain,
-          ),
-        );
-        if (_closeSheetChainRequested || category == null || !mounted) return;
-        final tookAction = await _openCategoryStores(category);
-        if (_closeSheetChainRequested || !mounted) return;
-        if (tookAction) return;
-      }
-    });
-  }
-
   Future<void> _openFavorites() async {
     await _runSheetChain(() async {
       while (mounted) {
@@ -497,6 +475,11 @@ class _MapShellScreenState extends State<MapShellScreen> {
     final placeInfo = _placeInfo;
     final routeVisible = _mode == MapMode.outdoor ? _outdoorRouteVisible : _indoorRouteVisible;
     return Scaffold(
+      // 상단 검색창(MapTopBar)에 포커스가 들어가 소프트키보드가 올라올 때
+      // Scaffold body가 리사이즈되면 그 안의 MapLibre PlatformView(지도)도
+      // 함께 줄어들며 리레이아웃이 발생해 모바일에서 화면이 눌리듯 버벅인다.
+      // 키보드는 지도 위에 그대로 덮이도록 두어 지도 자체는 리사이즈되지 않게 한다.
+      resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
           IndexedStack(
@@ -523,7 +506,7 @@ class _MapShellScreenState extends State<MapShellScreen> {
                 outerOverlayKeys: [
                   _topBarKey,
                   _favoritesPillKey,
-                  _categoryPillKey,
+                  _categoryRowKey,
                   _bottomBarKey,
                 ],
               ),
@@ -545,24 +528,30 @@ class _MapShellScreenState extends State<MapShellScreen> {
 
           Positioned(
             top: 78,
-            left: 16,
+            left: 0,
+            right: 0,
             child: SafeArea(
               bottom: false,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _FavoritesPill(key: _favoritesPillKey, onTap: _openFavorites),
-                  // 카테고리 pill은 실내 지도에서만 노출한다. 야외 모드에서는
-                  // "현재 건물"이 정의되지 않아 어떤 카테고리를 보여줄지 기준이
-                  // 없으므로 아예 숨긴다.
-                  if (_mode == MapMode.indoor) ...[
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _FavoritesPill(key: _favoritesPillKey, onTap: _openFavorites),
                     const SizedBox(width: 8),
-                    _CategoryPill(
-                      key: _categoryPillKey,
-                      onTap: _openCategoryList,
+                    // 야외·실내 모드 모두에서 노출한다. _buildingId가 항상
+                    // 현재 대상 건물(기본값 demoBuildingId)이라, 야외에서 chip을
+                    // 눌러도 그 건물의 카테고리 매장 시트가 정상적으로 뜬다.
+                    _CategoryChipsRow(
+                      key: _categoryRowKey,
+                      buildingId: _buildingId,
+                      onSelectCategory: (category) {
+                        _runSheetChain(() => _openCategoryStores(category));
+                      },
                     ),
                   ],
-                ],
+                ),
               ),
             ),
           ),
@@ -640,16 +629,98 @@ class _FavoritesPill extends StatelessWidget {
   }
 }
 
-/// 검색창 바로 아래에 뜨는 작은 "카테고리" 칩. 저장한 장소 pill과 시각적
-/// 형제로 나란히 놓여, 매장 대분류(패션·뷰티 등)를 훑어 매장 목록으로 갈
-/// 수 있는 지름길이다.
-class _CategoryPill extends StatelessWidget {
-  const _CategoryPill({super.key, required this.onTap});
+/// 검색창 바로 아래 저장한 장소 pill 옆에 붙는 카테고리 chip 열.
+/// 건물에 실제 존재하는 대분류만 골라 각각 하나의 chip으로 노출한다.
+/// chip 탭 → 해당 카테고리 매장 목록 시트가 바로 열린다 (예전에는 카테고리
+/// pill → 카테고리 목록 시트 → 매장 목록 시트로 두 단계였음).
+///
+/// 카테고리 enumeration은 건물 전 층의 `stores[].category`를 unique하게 뽑아
+/// 매장 수 많은 순으로 정렬한다. HttpBuildingRepository가 층별 응답을
+/// 캐시하므로 첫 로드 이후엔 즉시.
+class _CategoryChipsRow extends StatefulWidget {
+  const _CategoryChipsRow({
+    super.key,
+    required this.buildingId,
+    required this.onSelectCategory,
+  });
 
+  final String buildingId;
+  final ValueChanged<String> onSelectCategory;
+
+  @override
+  State<_CategoryChipsRow> createState() => _CategoryChipsRowState();
+}
+
+class _CategoryChipsRowState extends State<_CategoryChipsRow> {
+  late Future<List<String>> _categoriesFuture = _load();
+
+  @override
+  void didUpdateWidget(covariant _CategoryChipsRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.buildingId != widget.buildingId) {
+      _categoriesFuture = _load();
+    }
+  }
+
+  Future<List<String>> _load() async {
+    final building = await buildingRepository.getBuilding(widget.buildingId);
+    if (building == null) return const [];
+    final counts = <String, int>{};
+    for (final floor in building.floors) {
+      final json = await buildingRepository.getFloorGeoJson(
+        widget.buildingId,
+        floor,
+      );
+      if (json == null) continue;
+      final plan = FloorPlan.fromJson(json);
+      for (final store in plan.stores) {
+        final c = store.category;
+        if (c == null || c.isEmpty) continue;
+        counts[c] = (counts[c] ?? 0) + 1;
+      }
+    }
+    final entries = counts.entries.toList()
+      ..sort((a, b) {
+        final c = b.value.compareTo(a.value);
+        return c != 0 ? c : a.key.compareTo(b.key);
+      });
+    return entries.map((e) => e.key).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<String>>(
+      future: _categoriesFuture,
+      builder: (context, snapshot) {
+        final categories = snapshot.data ?? const <String>[];
+        if (categories.isEmpty) return const SizedBox.shrink();
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (int i = 0; i < categories.length; i++) ...[
+              if (i > 0) const SizedBox(width: 8),
+              _CategoryChip(
+                name: categories[i],
+                onTap: () => widget.onSelectCategory(categories[i]),
+              ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _CategoryChip extends StatelessWidget {
+  const _CategoryChip({required this.name, required this.onTap});
+
+  final String name;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final icon = categoryIconFor(name);
+    final color = categoryColorFor(name);
     return Material(
       color: Colors.white,
       elevation: 3,
@@ -658,16 +729,16 @@ class _CategoryPill extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(20),
-        child: const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.category_outlined, size: 16, color: AppColors.primary),
-              SizedBox(width: 6),
+              Icon(icon, size: 16, color: color),
+              const SizedBox(width: 6),
               Text(
-                '카테고리',
-                style: TextStyle(
+                name,
+                style: const TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w700,
                   color: AppColors.text,

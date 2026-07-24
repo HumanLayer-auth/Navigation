@@ -12,7 +12,9 @@ import '../../features/indoor_navigation/contract/indoor_navigation_contract.dar
 import '../../features/indoor_navigation/debug/pdr_debug_device_info.dart';
 import '../../features/indoor_navigation/debug/pdr_debug_session_recorder.dart';
 import '../../features/indoor_navigation/debug/pdr_debug_session_share.dart';
+import '../../domain/multi_floor_router.dart';
 import '../../models/building.dart';
+import '../../models/building_graph.dart';
 import '../../models/floor_graph.dart';
 import '../../models/floor_plan.dart';
 import '../../models/indoor_route.dart';
@@ -30,9 +32,9 @@ const _walkingSpeedMetersPerSecond = 1.2;
 const _mapShellTopChromePx = 68.0;
 const _mapShellBottomChromePx = 112.0;
 
-// IndoorMapBody 자신이 얹는 오버레이(층/건물명 인포바, 경로 ETA 카드) 높이.
-// 인포바는 top=78 지점에 있고, 위쪽 여백을 포함해 약 30px 세로를 차지한다.
-const _indoorInfoBarBottomPx = 30.0 + 78.0;
+// IndoorMapBody 자신이 얹는 하단 오버레이(경로 ETA 카드) 높이.
+// 층 selector는 이제 화면 왼쪽 하단(하단 바 옆)에 놓이므로 vertical fit에는
+// 영향을 주지 않고 여기서 별도 상수로 잡지 않는다.
 const _etaCardHeightPx = 130.0;
 
 // 사용자가 매장 내부/건물 밖을 탭했을 때 멀리 떨어진 복도로 강제 스냅하지
@@ -52,6 +54,12 @@ const _bottomBarInnerBottomPaddingPx = 14.0;
 // 홈/실내 세그먼트의 왼쪽에 8px 간격으로 PDR 제어를 붙이는 right inset.
 // iPhone 13 Pro 기준 세그먼트 폭(160px) + 화면 우측 여백(16px) + 간격(8px)이다.
 const _pdrControlRightInsetPx = 184.0;
+
+// 하단 바의 "위치 지정 / 위치 보정" 버튼 열 하단 offset(SafeArea 안쪽 기준).
+// MapBottomBar Column 구조: [버튼 열] + spacer(10) + [ModeSegment(~45)] + padding(14).
+// pill 하단을 이 값과 맞추면 층 선택기와 위 버튼들이 같은 층에 놓인 것처럼 보인다.
+const _floorSelectorBottomOffset =
+    _bottomBarInnerBottomPaddingPx + 45.0 + 10.0;
 
 /// 실내 지도 본문(층 평면도 + 경로/매장 오버레이). 검색창·길찾기·건물 전환 같은
 /// 공통 UI는 [MapShellScreen]이 상단/하단 바로 얹으므로 여기서는 다루지 않는다.
@@ -97,6 +105,11 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
   FloorGraph? _floorGraph;
   String _mapCalibrationVersion = 'unversioned';
   IndoorRoute? _route;
+
+  /// 층 간 경로일 때만 채워진다. [_route]는 이 다층 경로 중 지금 [_selectedFloor]
+  /// 에 해당하는 세그먼트를 얹은 것이며, 층 selector로 다른 층 지도를 열면
+  /// [_route]가 그 층 세그먼트로 갈아탄다(경로가 완전히 초기화되지 않음).
+  MultiFloorRoute? _multiFloorRoute;
   PoiSearchResult? _routeDestination;
   bool _interactive = true;
 
@@ -257,6 +270,7 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.buildingId != widget.buildingId) {
       _route = null;
+      _multiFloorRoute = null;
       _routeDestination = null;
       _highlightedStoreId = null;
       _loadBuilding();
@@ -324,23 +338,36 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
   }
 
   Future<void> _selectFloor(String floor) async {
-    final hadRoute = _route != null;
+    // 층 간 경로가 활성이면 그 층의 세그먼트로 갈아타고, 없으면(단일 층 경로
+    // 또는 경로 없음) 이전 경로/도착지 강조를 지운다.
+    final multiRoute = _multiFloorRoute;
+    final nextSegmentRoute = multiRoute?.segmentForFloor(floor)?.route;
+    final hadRouteVisible = _hasActiveRoute;
     setState(() {
       _selectedFloor = floor;
       _floorPlan = null;
       _floorGraph = null;
       _mapCalibrationVersion = 'unversioned';
-      // 층을 바꾸면 이전 경로는 다른 층 지도 위에 남아 있어도 의미가 없다.
-      _route = null;
-      _routeDestination = null;
+      if (multiRoute == null) {
+        // 단일 층 경로였다면 다른 층 지도 위에 남아 있어도 의미가 없다.
+        _route = null;
+        _routeDestination = null;
+      } else {
+        // 다층 경로: 이 층 세그먼트가 있으면 그것으로 갈아타고, 이 층에
+        // 세그먼트가 없으면 지도 위에는 그리지 않되 다층 경로 자체는 유지.
+        _route = nextSegmentRoute;
+      }
       _highlightedStoreId = null;
     });
-    if (hadRoute) widget.onRouteVisibleChanged?.call(false);
-    if (indoorNavigationDriver.currentRuntimeStatus.state !=
-        PdrRuntimeState.idle) {
-      await indoorNavigationDriver.changeFloor(floorId: floor);
-      if (mounted) _setPlacingAnchor(true);
+    if (hadRouteVisible != _hasActiveRoute) {
+      widget.onRouteVisibleChanged?.call(_hasActiveRoute);
     }
+    // 층 선택기(또는 라우팅 자동 층 전환)는 "다른 층 지도를 훑어보는" 동작이지
+    // 사용자가 물리적으로 이동한 신호가 아니다. 그래서 PDR 세션을 건드리지
+    // 않고 앵커도 그대로 둔다 — 다른 층에서는 anchor.floorId 게이팅으로 현재
+    // 위치 마커가 자동으로 숨겨지고, 사용자가 원래 층으로 돌아오면 다시
+    // 표시된다. 실제로 계단·엘리베이터로 이동해 새 층에서 위치를 다시 잡고
+    // 싶다면 하단 바 "위치 지정" 버튼으로 직접 앵커 배치를 시작하면 된다.
     await _loadFloorPlan(floor);
   }
 
@@ -413,50 +440,86 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
     _showPdrMessage('지도에서 현재 서 있는 위치를 탭해 지정해주세요.');
   }
 
-  /// 길찾기 시트에서 도착지를 고르면 호출된다. 목적지가 다른 층이면 그 층으로
-  /// 먼저 전환한 뒤 최단 경로(다익스트라)를 조회해 지도 위에 표시한다.
+  /// 길찾기 시트에서 도착지를 고르면 호출된다. 출발과 도착이 같은 층이면
+  /// 층별 그래프로 다익스트라를 돌리고, 다른 층이면 건물 전체 그래프
+  /// (수직 전이 간선 포함)로 층 간 경로를 계산해 층별 세그먼트로 나눠 표시한다.
   ///
-  /// [origin]을 주면(매장 정보 시트의 "출발지로 설정") 그 매장의 입구 노드를
-  /// 시작점으로 쓰고, 없으면 기존처럼 현재 위치에서 가장 가까운 매장 입구를
-  /// 자동으로 고른다.
+  /// [origin]을 주면 그 매장 입구 노드를 시작점으로 쓰고, 없으면 사용자의
+  /// 현재 위치(PDR 또는 앵커) 층에서 가장 가까운 그래프 노드를 자동으로 고른다.
   Future<void> showRouteTo(
     PoiSearchResult destination, {
     PoiSearchResult? origin,
   }) async {
-    if (destination.floor != _selectedFloor) {
-      await _selectFloor(destination.floor);
-      await _loadFloorPlan(destination.floor);
-    }
-    if (!mounted) return;
-    final floorPlan = _floorPlan;
-    if (floorPlan == null) return;
-    setState(() {
-      _routeDestination = destination;
-      // 새 목적지를 받을 때마다 초기화해서, 이번 경로가 계산되면 지도가
-      // 전체 경로에 맞춰 다시 줌아웃되게 한다(FloorPlanView의 null→값 전환).
-      _route = null;
-    });
-
+    // 출발점의 층을 결정한다. 명시적 출발지가 있으면 그 매장의 층, 없으면
+    // 사용자 앵커의 층(현재 표시 중인 층이 아니다 — 사용자가 다른 층 지도를
+    // 훑어보는 동안에도 앵커 층 기준으로 출발해야 한다).
+    final startFloor = origin?.floor ?? _pdrTrailState.anchor?.floorId;
+    final endFloor = destination.floor;
     final endNodeId = destination.nodeId;
-    final startNodeId =
-        origin?.nodeId ?? _pickStartNodeId(excludingNodeId: endNodeId);
-    if (endNodeId == null) return;
-    if (startNodeId == null) {
-      _showPdrMessage('출발 위치를 먼저 지정해주세요. PDR 시작 후 입구 또는 복도를 탭하면 됩니다.');
+    if (endNodeId == null) {
+      _showPdrMessage('도착지 노드 정보가 없어 경로를 계산할 수 없습니다.');
+      return;
+    }
+    if (startFloor == null) {
+      _showPdrMessage('출발 위치를 먼저 지정해주세요. 하단 "위치 지정" 버튼으로 이 층 위에 시작점을 탭하면 됩니다.');
       return;
     }
 
+    setState(() {
+      _routeDestination = destination;
+    });
+
+    if (startFloor == endFloor) {
+      await _computeAndShowSingleFloorRoute(
+        floor: endFloor,
+        endNodeId: endNodeId,
+        explicitOriginNodeId: origin?.nodeId,
+      );
+    } else {
+      await _computeAndShowMultiFloorRoute(
+        startFloor: startFloor,
+        endFloor: endFloor,
+        endNodeId: endNodeId,
+        explicitOriginNodeId: origin?.nodeId,
+      );
+    }
+  }
+
+  /// 같은 층 안에서 계산한 경로를 지도에 얹는다. 기존 흐름과 동일.
+  Future<void> _computeAndShowSingleFloorRoute({
+    required String floor,
+    required String endNodeId,
+    String? explicitOriginNodeId,
+  }) async {
+    if (floor != _selectedFloor) {
+      await _selectFloor(floor);
+      if (!mounted) return;
+    }
+    final floorPlan = _floorPlan;
+    if (floorPlan == null) return;
+
+    setState(() {
+      // 새 목적지를 받을 때마다 초기화해서, 이번 경로가 계산되면 지도가
+      // 전체 경로에 맞춰 다시 줌아웃되게 한다(FloorPlanView의 null→값 전환).
+      _route = null;
+      _multiFloorRoute = null;
+    });
+
+    final startNodeId = explicitOriginNodeId ??
+        _pickStartNodeIdOnFloor(floor, excludingNodeId: endNodeId);
+    if (startNodeId == null) {
+      _showPdrMessage('출발 위치를 먼저 지정해주세요. 하단 "위치 지정" 버튼으로 이 층 위에 시작점을 탭하면 됩니다.');
+      widget.onRouteVisibleChanged?.call(false);
+      return;
+    }
     final route = await buildingRepository.getShortestRoute(
       widget.buildingId,
-      destination.floor,
+      floor,
       startNodeId,
       endNodeId,
     );
     if (!mounted) return;
     if (route == null) {
-      // 다익스트라가 실패해 경로가 null로 왔을 때(예: startNodeId·endNodeId가
-      // 이 층 그래프에 없어 ArgumentError로 그래프가 거부한 경우). 이전에는
-      // 조용히 넘어가 사용자가 "왜 아무 반응도 없지" 하고 헷갈렸다.
       setState(() => _route = null);
       widget.onRouteVisibleChanged?.call(false);
       _showPdrMessage('경로를 찾지 못했습니다. 다른 매장을 골라보거나 출발지를 다시 지정해주세요.');
@@ -466,8 +529,71 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
     widget.onRouteVisibleChanged?.call(true);
   }
 
-  /// PDR 확정 위치(또는 사용자가 잡은 앵커)에서 가장 가까운 **그래프 노드**를
-  /// 골라 라우팅 시작점으로 쓴다.
+  /// 서로 다른 층 사이 경로를 건물 전체 그래프로 계산해, 층별 세그먼트로
+  /// 나눠 저장한다. 현재 화면(_selectedFloor)이 세그먼트를 가지고 있으면 그
+  /// 세그먼트가 지도에 그려지고, 다른 층으로 전환해도 그 층의 세그먼트로
+  /// 자동으로 갈아탄다.
+  Future<void> _computeAndShowMultiFloorRoute({
+    required String startFloor,
+    required String endFloor,
+    required String endNodeId,
+    String? explicitOriginNodeId,
+  }) async {
+    final buildingGraph = await buildingRepository.getBuildingGraph(
+      widget.buildingId,
+    );
+    if (!mounted) return;
+    if (buildingGraph == null || buildingGraph.nodes.isEmpty) {
+      _showPdrMessage('층 간 경로 계산에 필요한 그래프를 불러오지 못했습니다.');
+      widget.onRouteVisibleChanged?.call(false);
+      return;
+    }
+
+    final startNodeId = explicitOriginNodeId ??
+        _pickStartNodeIdInBuildingGraph(
+          graph: buildingGraph,
+          startFloorName: startFloor,
+          excludingNodeId: endNodeId,
+        );
+    if (startNodeId == null) {
+      _showPdrMessage('출발 위치를 먼저 지정해주세요. 하단 "위치 지정" 버튼으로 이 층 위에 시작점을 탭하면 됩니다.');
+      widget.onRouteVisibleChanged?.call(false);
+      return;
+    }
+
+    final route = computeMultiFloorRoute(buildingGraph, startNodeId, endNodeId);
+    if (!mounted) return;
+    if (route == null || route.isEmpty) {
+      setState(() {
+        _route = null;
+        _multiFloorRoute = null;
+      });
+      widget.onRouteVisibleChanged?.call(false);
+      _showPdrMessage('층 간 경로를 찾지 못했습니다. 엘리베이터/에스컬레이터 연결을 확인해주세요.');
+      return;
+    }
+
+    // 다층 경로 상태로 확정. 현재 표시 중인 층이 세그먼트를 가지고 있으면
+    // 그 세그먼트를 화면에 그리고, 아니면 상단 층 selector로 갈아탈 때
+    // _selectFloor가 그 층 세그먼트를 자동으로 얹는다.
+    setState(() {
+      _multiFloorRoute = route;
+      _route = route.segmentForFloor(_selectedFloor ?? '')?.route;
+    });
+    widget.onRouteVisibleChanged?.call(true);
+
+    // 다층 경로를 처음 그릴 때는 언제나 출발지 층으로 화면을 이동한다.
+    // 검색·시트로 목적지 층(또는 중간 층)을 훑어보다 도착을 확정한 순간에도
+    // 사용자가 가장 먼저 봐야 하는 건 "내가 지금 있는 곳과 첫 걸음의 방향"이지
+    // 목적지 층의 도착 지점이 아니다. 예전에는 "지금 층에 세그먼트만 있으면
+    // 그대로 둔다"고 봤는데, 이러면 3층 매장을 훑던 뷰가 그대로 3층에 머물러
+    // 위치 핀이 3층 에스컬레이터에 찍히는 오해를 만든다.
+    if (_selectedFloor != startFloor) {
+      await _selectFloor(startFloor);
+    }
+  }
+
+  /// 사용자 위치에서 가장 가까운 그래프 노드를 시작점으로 고른다.
   ///
   /// 예전엔 "가장 가까운 매장의 centroid"를 기준으로 그 매장의 entrance node를
   /// 반환했는데(a) 매장 중심점은 실제 입구 위치와 크게 다를 수 있고 (b) 사용자가
@@ -476,19 +602,72 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
   /// (복도·교차점·매장 입구 등)에서 사용자의 floor-local 위치와 가장 가까운
   /// 노드를 고르므로 복도에 서 있으면 그 복도 노드가 자연스럽게 잡힌다.
   ///
-  /// 위치를 모르는 상태에서는 도면 중심을 가짜 시작점으로 추정하지 않는다.
-  String? _pickStartNodeId({String? excludingNodeId}) {
+  /// [floorName]은 시작점이 있어야 하는 층 라벨. 사용자의 앵커가 그 층에 있어야
+  /// 위치를 알 수 있으므로, 앵커가 다른 층이면 null을 돌려준다. 위치를 모르는
+  /// 상태에서는 도면 중심을 가짜 시작점으로 추정하지 않는다.
+  String? _pickStartNodeIdOnFloor(
+    String floorName, {
+    String? excludingNodeId,
+  }) {
     final graph = _floorGraph;
     if (graph == null || graph.nodes.isEmpty) return null;
+    // 현재 로드된 층 그래프가 요청 층과 다르면 이 헬퍼로는 답할 수 없다.
+    if (_selectedFloor != floorName) return null;
     final current = _pdrFloorLocation();
     if (current == null) return null;
 
+    return _nearestNodeId(
+      graph.nodes,
+      current.eastM,
+      current.northM,
+      excludingNodeId: excludingNodeId,
+    );
+  }
+
+  /// 건물 전체 그래프에서 사용자의 앵커 층에 있는 노드 중 앵커 위치에 가장
+  /// 가까운 노드를 고른다. 층 간 경로의 시작점.
+  String? _pickStartNodeIdInBuildingGraph({
+    required BuildingGraph graph,
+    required String startFloorName,
+    String? excludingNodeId,
+  }) {
+    final anchor = _pdrTrailState.anchor;
+    if (anchor == null || anchor.floorId != startFloorName) return null;
+
+    // 앵커 층의 노드만 후보로 쓴다(앵커의 floorId는 사람이 보는 층 라벨이며,
+    // 그래프 노드의 floorId는 내부 Floor.id다 — floorNamesById로 매핑한다).
+    final floorId = graph.floorNamesById.entries
+        .firstWhere(
+          (entry) => entry.value == startFloorName,
+          orElse: () => const MapEntry('', ''),
+        )
+        .key;
+    if (floorId.isEmpty) return null;
+    final candidates = graph.nodes
+        .where((node) => node.floorId == floorId)
+        .toList(growable: false);
+    if (candidates.isEmpty) return null;
+
+    return _nearestNodeId(
+      candidates,
+      anchor.anchorLocalM.eastM,
+      anchor.anchorLocalM.northM,
+      excludingNodeId: excludingNodeId,
+    );
+  }
+
+  String? _nearestNodeId(
+    List<GraphNode> nodes,
+    double xM,
+    double yM, {
+    String? excludingNodeId,
+  }) {
     GraphNode? nearest;
     double? nearestDistanceSquared;
-    for (final node in graph.nodes) {
+    for (final node in nodes) {
       if (node.id == excludingNodeId) continue;
-      final dx = node.xM - current.eastM;
-      final dy = node.yM - current.northM;
+      final dx = node.xM - xM;
+      final dy = node.yM - yM;
       final distanceSquared = dx * dx + dy * dy;
       if (nearestDistanceSquared == null ||
           distanceSquared < nearestDistanceSquared) {
@@ -515,9 +694,59 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
   void _clearRoute() {
     setState(() {
       _route = null;
+      _multiFloorRoute = null;
       _routeDestination = null;
     });
     widget.onRouteVisibleChanged?.call(false);
+  }
+
+  /// ETA 카드가 지금 화면에 노출돼야 하는지. 단일 층 경로는 이 층에 실제
+  /// 폴리라인이 있을 때만 노출하지만, 다층 경로는 어느 층을 보고 있든 계속
+  /// 노출한다 — 사용자가 "여기서 어디로 얼마 걸어가야 하는지" 상시 알기 위함.
+  bool get _hasActiveRoute =>
+      _multiFloorRoute != null || _route != null;
+
+  /// ETA에 쓸 거리. 다층 경로면 층 전체 합, 단일 층이면 그 층 세그먼트 거리.
+  double _etaDistanceMeters(IndoorRoute? currentFloorRoute) {
+    final multi = _multiFloorRoute;
+    if (multi != null) return multi.totalDistanceMeters;
+    return currentFloorRoute?.distanceMeters ?? 0;
+  }
+
+  /// ETA 라벨. 다층 경로에서는 어떤 층/이동수단으로 가는지 요약을 덧붙여
+  /// 사용자가 "지금 이 층에 안 그려진 이유"를 이해할 수 있게 한다.
+  String _etaLabel(PoiSearchResult destination) {
+    final multi = _multiFloorRoute;
+    if (multi == null) return '${destination.name}까지';
+    final buffer = StringBuffer('${destination.name}까지');
+    for (var index = 0; index < multi.segments.length; index++) {
+      final segment = multi.segments[index];
+      buffer.write(index == 0 ? ' · ${segment.floorName}' : ' → ${segment.floorName}');
+      final transferMode = segment.transferModeToNext;
+      if (transferMode != null) {
+        buffer.write(transferMode == 'elevator' ? ' (엘리베이터)' : ' (에스컬레이터)');
+      }
+    }
+    return buffer.toString();
+  }
+
+  /// 지금 표시 중인 층에 도착 핀을 찍어야 하면 그 좌표, 아니면 null.
+  /// 단일 층 경로: 늘 도착지. 다층 경로: 마지막 세그먼트(목적지 층)일 때만.
+  ll.LatLng? _destinationPinForCurrentFloor(
+    IndoorRoute? currentFloorRoute,
+    PoiSearchResult? destination,
+  ) {
+    final multi = _multiFloorRoute;
+    if (multi != null) {
+      if (multi.destinationSegment.floorName != _selectedFloor) return null;
+      final points = multi.destinationSegment.route.points;
+      if (points.isNotEmpty) return points.last;
+      return destination?.point;
+    }
+    if (currentFloorRoute != null && currentFloorRoute.points.isNotEmpty) {
+      return currentFloorRoute.points.last;
+    }
+    return destination?.point;
   }
 
   List<PdrLocalPoint> get _pdrConfirmedFloorPath {
@@ -776,7 +1005,7 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
       message: message,
       bottomOffset:
           _mapShellBottomChromePx +
-          (_route != null ? _etaCardHeightPx : 0) +
+          (_hasActiveRoute ? _etaCardHeightPx : 0) +
           12,
     );
   }
@@ -788,7 +1017,7 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
       message: message,
       bottomOffset:
           _mapShellBottomChromePx +
-          (_route != null ? _etaCardHeightPx : 0) +
+          (_hasActiveRoute ? _etaCardHeightPx : 0) +
           12,
       actionLabel: 'JSON 공유',
       onAction: () => unawaited(_exportPdrDebugJson()),
@@ -857,7 +1086,7 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOut,
           left: 12,
-          bottom: _route != null ? _bottomBarLiftPx : 0,
+          bottom: _hasActiveRoute ? _bottomBarLiftPx : 0,
           child: SafeArea(
             top: false,
             child: Padding(
@@ -935,14 +1164,14 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
             activeEdgeIds: _pdrMatchedEdgeIds,
           )
         : const DebugMapOverlay();
-    // PDR anchor 또는 실제 route가 없을 때 도면 중심을 가짜 현재 위치로
-    // 그리지 않는다. 실내 PDR은 시작 위치를 모르면 절대 위치를 알 수 없다.
-    final current =
-        pdrCurrent ??
-        _pdrAnchorLocation ??
-        ((route != null && route.points.isNotEmpty)
-            ? route.points.first
-            : null);
+    // 위치 핀은 "사용자가 지금 있는 곳"만 표현한다. PDR 확정 위치도, 앵커도
+    // 이 층에 없다면 아무것도 그리지 않는다 — 예전에는 route.points.first로
+    // 폴백했는데, 다층 경로에서 앵커가 다른 층에 있을 때 이 값은 이 층 세그먼트의
+    // 시작점(=에스컬레이터/엘리베이터 도착 지점)이라 사용자 위치가 아니다.
+    // 그 폴백이 켜지면 "3층 에스컬레이터에 내가 서 있는 것"처럼 보여 오해를
+    // 만든다. 층이 다르면 뷰는 그저 다른 층의 지도만 보여주고, 자기 위치가
+    // 궁금하면 "위치 지정" 또는 재보정으로 원래 층으로 돌아가면 된다.
+    final current = pdrCurrent ?? _pdrAnchorLocation;
 
     // 지도가 화면 끝까지 그려지지만 위/아래 UI에 실제로 가려지는 두께를 계산해
     // FloorPlanView에 넘긴다. 축소 하한이 이 "가려지지 않는 세로 영역"에 맞춰
@@ -950,12 +1179,11 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
     // 인포바는 위쪽 대각선 공간만 살짝 차지해 vertical fit에 큰 영향은 없지만,
     // 하한이 아주 살짝 더 넉넉해지도록 top에 포함해 둔다.
     final systemPadding = MediaQuery.paddingOf(context);
-    final topOverlay =
-        systemPadding.top + _mapShellTopChromePx + _indoorInfoBarBottomPx;
+    final topOverlay = systemPadding.top + _mapShellTopChromePx;
     final bottomOverlay =
         systemPadding.bottom +
         _mapShellBottomChromePx +
-        (route != null ? _etaCardHeightPx : 0);
+        (_hasActiveRoute ? _etaCardHeightPx : 0);
 
     return Stack(
       children: [
@@ -975,10 +1203,9 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
           // 핀은 매장 중심(centroid)이 아니라 실제 도착 노드(경로의 마지막
           // 점 = 매장 입구)에 찍는다. 경로가 아직 계산되기 전 짧은 순간에는
           // 경로 정보가 없으므로 centroid로 폴백해 핀이 아예 안 보이는
-          // 상태를 만들지 않는다.
-          destination: (route != null && route.points.isNotEmpty)
-              ? route.points.last
-              : routeDestination?.point,
+          // 상태를 만들지 않는다. 단, 다층 경로에서는 도착지 층을 보고 있을
+          // 때만 도착 핀을 표시한다(중간 층은 지나가는 층이라 핀이 없어야 함).
+          destination: _destinationPinForCurrentFloor(route, routeDestination),
           routePoints: route?.points ?? const [],
           pdrPathPoints:
               debugEnabled && _debugModeController.showMapMatchedPdrPath
@@ -1024,24 +1251,28 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
             ),
           ),
 
-        // 모바일에서 status bar 높이만큼 아래로 내려온 검색창(MapTopBar) 밑에
-        // 층 chip이 깔리지 않도록 SafeArea로 감싼다. 웹/데스크톱은 SafeArea.top이
-        // 0이라 기존 위치가 그대로 유지된다. 같은 이유로 _FavoritesPill,
-        // _PdrMapControl 등 다른 상단 오버레이도 모두 SafeArea를 쓰고 있다.
-        Positioned(
-          top: 78,
-          left: 0,
-          right: 0,
-          child: SafeArea(
-            bottom: false,
-            child: _IndoorInfoBar(
-              building: building,
-              selectedFloor: _selectedFloor,
-              onSelectFloor: _selectFloor,
-              floorSelectorKey: _floorSelectorKey,
+        // 층 선택기는 화면 왼쪽 하단 — 하단 바의 "위치 지정 / 위치 보정" 버튼과
+        // 같은 baseline에 놓는다. 그 버튼 열은 SafeArea 바닥에서
+        // (padding 14 + ModeSegment 45 + spacer 10 = 69)px 위에 앉기 때문에
+        // pill 하단을 같은 오프셋에 맞춰 두 요소가 시각적으로 같은 층에 있게 한다.
+        // 경로 ETA가 뜨면 하단 바가 위로 리프트되므로 pill도 같이 올린다.
+        if (_selectedFloor != null && building.floors.isNotEmpty)
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+            left: 16,
+            bottom: _floorSelectorBottomOffset +
+                (_hasActiveRoute ? _bottomBarLiftPx : 0),
+            child: SafeArea(
+              top: false,
+              child: _FloorSelector(
+                key: _floorSelectorKey,
+                floors: building.floors,
+                selectedFloor: _selectedFloor!,
+                onSelectFloor: _selectFloor,
+              ),
             ),
           ),
-        ),
 
         // PDR 제어는 하단 홈/실내 세그먼트 바로 왼쪽에 같은 baseline으로 둔다.
         // 상단의 장소·카테고리·층 chip과 분리해 좁은 화면에서도 겹치지 않으며,
@@ -1051,7 +1282,7 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeOut,
             right: _pdrControlRightInsetPx,
-            bottom: route != null ? _bottomBarLiftPx : 0,
+            bottom: _hasActiveRoute ? _bottomBarLiftPx : 0,
             child: SafeArea(
               top: false,
               child: Padding(
@@ -1083,7 +1314,7 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
             child: SafeArea(child: _PdrAnchorHint(onCancel: _cancelPdrAnchor)),
           ),
 
-        if (route != null && routeDestination != null)
+        if (_hasActiveRoute && routeDestination != null)
           Positioned(
             left: 0,
             right: 0,
@@ -1093,12 +1324,13 @@ class IndoorMapBodyState extends State<IndoorMapBody> {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
                 child: EtaCard(
-                  distanceMeters: route.distanceMeters,
-                  minutes:
-                      (route.distanceMeters / _walkingSpeedMetersPerSecond / 60)
-                          .ceil()
-                          .clamp(1, 999),
-                  label: '${routeDestination.name}까지',
+                  distanceMeters: _etaDistanceMeters(route),
+                  minutes: (_etaDistanceMeters(route) /
+                          _walkingSpeedMetersPerSecond /
+                          60)
+                      .ceil()
+                      .clamp(1, 999),
+                  label: _etaLabel(routeDestination),
                   onClose: _clearRoute,
                 ),
               ),
@@ -1184,7 +1416,7 @@ class _PdrMapControl extends StatelessWidget {
               ),
             ),
             if (canExport) ...[
-              Container(width: 1, height: 24, color: const Color(0xFFE0E3E7)),
+              Container(width: 1, height: 24, color: AppColors.blue100),
               IconButton(
                 key: shareButtonKey,
                 tooltip: 'PDR 디버그 JSON 공유',
@@ -1254,56 +1486,11 @@ class _PdrAnchorHint extends StatelessWidget {
   }
 }
 
-/// 건물명 + 현재 층 + (여러 층이면) 층 전환 칩을 묶은 오버레이 정보 바.
-/// 예전에는 이 내용이 전용 Scaffold 상단바였지만, 검색/길찾기/건물전환은
-/// 이제 [MapShellScreen]의 공용 상단바가 맡으므로 여기서는 "지금 보고
-/// 있는 건물/층이 어디인지"만 알려주는 보조 역할만 한다.
-class _IndoorInfoBar extends StatelessWidget {
-  const _IndoorInfoBar({
-    required this.building,
-    required this.selectedFloor,
-    required this.onSelectFloor,
-    this.floorSelectorKey,
-  });
-
-  final Building building;
-  final String? selectedFloor;
-  final ValueChanged<String> onSelectFloor;
-
-  /// _FloorSelector에 붙일 GlobalKey. 부모(IndoorMapBody)가 이 key로 selector
-  /// 의 화면 영역을 알아내 지도 클릭 이벤트에서 제외하는 데 쓴다.
-  final GlobalKey? floorSelectorKey;
-
-  @override
-  Widget build(BuildContext context) {
-    final floors = building.floors;
-    final selectedFloor = this.selectedFloor;
-    if (floors.isEmpty || selectedFloor == null) {
-      return const SizedBox.shrink();
-    }
-    // 검색창 오른쪽 아래에 정렬된 층 selector만 남긴다. 건물 이름 라벨은
-    // 지도 위 chrome을 최소화하고자 제거했다 — 이미 건물 전환 시트에서
-    // 어느 건물인지 확인할 수 있다.
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Align(
-        alignment: Alignment.topRight,
-        child: _FloorSelector(
-          key: floorSelectorKey,
-          floors: floors,
-          selectedFloor: selectedFloor,
-          onSelectFloor: onSelectFloor,
-        ),
-      ),
-    );
-  }
-}
-
-/// 검색창 오른쪽 아래에 놓이는 접이식 층 선택기. 기본 상태에서는 현재 층
-/// 한 개만 chip으로 뜨고, 누르면 나머지 층이 세로로 펼쳐진다. 다른 층을
-/// 고르거나 바깥을 탭하면 다시 접힌다.
+/// 검색창 오른쪽 아래에 놓이는 세로 층 선택기. 어두운 stadium(약통) 형태
+/// 안에 층 라벨을 세로로 나열하고, 한 번에 최대 5개까지만 노출한다. 층이 그
+/// 이상이면 세로 스크롤로 나머지를 볼 수 있고, 현재 층은 파란 캡슐로 강조된다.
 ///
-/// 층이 하나뿐이면 접고 펴는 의미가 없으므로 단순 표시용 chip만 보인다.
+/// 층이 하나뿐이면 스크롤이 의미 없으므로 단일 셀만 표시한다.
 class _FloorSelector extends StatefulWidget {
   const _FloorSelector({
     super.key,
@@ -1321,162 +1508,191 @@ class _FloorSelector extends StatefulWidget {
 }
 
 class _FloorSelectorState extends State<_FloorSelector> {
-  bool _expanded = false;
+  // 한 셀 높이·표시할 셀 수·내부 여백은 시안(어두운 pill, 5개 노출)에 맞춘 값.
+  // 셀 높이를 바꾸면 pill 총 높이와 스크롤 위치 계산이 함께 달라진다.
+  // 하단 바의 "위치 지정 / 위치 보정" 버튼(44px 원형)과 같은 baseline 옆에 놓이므로
+  // 너무 크면 지도 좌측을 크게 가린다 — 셀·폰트·폭을 모두 축소해서 얹는다.
+  static const double _cellHeight = 36;
+  static const int _maxVisibleCells = 5;
+  static const double _pillPaddingV = 4;
+  static const double _pillWidth = 44;
+  static const double _labelFontSize = 14;
 
-  void _toggle() => setState(() => _expanded = !_expanded);
+  final ScrollController _scrollController = ScrollController();
 
-  void _pick(String floor) {
-    if (floor != widget.selectedFloor) widget.onSelectFloor(floor);
-    setState(() => _expanded = false);
+  @override
+  void initState() {
+    super.initState();
+    // 첫 프레임 후 현재 층이 뷰포트 중앙 근처에 오도록 스크롤. controller에
+    // 아직 clients가 붙기 전이라 postFrame에서 실행한다.
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _scrollToSelected(animate: false),
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant _FloorSelector oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.selectedFloor != widget.selectedFloor ||
+        oldWidget.floors != widget.floors) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _scrollToSelected(animate: true),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToSelected({required bool animate}) {
+    if (!_scrollController.hasClients) return;
+    final index = widget.floors.indexOf(widget.selectedFloor);
+    if (index < 0) return;
+    final viewport = _maxVisibleCells * _cellHeight;
+    final rawTarget = index * _cellHeight - viewport / 2 + _cellHeight / 2;
+    final position = _scrollController.position;
+    final target = rawTarget.clamp(
+      position.minScrollExtent,
+      position.maxScrollExtent,
+    );
+    if (animate) {
+      _scrollController.animateTo(
+        target,
+        duration: const Duration(milliseconds: 240),
+        curve: Curves.easeOut,
+      );
+    } else {
+      _scrollController.jumpTo(target);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final selected = widget.selectedFloor;
     final floors = widget.floors;
-    if (floors.length <= 1) {
-      return _FloorChip(label: selected, active: true, onTap: () {});
-    }
-    // 다른 층은 selected를 뺀 채 백엔드가 준 순서(위층 → 아래층, 엘리베이터
-    // 버튼판과 동일)로 세로로 떨어뜨린다.
-    final others = floors.where((f) => f != selected).toList(growable: false);
-    // 12개 층(6F~B6)이면 전부 펼쳤을 때 화면 밖으로 넘친다. 펼침 영역은 화면
-    // 높이의 절반으로 묶고 그 안에서 스크롤시킨다.
-    final maxListHeight = MediaQuery.sizeOf(context).height * 0.5;
-    return TapRegion(
-      onTapOutside: (_) {
-        if (_expanded) setState(() => _expanded = false);
-      },
-      // MapLibre가 PlatformView라, 지도 위 Flutter 오버레이를 탭해도 그 아래
-      // 네이티브 지도의 onMapClick이 그대로 함께 발화해 뒤에 있는 매장이
-      // 같이 눌리는 문제가 있다. 이 GestureDetector로 selector 영역의 모든
-      // 탭을 opaque로 흡수해서 새어나가지 않게 한다. 내부 chip InkWell은
-      // nested라 자기 tap을 그대로 받고, chip 사이 간격이나 stadium 외곽
-      // 모서리의 빈 공간만 여기가 소비한다.
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () {},
-        // IntrinsicWidth + crossAxisAlignment.stretch로 Column의 폭을 trigger
-        // chip(화살표까지 포함해 가장 넓다)에 맞추고, 아래 옵션 chip들이 그
-        // 폭으로 늘어나 모든 chip 크기가 동일해 보이게 한다.
-        child: IntrinsicWidth(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _FloorChip(
-                label: selected,
-                active: true,
-                onTap: _toggle,
-                // 접힘 상태에서는 아래로 펼칠 수 있음을 표시하고, 펼침 상태에서는
-                // 다시 접을 수 있음을 표시한다. 색은 active chip 톤에 맞춰 흰색.
-                trailing: Icon(
-                  _expanded ? Icons.expand_less : Icons.expand_more,
-                  size: 16,
-                  color: Colors.white,
-                ),
+    if (floors.isEmpty) return const SizedBox.shrink();
+
+    final visibleCount = math.min(floors.length, _maxVisibleCells);
+    final listHeight = visibleCount * _cellHeight;
+
+    // MapLibre가 PlatformView라, 지도 위 Flutter 오버레이를 탭해도 그 아래
+    // 네이티브 지도의 onMapClick이 그대로 함께 발화해 뒤에 있는 매장이
+    // 같이 눌리는 문제가 있다. 이 GestureDetector로 selector 영역의 모든
+    // 탭을 opaque로 흡수해서 새어나가지 않게 한다. 내부 셀 InkWell은
+    // nested라 자기 tap을 그대로 받는다.
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {},
+      child: _FloorPill(
+        width: _pillWidth,
+        listHeight: listHeight,
+        paddingV: _pillPaddingV,
+        child: floors.length == 1
+            ? _FloorCell(
+                label: floors.first,
+                selected: true,
+                height: _cellHeight,
+                onTap: () {},
+              )
+            : ListView.builder(
+                controller: _scrollController,
+                itemCount: floors.length,
+                itemExtent: _cellHeight,
+                padding: EdgeInsets.zero,
+                physics: const BouncingScrollPhysics(),
+                itemBuilder: (context, index) {
+                  final floor = floors[index];
+                  final selected = floor == widget.selectedFloor;
+                  return _FloorCell(
+                    label: floor,
+                    selected: selected,
+                    height: _cellHeight,
+                    onTap: () {
+                      if (!selected) widget.onSelectFloor(floor);
+                    },
+                  );
+                },
               ),
-              if (_expanded)
-                ConstrainedBox(
-                  constraints: BoxConstraints(maxHeight: maxListHeight),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        for (final floor in others) ...[
-                          const SizedBox(height: 6),
-                          _FloorChip(
-                            label: floor,
-                            active: false,
-                            onTap: () => _pick(floor),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
       ),
     );
   }
 }
 
-class _FloorChip extends StatelessWidget {
-  const _FloorChip({
-    required this.label,
-    required this.active,
-    required this.onTap,
-    this.trailing,
+/// 어두운 stadium(약통) 컨테이너. 내부 리스트/단일 셀을 감싸는 껍데기 역할.
+class _FloorPill extends StatelessWidget {
+  const _FloorPill({
+    required this.width,
+    required this.listHeight,
+    required this.paddingV,
+    required this.child,
   });
 
-  final String label;
-  final bool active;
-  final VoidCallback onTap;
-
-  /// 층 라벨 오른쪽에 붙일 아이콘 등의 위젯. 드롭다운 trigger에서
-  /// expand_more/expand_less 아이콘을 붙이는 데 쓴다.
-  final Widget? trailing;
+  final double width;
+  final double listHeight;
+  final double paddingV;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    // Material에 shape를 지정하고 clipBehavior: antiAlias를 주면 InkWell
-    // splash/hover/focus 하이라이트가 stadium 밖으로 새지 않고 chip 모양
-    // 안에서 잘려서 그려진다. 이전 구현(BoxDecoration 위 InkWell)에서는
-    // 클릭·포커스 시 아주 살짝 네모난 하이라이트 상자가 비쳤다.
-    final shape = StadiumBorder(
-      side: BorderSide(
-        color: active ? AppColors.indoor : const Color(0x14000000),
-        width: 1.5,
+    final radius = BorderRadius.circular(width / 2);
+    return Container(
+      width: width,
+      height: listHeight + paddingV * 2,
+      padding: EdgeInsets.symmetric(vertical: paddingV),
+      decoration: BoxDecoration(
+        color: const Color(0xF2FFFFFF),
+        borderRadius: radius,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.14),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
+      // 리스트 아이템이 pill 상·하 안쪽 반경을 넘어 그려지지 않도록 클립.
+      child: ClipRRect(borderRadius: radius, child: child),
     );
-    return SizedBox(
-      height: 30,
+  }
+}
+
+class _FloorCell extends StatelessWidget {
+  const _FloorCell({
+    required this.label,
+    required this.selected,
+    required this.height,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final double height;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(height / 2);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
       child: Material(
-        color: active ? AppColors.indoor : Colors.white,
-        shape: shape,
+        color: selected ? AppColors.indoor : Colors.transparent,
+        borderRadius: radius,
         clipBehavior: Clip.antiAlias,
-        elevation: active ? 3 : 1.5,
-        shadowColor: active
-            ? AppColors.indoor.withValues(alpha: 0.38)
-            : Colors.black.withValues(alpha: 0.16),
         child: InkWell(
           onTap: onTap,
-          customBorder: shape,
-          child: Padding(
-            // trailing이 있는 trigger chip은 텍스트를 왼쪽, 화살표를 오른쪽
-            // 가장자리에 붙여 드롭다운 형태를 명확히 하고, 옵션 chip은 늘어난
-            // 폭 안에서 텍스트를 가운데 정렬해 균형을 잡는다.
-            padding: EdgeInsets.symmetric(
-              horizontal: trailing == null ? 12 : 12,
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: _FloorSelectorState._labelFontSize,
+                fontWeight: FontWeight.w700,
+                color: selected
+                    ? Colors.white
+                    : AppColors.text.withValues(alpha: 0.55),
+              ),
             ),
-            child: trailing == null
-                ? Center(
-                    child: Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w700,
-                        color: active ? Colors.white : AppColors.muted,
-                      ),
-                    ),
-                  )
-                : Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        label,
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w700,
-                          color: active ? Colors.white : AppColors.muted,
-                        ),
-                      ),
-                      trailing!,
-                    ],
-                  ),
           ),
         ),
       ),
