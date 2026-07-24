@@ -6,16 +6,38 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 COPY requirements.txt .
+
+# torch를 CPU 전용 휠로 먼저 고정한다. requirements.txt의 sentence-transformers는
+# torch>=1.11만 요구하므로, PyPI 기본 인덱스에 맡기면 리눅스에서 CUDA 빌드를 끌어온다
+# (torch 731MB + nvidia-*/triton 14개 2,178MB = 압축 기준 약 2.9GB).
+# 서버는 CPU 추론만 하므로 GPU 런타임은 전부 죽은 용량이다. CPU 휠은 168MB.
+# requirements.txt는 건드리지 않는다 — Windows/macOS 로컬 개발은 이미 CPU 휠을 받는다.
 RUN python -m pip install --upgrade pip \
+    && python -m pip install --no-cache-dir \
+       --index-url https://download.pytorch.org/whl/cpu torch==2.7.0 \
     && python -m pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+# appuser를 /app에 큰 파일을 쓰기 전에 만든다. 나중에 chown -R /app을 하면
+# 모델 캐시(약 420MB)를 통째로 새 레이어에 복사해 이미지가 약 450MB 불어난다.
+# 대신 여기서 유저를 만들고 /app 소유권만 넘긴 뒤, 이후 쓰기를 처음부터 appuser로 한다.
+RUN useradd --create-home --shell /bin/bash appuser \
+    && mkdir -p /app/data \
+    && chown appuser:appuser /app /app/data
 
-RUN mkdir -p /app/data \
-    && useradd --create-home --shell /bin/bash appuser \
-    && chown -R appuser:appuser /app
+# 소스를 처음부터 appuser 소유로 복사한다(런타임에 재-chown 불필요).
+COPY --chown=appuser:appuser . .
+
+# 임베딩 모델 캐시를 이미지 안에 고정한다. 지정하지 않으면 빌드는 root의 ~/.cache에,
+# 런타임은 appuser의 ~/.cache에 캐시를 찾아 서로 어긋난다.
+ENV HF_HOME=/app/.cache/huggingface \
+    NAV_WARM_EMBEDDING=1
 
 USER appuser
+
+# AI 질의용 모델(약 420MB)을 빌드 시점에 appuser로 받아 둔다. 캐시가 처음부터 appuser
+# 소유라 chown -R가 필요없다. 이걸 빼면 Cloud Run 콜드 스타트마다 첫 /query/ai 요청이
+# 다운로드를 기다린다(파일시스템이 휘발성이라 캐시가 남지 않는다).
+RUN python -m scripts.warm_embedding_model
 
 # Cloud Run은 $PORT(기본 8080)로 요청을 보낸다. 로컬 실행 시에는 8080으로 뜬다.
 EXPOSE 8080

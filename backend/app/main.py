@@ -60,6 +60,14 @@ def create_app() -> FastAPI:
     def health():
         return {"status": "ok"}
 
+    # AI 질의용 임베딩 모델을 백그라운드로 미리 올린다(NAV_WARM_EMBEDDING=1일 때만).
+    # import까지 이 안에 두는 이유: 끄고 실행하는 프로세스(테스트 등)는 torch를
+    # 건드리지 않는다는 query_semantic의 지연 로드 원칙을 그대로 유지하기 위해서다.
+    if settings.warm_embedding:
+        from app.repositories import query_semantic
+
+        query_semantic.warm_model_in_background()
+
     return app
 
 
