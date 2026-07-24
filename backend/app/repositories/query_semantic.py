@@ -48,6 +48,27 @@ _index_lock = threading.Lock()
 _indexes: dict[str, tuple[Any, list[str]]] = {}
 
 
+def _load_model() -> Any:
+    """로컬 캐시를 먼저 보고, 없을 때만 Hub에서 내려받는다.
+
+    캐시가 있어도 기본 로드는 리비전 확인용 익명 HTTP 요청을 보내
+    "unauthenticated requests to the HF Hub" 경고와 함께 왕복 지연을 만든다
+    (실측: 온라인 11.0초 / 로컬 전용 6.5초). 캐시 히트가 정상 경로이므로
+    local_files_only를 먼저 시도하고, 캐시가 없는 새 머신에서만 Hub로 폴백한다.
+
+    HF_HUB_OFFLINE 환경변수 대신 인자로 거는 이유: 그 변수는 huggingface_hub
+    import 시점에 읽히는데 이 모듈은 지연 import라 설정 순서가 깨지기 쉽고,
+    캐시 없는 환경을 폴백 없이 막아버린다.
+    """
+    from sentence_transformers import SentenceTransformer
+
+    try:
+        return SentenceTransformer(_MODEL_NAME, local_files_only=True)
+    except Exception as error:  # noqa: BLE001 - 캐시 미스·손상 모두 Hub 재시도로 회복
+        print(f"임베딩 모델 로컬 캐시 미스({_MODEL_NAME}): {error} → Hub에서 내려받는다")
+        return SentenceTransformer(_MODEL_NAME)
+
+
 def _get_model() -> Any | None:
     """모델을 한 번만 로드해 재사용. 로드 실패 시 None을 돌려 AI 경로만 비활성한다."""
     global _model, _model_load_failed
@@ -59,13 +80,30 @@ def _get_model() -> Any | None:
     with _model_lock:
         if _model is None and not _model_load_failed:
             try:
-                from sentence_transformers import SentenceTransformer
-
-                _model = SentenceTransformer(_MODEL_NAME)
+                _model = _load_model()
             except Exception as error:  # noqa: BLE001 - 어떤 실패든 경량 경로는 살린다
                 print(f"임베딩 모델 로드 실패({_MODEL_NAME}): {error}")
                 _model_load_failed = True
     return _model
+
+
+def warm_model_in_background() -> threading.Thread:
+    """모델 로드를 데몬 스레드로 미리 돌려 첫 /query/ai의 대기를 없앤다.
+
+    로드 자체는 캐시가 있어도 CPU로 6초대가 걸린다(실측). 그 시간을 첫 질의가
+    아니라 기동 직후에 쓰면 사용자에게는 보이지 않는다. 그동안 /health·타일 같은
+    다른 요청은 정상 처리된다 — 이 스레드는 아무 락도 잡고 있지 않다.
+
+    _get_model()이 _model_lock으로 직렬화하므로, 워밍이 끝나기 전에 질의가 들어와도
+    모델을 두 번 로드하지 않고 락에서 기다렸다가 같은 인스턴스를 쓴다.
+    daemon=True — 로드가 남아 있어도 서버 종료를 막지 않는다.
+
+    주의: Cloud Run 기본 설정은 요청 처리 중이 아닐 때 CPU를 조인다. startup CPU
+    boost나 min-instances 없이는 이 워밍이 기동 직후에 끝나지 않을 수 있다.
+    """
+    thread = threading.Thread(target=_get_model, name="embedding-warmup", daemon=True)
+    thread.start()
+    return thread
 
 
 def _document_text(store: "Store") -> str:

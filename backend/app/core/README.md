@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     database_url: str = DEFAULT_DATABASE_URL
     sql_echo: bool = False        # NAV_SQL_ECHO — 실행된 SQL을 app/sql/queries.sql에
     http_capture: bool = False    # NAV_HTTP_CAPTURE — 요청/응답 JSON을 app/args/에
+    warm_embedding: bool = False  # NAV_WARM_EMBEDDING — 기동 시 임베딩 모델 백그라운드 선로드
     model_config = SettingsConfigDict(env_prefix="NAV_", case_sensitive=False)
 
 
@@ -46,6 +47,10 @@ settings = Settings()   # import 시 1회 생성, 프로세스 전역 재사용
 - **진단 로그 둘은 기본이 꺼짐(False)이다.** 로컬 개발 실행에서만
   `NAV_SQL_ECHO=1`·`NAV_HTTP_CAPTURE=1`로 켠다. 실행 명령은
   [`DEBUG_LOGGING.md`](../../DEBUG_LOGGING.md)를 따른다.
+- **`NAV_WARM_EMBEDDING`도 기본 꺼짐이다.** 켜면 `main.create_app()`이 기동 직후
+  임베딩 모델을 백그라운드 데몬 스레드로 선로드해 첫 `/query/ai` 지연을 없앤다. 켠 프로세스는
+  torch를 로드하고 메모리를 상주시키므로 **배포 이미지에서만 켜고**(`Dockerfile`), 테스트·로컬은
+  끈다. 배포 스펙은 [`gcp-instance.md`](../../../docs/guide/gcp-instance.md).
 - **기본 DB는 `backend/data/navigation.db`** (SQLite 파일). `API_ROOT`는 이 파일(`app/core/config.py`) 기준 두 단계 위 = `backend/`.
   - `parents[0]=core`, `parents[1]=app`, `parents[2]=backend`.
   - ⚠️ 이 파일을 다른 깊이로 옮기면 `parents[2]`도 같이 고쳐야 한다.

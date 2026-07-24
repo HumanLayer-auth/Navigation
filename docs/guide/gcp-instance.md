@@ -3,6 +3,30 @@
 > 백엔드 FastAPI 서버를 Google Cloud Run에 배포하고 관리하는 방법을 정리합니다.
 > Flutter 클라이언트는 로컬에서 실행하고 이 서버 주소를 바라봅니다.
 
+> **현재 상태(2026-07-24): 배포된 서비스 없음.** 이전 `navigation-api` 서비스는
+> 비용 관리를 위해 삭제되었고, 아래 URL·설정 표는 재배포 시의 **기준 스펙**이다.
+> `gcloud run services list`가 비어 있는 것이 정상이며, 재배포는 [재배포](#재배포)를 따른다.
+
+## AI 질의(임베딩) 때문에 주의할 배포 스펙
+
+`/query/ai`는 문장 임베딩 모델(`jhgan/ko-sroberta-multitask`)을 로드한다. 이게 배포
+스펙 두 가지를 좌우한다. 근거는 로컬 실측이다.
+
+- **메모리는 최소 2 GiB.** 모델 로드 + 인코딩 1회 후 프로세스 RSS가 **약 775 MB**로
+  측정됐다. 표에 남아 있던 512 MiB로는 첫 AI 질의에서 OOM으로 컨테이너가 죽는다.
+- **이미지에서 torch는 CPU 전용 휠로 고정한다.** PyPI 기본 인덱스는 리눅스에서 CUDA
+  빌드 torch를 주는데, `nvidia-*`/`triton`까지 합쳐 압축 기준 약 2.9 GB다. Cloud Run
+  컨테이너에는 GPU가 없어 전부 죽은 용량이므로 `Dockerfile`이 CPU 휠(약 168 MB)로
+  고정한다. CUDA는 "GPU 필수"가 아니라 "GPU용 라이브러리를 동봉"한다는 뜻이라,
+  CPU 휠로 바꿔도 추론 결과·속도는 동일하다.
+- **모델은 빌드 시점에 이미지에 굽는다.** `Dockerfile`이 `scripts.warm_embedding_model`로
+  모델(약 420 MB)을 미리 받아 캐시에 넣는다. Cloud Run 파일시스템은 휘발성이라, 굽지
+  않으면 콜드 스타트마다 첫 질의가 다운로드를 기다린다.
+- **`NAV_WARM_EMBEDDING=1`은 이미지에 이미 설정돼 있다.** 기동 직후 백그라운드 데몬
+  스레드가 모델을 올려 첫 질의 대기(약 6초)를 없앤다. 다만 Cloud Run 기본 설정은 요청
+  처리 중이 아닐 때 CPU를 조이므로, 이 워밍이 기동 직후에 끝나려면 `--min-instances 1`
+  또는 startup CPU boost가 필요하다(둘 다 과금).
+
 ## 배포된 서비스 요약
 
 | 항목 | 값 |
@@ -12,7 +36,7 @@
 | 리전 | `asia-northeast3` (서울) |
 | 서비스 URL | `https://navigation-api-465890645804.asia-northeast3.run.app` |
 | 인증 | 없음 (`--allow-unauthenticated`, 데모용 공개) |
-| 메모리 | 512 MiB |
+| 메모리 | 2 GiB (임베딩 모델 상주 약 775 MB 실측 반영, 최소 요구) |
 | CPU | 1 vCPU |
 | 최소 인스턴스 | 1 (콜드 스타트 방지) |
 | 최대 인스턴스 | 100 (기본값) |
@@ -57,8 +81,13 @@ gcloud run deploy navigation-api `
   --source . `
   --region asia-northeast3 `
   --allow-unauthenticated `
+  --memory 2Gi `
   --min-instances 1
 ```
+
+> `--memory 2Gi`는 임베딩 모델 상주 때문에 필수다(위 "주의할 배포 스펙" 참고).
+> `--source .`는 Cloud Build가 `Dockerfile`을 그대로 쓰므로 CPU 전용 torch 고정과
+> 모델 굽기가 자동 적용된다. 최초 빌드는 이미지가 커서(수 GB) 몇 분 걸린다.
 
 ## 상태 확인
 
