@@ -136,9 +136,10 @@ def get_building_graph(
     if building is None:
         return None
 
-    floor_ids = session.scalars(
-        select(Floor.id).where(Floor.building_id == building_id)
+    floors = session.scalars(
+        select(Floor).where(Floor.building_id == building_id)
     ).all()
+    floor_ids = [floor.id for floor in floors]
     nodes = session.scalars(select(Node).where(Node.floor_id.in_(floor_ids))).all()
     node_ids = {node.id for node in nodes}
 
@@ -158,6 +159,7 @@ def get_building_graph(
     return {
         "building": {"id": building.id, "name": building.name},
         "vertical": vertical,
+        "floors": [{"id": floor.id, "name": floor.name} for floor in floors],
         "nodes": [_to_graph_node_dict(node) for node in nodes],
         "edges": [_to_edge_dict(edge) for edge in edges],
     }
