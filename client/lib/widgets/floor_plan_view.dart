@@ -63,10 +63,87 @@ const _poiIconByType = <String, IconData>{
 const _defaultPoiIcon = Icons.place;
 const _poiIconBackgroundColor = Color(0xFF76AE6D);
 
+/// 매장 폴리곤이지만 이름이 이 표에 있는 시설(화장실·정수기 등)은 라벨
+/// 옆에 종류별 아이콘을 함께 얹는다. POI(엘리베이터·에스컬레이터 등)와 달리
+/// 이 시설들은 백엔드에서 `pois` 레이어가 아니라 `stores` 레이어에 들어오기
+/// 때문에 POI 아이콘 매핑만으로는 눈에 띄지 않는다. 벡터 타일에는
+/// subcategory 속성이 없어(name/id/kind만 노출) name으로 매칭한다.
+///
+/// 화장실은 흰 원 안에 파란 Icons.man과 분홍 Icons.woman을 나란히 얹어
+/// 남/여 화장실임이 한눈에 읽히도록 한다(duo 스타일에서 left/rightBackground
+/// 값은 배경색이 아니라 좌/우 아이콘 색으로 쓰인다).
+/// 장애인화장실은 접근성 파랑 원에 휠체어 아이콘(Icons.accessible)을 얹고,
+/// 나머지 시설은 다른 POI와 동일하게 초록 원 위에 흰 아이콘으로 그린다.
+const _storeFacilityStyleByName = <String, _FacilityIconStyle>{
+  '화장실': _FacilityIconStyle.duo(
+    leftIcon: Icons.man,
+    leftBackground: Color(0xFF1E88E5),
+    rightIcon: Icons.woman,
+    rightBackground: Color(0xFFEC407A),
+  ),
+  '장애인화장실': _FacilityIconStyle(
+    icon: Icons.accessible,
+    background: Color(0xFF1565C0),
+  ),
+  '정수기': _FacilityIconStyle(
+    icon: Icons.water_drop_outlined,
+    background: _poiIconBackgroundColor,
+  ),
+  '수유실': _FacilityIconStyle(
+    icon: Icons.child_friendly,
+    background: _poiIconBackgroundColor,
+  ),
+  '흡연실 (전자담배 전용)': _FacilityIconStyle(
+    icon: Icons.smoking_rooms,
+    background: _poiIconBackgroundColor,
+  ),
+  'ATM (하나은행)': _FacilityIconStyle(
+    icon: Icons.local_atm,
+    background: _poiIconBackgroundColor,
+  ),
+  '취식 가능장소': _FacilityIconStyle(
+    icon: Icons.dining_outlined,
+    background: _poiIconBackgroundColor,
+  ),
+};
+
+/// 편의시설 아이콘 스타일. 단일 아이콘 모드와 좌/우 반원을 서로 다른 색으로
+/// 나눠 두 아이콘을 얹는 duo 모드를 지원한다(화장실 남/여 표현용).
+class _FacilityIconStyle {
+  const _FacilityIconStyle({required this.icon, required this.background})
+      : leftIcon = null,
+        leftBackground = null,
+        rightIcon = null,
+        rightBackground = null;
+
+  const _FacilityIconStyle.duo({
+    required IconData this.leftIcon,
+    required Color this.leftBackground,
+    required IconData this.rightIcon,
+    required Color this.rightBackground,
+  })  : icon = Icons.wc,
+        background = const Color(0xFF9E9E9E);
+
+  final IconData icon;
+  final Color background;
+  final IconData? leftIcon;
+  final Color? leftBackground;
+  final IconData? rightIcon;
+  final Color? rightBackground;
+
+  bool get isDuo => leftIcon != null;
+}
+
 /// [MapLibreMapController.addImage]에 등록할 때 쓰는 이름. 같은 아이콘을
 /// 여러 type이 공유할 수 있으므로 type이 아니라 아이콘 자체를 키로 삼아
 /// 중복 렌더링/등록을 피한다.
 String _poiIconImageName(IconData icon) => 'poi-icon-${icon.codePoint}';
+
+/// 편의시설 아이콘은 이름별로 배경색/구성이 달라(화장실 duo, 장애인화장실
+/// 파랑 등) 아이콘 codePoint만으로는 구분되지 않는다. 시설 이름을 그대로
+/// 키로 삼아 addImage에 등록한다.
+String _facilityIconImageName(String facilityName) =>
+    'facility-icon-$facilityName';
 
 /// 목적지 핀 이미지의 addImage 등록 이름.
 const _destinationPinImageName = 'marker-destination-pin';
@@ -76,6 +153,37 @@ const _currentLocationDotImageName = 'marker-current-location-dot';
 /// 지도 위에 얹을 현재 위치/목적지 점 마커. 종류에 따라 스타일이 달라진다
 /// (마커 색상은 [_markersGeoJson]의 circle-color data-driven 표현식이 결정).
 enum MapMarkerKind { current, destination }
+
+/// FloorPlanView의 카메라를 외부에서 직접 조작(회전/중심 이동)하기 위한
+/// controller. 상위 위젯(IndoorMapBody)이 이 controller를 생성해 FloorPlanView
+/// 에 전달하면, FloorPlanView가 initState에서 자신을 attach한다.
+///
+/// 건물/층이 바뀔 때 FloorPlanView는 ValueKey 차이로 통째로 재생성되지만,
+/// controller는 새 state가 만들어질 때 자동으로 재attach되므로 상위는 controller
+/// 를 한 번만 만들어 놓고 계속 재사용할 수 있다.
+class FloorPlanController {
+  FloorPlanViewState? _state;
+
+  void _attach(FloorPlanViewState state) => _state = state;
+
+  void _detach(FloorPlanViewState state) {
+    if (identical(_state, state)) _state = null;
+  }
+
+  /// FloorPlanView가 아직 준비되지 않았거나 detach된 상태면 false.
+  bool get isAttached => _state != null;
+
+  /// 카메라 bearing만 [bearingDeg](북쪽 기준 시계방향)로 돌린다. 사용자가
+  /// 바라보는 방향을 화면 위쪽에 오게 하는 나침반 모드에 쓴다.
+  Future<void> rotateToBearing(double bearingDeg) async {
+    await _state?.rotateToBearing(bearingDeg);
+  }
+
+  /// 카메라 중심만 [target]으로 옮긴다. bearing/줌은 유지.
+  Future<void> centerOn(ll.LatLng target) async {
+    await _state?.centerOn(target);
+  }
+}
 
 /// 매장 폴리곤을 탭할 수 있는 실내 평면도 뷰.
 ///
@@ -108,7 +216,12 @@ class FloorPlanView extends StatefulWidget {
     this.visibleInsets = EdgeInsets.zero,
     this.overlayHitTest,
     this.onCameraBearingChanged,
+    this.controller,
   });
+
+  /// 카메라를 외부에서 조작(회전/중심 이동)하기 위한 controller. 상위 위젯이
+  /// 재보정 버튼처럼 지도 밖에서 오는 명령을 이 controller로 전달한다.
+  final FloorPlanController? controller;
 
   final String buildingId;
   final String floorName;
@@ -176,14 +289,26 @@ class FloorPlanView extends StatefulWidget {
   final EdgeInsets visibleInsets;
 
   @override
-  State<FloorPlanView> createState() => _FloorPlanViewState();
+  State<FloorPlanView> createState() => FloorPlanViewState();
 }
 
-class _FloorPlanViewState extends State<FloorPlanView> {
+class FloorPlanViewState extends State<FloorPlanView> {
   MapLibreMapController? _controller;
   bool _styleReady = false;
   Size? _lastViewport;
   double? _minZoom;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller?._attach(this);
+  }
+
+  @override
+  void dispose() {
+    widget.controller?._detach(this);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -270,6 +395,10 @@ class _FloorPlanViewState extends State<FloorPlanView> {
   @override
   void didUpdateWidget(covariant FloorPlanView oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.controller, widget.controller)) {
+      oldWidget.controller?._detach(this);
+      widget.controller?._attach(this);
+    }
     if (!_styleReady) return;
     if (oldWidget.buildingId != widget.buildingId ||
         oldWidget.floorName != widget.floorName) {
@@ -279,11 +408,12 @@ class _FloorPlanViewState extends State<FloorPlanView> {
     }
     if (oldWidget.routePoints != widget.routePoints) {
       _updateRouteSource();
-      // 경로가 새로 생기면(이전엔 없다가 이번에 생김) 경로 전체가 화면에
-      // 들어오도록 카메라를 자동으로 줌아웃한다. 이미 경로가 있는 상태에서
-      // 갱신될 때는(예: PDR 위치가 계속 바뀌는 경우) 다시 맞추지 않는다 —
-      // 사용자가 지도를 보는 중에 카메라가 계속 튀면 방해가 된다.
-      if (widget.routePoints.length >= 2 && oldWidget.routePoints.length < 2) {
+      // 경로가 새로 생기면(이전엔 없다가 이번에 생김) 사용자의 현재 위치인
+      // 경로 출발점으로 카메라를 옮겨, 지금 어디서 어느 방향으로 가야 하는지가
+      // 바로 보이게 한다. 이미 경로가 있는 상태에서 갱신될 때는(예: PDR
+      // 위치가 계속 바뀌는 경우) 다시 맞추지 않는다 — 사용자가 지도를 보는
+      // 중에 카메라가 계속 튀면 방해가 된다.
+      if (widget.routePoints.isNotEmpty && oldWidget.routePoints.isEmpty) {
         _fitToRouteBounds(widget.routePoints);
       }
     }
@@ -345,6 +475,12 @@ class _FloorPlanViewState extends State<FloorPlanView> {
     // 바로 위, 라벨/POI 아이콘보다 아래에 깔아서 초록 아이콘과 한 덩어리로
     // 읽히게 한다. 필터가 어긋나면(백엔드 name 변경 등) 이 레이어만 비고
     // 아래 일반 매장 스타일로 자연스럽게 폴백된다.
+    //
+    // 필터는 이 파일의 다른 레이어(_debugGraphSourceId 등)와 같은 ['any',
+    // ['==', ...], ...] 형태를 쓴다 — ['match', [get, name], <배열>, ...]도
+    // 스펙상은 유효하지만 MapLibre GL Native(Android/iOS)에서 label 위치의
+    // 배열이 항상 안정적으로 파싱되지 않아 조용히 필터 매치가 0건이 되던
+    // 케이스가 있었다. ==는 이 파일 전반에서 검증된 경로라 그 쪽으로 통일한다.
     await controller.addFillLayer(
       _tileSourceId,
       _verticalTransportFillLayerId,
@@ -354,11 +490,13 @@ class _FloorPlanViewState extends State<FloorPlanView> {
       ),
       sourceLayer: 'stores',
       filter: [
-        'match',
-        ['get', 'name'],
-        _verticalTransportStoreNames,
-        true,
-        false,
+        'any',
+        for (final name in _verticalTransportStoreNames)
+          [
+            '==',
+            ['get', 'name'],
+            name,
+          ],
       ],
       enableInteraction: false,
     );
@@ -400,6 +538,13 @@ class _FloorPlanViewState extends State<FloorPlanView> {
       await controller.addImage(
         _poiIconImageName(icon),
         await _renderPoiIcon(icon),
+      );
+    }
+    // 편의시설 아이콘은 이름별로 배경색/구성이 달라 각각 별도로 렌더링한다.
+    for (final entry in _storeFacilityStyleByName.entries) {
+      await controller.addImage(
+        _facilityIconImageName(entry.key),
+        await _renderFacilityIcon(entry.value),
       );
     }
     await controller.addImage(
@@ -447,6 +592,45 @@ class _FloorPlanViewState extends State<FloorPlanView> {
         textHaloWidth: 1,
       ),
       sourceLayer: 'pois',
+      enableInteraction: false,
+    );
+
+    // 편의시설 아이콘: `stores` 소스에 있는 화장실·정수기 같은 시설물은 POI
+    // 레이어를 타지 않으므로 아이콘이 안 붙는다. 매장 이름을 기준으로
+    // 심볼을 하나 더 얹어 라벨 바로 위에 아이콘이 뜨게 한다.
+    // 필터에서 걸러진 매장은 아예 이 레이어에 등장하지 않고, iconImage의
+    // match 표현식은 안전을 위해 알 수 없는 name이 왔을 때 default를 준다.
+    await controller.addSymbolLayer(
+      _tileSourceId,
+      'floor-store-facility-icons',
+      SymbolLayerProperties(
+        iconImage: [
+          'match',
+          ['get', 'name'],
+          for (final entry in _storeFacilityStyleByName.entries) ...[
+            entry.key,
+            _facilityIconImageName(entry.key),
+          ],
+          _poiIconImageName(_defaultPoiIcon),
+        ],
+        iconSize: 0.28,
+        iconOpacity: 0.92,
+        iconAllowOverlap: true,
+        // 라벨(textOffset 없음, centroid에 그려짐) 위쪽으로 아이콘이 살짝
+        // 뜨도록 y를 음수(=위)로 준다. 폴리곤이 작아도 아이콘과 라벨이
+        // 서로 가리지 않고 위·아래로 정렬돼 읽힌다.
+        iconOffset: [0, -18],
+      ),
+      sourceLayer: 'stores',
+      filter: [
+        'any',
+        for (final name in _storeFacilityStyleByName.keys)
+          [
+            '==',
+            ['get', 'name'],
+            name,
+          ],
+      ],
       enableInteraction: false,
     );
 
@@ -755,7 +939,10 @@ class _FloorPlanViewState extends State<FloorPlanView> {
       'floor-highlight-line',
       const LineLayerProperties(
         lineColor: '#1A73E8',
-        lineWidth: 3,
+        // 두꺼운 파란 테두리는 옆 매장까지 덮어 지도 가독성을 해쳤다. 채움
+        // 색으로도 포커스를 충분히 표현하므로, 테두리는 매장 경계선을 아주
+        // 살짝 진하게 하는 정도로만 남긴다.
+        lineWidth: 1.2,
         lineJoin: 'round',
       ),
       enableInteraction: false,
@@ -769,7 +956,7 @@ class _FloorPlanViewState extends State<FloorPlanView> {
     await _updatePdrTrailSource();
     await _updateMarkersSource();
     await _updateHighlightSource();
-    if (widget.routePoints.length >= 2) {
+    if (widget.routePoints.isNotEmpty) {
       await _fitToRouteBounds(widget.routePoints);
     } else {
       await _fitToFootprint();
@@ -842,44 +1029,34 @@ class _FloorPlanViewState extends State<FloorPlanView> {
     });
   }
 
-  /// 경로 전체(출발점~도착점)가 화면 안에 들어오도록 카메라를 맞춘다.
-  /// `newLatLngBounds`는 카메라 tilt/bearing을 0(정북)으로 되돌리므로,
-  /// [_fitToFootprint]가 쓰는 건물 정렬 회전은 경로를 보여주는 동안은 잠시
-  /// 포기한다 — 경로 전체를 보여주는 목적이 건물 정렬보다 우선한다.
+  /// 새 경로가 그려질 때 카메라를 경로의 **출발점**으로 옮긴다. 예전엔 경로
+  /// 전체 bounding box에 맞춰 줌아웃했지만, 그러면 사용자가 지금 서 있는
+  /// 위치와 바로 가야 할 방향이 화면 안에서 너무 작게 보인다. 특히 층 간
+  /// 경로(1F→6F)에서는 이 층에 그려진 세그먼트가 사용자 시점에서 크게 보여야
+  /// "여기서 저기 엘리베이터로 가면 되는구나"가 즉시 이해된다.
+  ///
+  /// 줌은 [_routeStartZoom]으로 고정한다(사용자가 방향을 놓치지 않을 정도로
+  /// 가깝게). 현재 bearing은 유지하며, 사용자가 이후 줌/이동을 하면 그 조작을
+  /// 덮지 않는다 — 이 함수는 "경로가 새로 생긴 순간"에만 호출된다.
   Future<void> _fitToRouteBounds(List<ll.LatLng> points) async {
     final controller = _controller;
-    if (controller == null || points.length < 2) return;
-
-    var minLat = points.first.latitude;
-    var maxLat = points.first.latitude;
-    var minLng = points.first.longitude;
-    var maxLng = points.first.longitude;
-    for (final point in points) {
-      minLat = min(minLat, point.latitude);
-      maxLat = max(maxLat, point.latitude);
-      minLng = min(minLng, point.longitude);
-      maxLng = max(maxLng, point.longitude);
-    }
-
-    // 출발점과 도착점이 사실상 같은 좌표면 경계 상자 폭이 0에 가까워져
-    // 줌 계산이 발산한다 — 이 경우엔 화면에 맞출 "경로"랄 게 없으니 건너뛴다.
-    if ((maxLat - minLat).abs() < 1e-6 && (maxLng - minLng).abs() < 1e-6) {
-      return;
-    }
-
+    if (controller == null || points.isEmpty) return;
+    final current = controller.cameraPosition;
     await controller.moveCamera(
-      CameraUpdate.newLatLngBounds(
-        LatLngBounds(
-          southwest: LatLng(minLat, minLng),
-          northeast: LatLng(maxLat, maxLng),
+      CameraUpdate.newCameraPosition(
+        CameraPosition(
+          target: _toMapLibreLatLng(points.first),
+          zoom: _routeStartZoom,
+          bearing: current?.bearing ?? 0,
+          tilt: current?.tilt ?? 0,
         ),
-        left: 40,
-        top: 110,
-        right: 40,
-        bottom: 180,
       ),
     );
   }
+
+  /// 경로 시작 시 사용할 카메라 줌 레벨. 사용자가 지금 위치와 바로 앞 방향을
+  /// 명확히 볼 수 있을 정도의 값.
+  static const _routeStartZoom = 19.0;
 
   /// 화면(뷰포트) 크기에 맞춰 건물이 최대한 크게(=매장 라벨이 최대한 많이
   /// 안 겹치고 보이게) 나오도록 카메라 bearing과 zoom을 같이 계산해서 적용한다.
@@ -892,6 +1069,33 @@ class _FloorPlanViewState extends State<FloorPlanView> {
   /// 외곽선에 맞춘 각도, 그리고 그걸 90도 돌린 각도) 각각에 대해 "그 각도로
   /// 봤을 때 건물이 뷰포트에 얼마나 크게 들어가는지"를 직접 계산해서 더 크게
   /// 보이는 쪽을 고른다.
+  /// 카메라 bearing만 [bearingDeg](북쪽 기준 시계방향, 0~360°)로 돌린다.
+  /// 사용자가 바라보는 방향을 화면 위쪽에 오게 하는 나침반 모드에 쓴다 —
+  /// 현재 중심/줌은 유지하고 회전만 한다.
+  Future<void> rotateToBearing(double bearingDeg) async {
+    final controller = _controller;
+    if (controller == null || !bearingDeg.isFinite) return;
+    final current = controller.cameraPosition;
+    await controller.moveCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(
+          target: current?.target ?? _initialCenter(widget.floorPlan),
+          zoom: current?.zoom ?? 18,
+          bearing: bearingDeg,
+          tilt: current?.tilt ?? 0,
+        ),
+      ),
+    );
+  }
+
+  /// 카메라 중심만 [target]으로 옮긴다. 현재 bearing/줌은 유지 — 사용자 위치를
+  /// 화면 정중앙에 오게 하는 데 쓴다.
+  Future<void> centerOn(ll.LatLng target) async {
+    final controller = _controller;
+    if (controller == null) return;
+    await controller.moveCamera(CameraUpdate.newLatLng(_toMapLibreLatLng(target)));
+  }
+
   Future<void> _fitToFootprint() async {
     final controller = _controller;
     final footprint = widget.floorPlan.footprint;
@@ -941,20 +1145,12 @@ class _FloorPlanViewState extends State<FloorPlanView> {
       Paint()..color = _poiIconBackgroundColor,
     );
 
-    final textPainter = TextPainter(textDirection: TextDirection.ltr)
-      ..text = TextSpan(
-        text: String.fromCharCode(icon.codePoint),
-        style: TextStyle(
-          fontSize: canvasSize * 0.55,
-          fontFamily: icon.fontFamily,
-          package: icon.fontPackage,
-          color: Colors.white,
-        ),
-      )
-      ..layout();
-    textPainter.paint(
+    _paintIconGlyph(
       canvas,
-      center - Offset(textPainter.width / 2, textPainter.height / 2),
+      icon: icon,
+      color: Colors.white,
+      fontSize: canvasSize * 0.55,
+      center: center,
     );
 
     final image = await recorder.endRecording().toImage(
@@ -963,6 +1159,96 @@ class _FloorPlanViewState extends State<FloorPlanView> {
     );
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
     return byteData!.buffer.asUint8List();
+  }
+
+  /// 편의시설(화장실·정수기·수유실 등)용 아이콘 렌더러. 단일 배경색 모드와
+  /// 좌/우 반원을 다른 색으로 나눠 아이콘을 두 개 얹는 duo 모드를 지원한다.
+  /// duo 모드는 화장실을 파랑(남)·분홍(여)으로 한눈에 구분되게 만들 때 쓴다.
+  static Future<Uint8List> _renderFacilityIcon(
+    _FacilityIconStyle style,
+  ) async {
+    const canvasSize = 96.0;
+    const radius = canvasSize / 2;
+    const innerRadius = canvasSize / 2 - 5;
+    const center = Offset(canvasSize / 2, canvasSize / 2);
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(
+      recorder,
+      const Rect.fromLTWH(0, 0, canvasSize, canvasSize),
+    );
+
+    canvas.drawCircle(center, radius, Paint()..color = Colors.white);
+
+    if (style.isDuo) {
+      // 배경은 흰색 원 하나로 두고, 좌/우 아이콘 자체를 서로 다른 색으로
+      // 그린다(예: 파란 남 · 분홍 여). 반대로 배경을 두 색으로 나누고 흰
+      // 글리프를 얹으면 시설 아이콘 사이 대비가 강해 지도 배경을 눌러버려서,
+      // 흰 원 위에 컬러 글리프를 두는 편이 지도와 잘 어울린다.
+      canvas.drawCircle(
+        center,
+        innerRadius,
+        Paint()..color = Colors.white,
+      );
+
+      _paintIconGlyph(
+        canvas,
+        icon: style.leftIcon!,
+        color: style.leftBackground!,
+        fontSize: canvasSize * 0.48,
+        center: const Offset(canvasSize * 0.29, canvasSize / 2),
+      );
+      _paintIconGlyph(
+        canvas,
+        icon: style.rightIcon!,
+        color: style.rightBackground!,
+        fontSize: canvasSize * 0.48,
+        center: const Offset(canvasSize * 0.71, canvasSize / 2),
+      );
+    } else {
+      canvas.drawCircle(
+        center,
+        innerRadius,
+        Paint()..color = style.background,
+      );
+      _paintIconGlyph(
+        canvas,
+        icon: style.icon,
+        color: Colors.white,
+        fontSize: canvasSize * 0.55,
+        center: center,
+      );
+    }
+
+    final image = await recorder.endRecording().toImage(
+      canvasSize.toInt(),
+      canvasSize.toInt(),
+    );
+    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+    return byteData!.buffer.asUint8List();
+  }
+
+  static void _paintIconGlyph(
+    Canvas canvas, {
+    required IconData icon,
+    required Color color,
+    required double fontSize,
+    required Offset center,
+  }) {
+    final textPainter = TextPainter(textDirection: TextDirection.ltr)
+      ..text = TextSpan(
+        text: String.fromCharCode(icon.codePoint),
+        style: TextStyle(
+          fontSize: fontSize,
+          fontFamily: icon.fontFamily,
+          package: icon.fontPackage,
+          color: color,
+        ),
+      )
+      ..layout();
+    textPainter.paint(
+      canvas,
+      center - Offset(textPainter.width / 2, textPainter.height / 2),
+    );
   }
 
   /// 목적지 마커의 빨간 물방울 핀 이미지를 오프스크린 렌더링해 PNG 바이트로
@@ -1384,6 +1670,29 @@ class _FloorPlanViewState extends State<FloorPlanView> {
     // 그 아래 실제 DOM 캔버스(MapLibre)까지 새어나가, 마침 그 자리에 다른
     // 매장 폴리곤이 있으면 그 매장 정보 시트가 겹쳐 열리는 문제가 있었다.
     if (!widget.interactive) return;
+
+    // 검색창에 포커스가 있어 소프트키보드가 떠 있는 상태로 지도를 탭하면
+    // "키보드 바깥을 눌렀다"는 사용자 의도로 보고 포커스를 내려 키보드를
+    // 닫는다. MapLibre가 PlatformView라 Flutter의 outer GestureDetector로는
+    // 지도 위 탭을 잡지 못하므로 이 콜백에서 직접 처리한다.
+    //
+    // 이 한 번의 탭은 "키보드 닫기"에만 사용하고, 매장 선택·onMapPressed 등
+    // 다른 지도 상호작용은 실행하지 않고 그대로 return한다 — 그렇지 않으면
+    // 키보드를 내리려고 지도를 눌렀는데 뒤에 있던 매장 정보 시트가 함께
+    // 뜨는 문제가 생긴다.
+    //
+    // "키보드가 떠 있는지"는 `FocusManager.primaryFocus`로 판단하면 안 된다 —
+    // IconButton/InkWell 등 흔한 위젯이 내부에 Focus 노드를 만들어, 사용자가
+    // 상단 검색 아이콘/하단 모드 버튼을 한 번이라도 탭한 뒤에는 primary focus
+    // 가 계속 그 버튼에 남아 매장 탭을 포함한 모든 지도 클릭이 삼켜졌다. 실제
+    // 판정은 뷰포트 하단이 소프트키보드에 잘려있는지로 한다 — 웹/데스크톱에서
+    // 이 값은 항상 0이라 자연스럽게 지도 탭이 통과된다.
+    final keyboardHeight =
+        MediaQuery.maybeOf(context)?.viewInsets.bottom ?? 0;
+    if (keyboardHeight > 0) {
+      FocusManager.instance.primaryFocus?.unfocus();
+      return;
+    }
 
     // 층 selector 같은 지도 위 오버레이 영역의 탭은 무시한다. MapLibre가
     // PlatformView라 Flutter gesture arena를 우회해 네이티브 지도가 독립적으로

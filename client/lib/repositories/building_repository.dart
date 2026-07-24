@@ -1,4 +1,5 @@
 import '../models/building.dart';
+import '../models/building_graph.dart';
 import '../models/indoor_route.dart';
 
 abstract class BuildingRepository {
@@ -15,4 +16,11 @@ abstract class BuildingRepository {
     String startNodeId,
     String endNodeId,
   );
+
+  /// 건물 전체 길찾기 그래프(전 층 노드 + 층 내부 간선 + 수직 전이 간선).
+  /// 층 간 경로 계산의 입력이며, 건물이 없으면 null.
+  Future<BuildingGraph?> getBuildingGraph(
+    String buildingId, {
+    String vertical = 'auto',
+  });
 }

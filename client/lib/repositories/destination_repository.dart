@@ -7,6 +7,9 @@ abstract class DestinationRepository {
   /// 현재 층 시설(엘리베이터·화장실 등)만 골라 보여줄 때 이 파라미터를 채워
   /// 넘긴다. null이면 예전처럼 건물 전체를 검색한다 — 야외 모드나 아직
   /// 층이 로드되지 않은 경우, 또는 사용자가 "전체 층에서 찾기"를 켠 경우.
+  ///
+  /// 값은 사용자에게 보이는 층 라벨(예: "B2") 또는 내부 floor id 둘 다 허용
+  /// 된다 — 백엔드 query_search._load_stores가 두 형태 모두 처리한다.
   Future<List<PoiSearchResult>> searchDestinations(
     String buildingId,
     String query, {

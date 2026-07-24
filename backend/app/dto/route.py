@@ -70,5 +70,6 @@ class GraphBuildingResponse(BaseModel):
 class BuildingGraphResponse(BaseModel):
     building: GraphBuildingResponse  # 이 그래프가 속한 건물
     vertical: str                    # 적용된 수직 이동 정책 (auto/elevator/escalator)
+    floors: list[GraphFloorResponse] # 건물의 층 목록. 클라이언트가 노드의 floor_id를 층 라벨로 되찾는 근거
     nodes: list[GraphNodeResponse]   # 전 층 정점 목록 (floor_id로 층 구분)
     edges: list[GraphEdgeResponse]   # 층 내부 + 수직 전이 간선 목록

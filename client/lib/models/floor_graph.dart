@@ -22,6 +22,7 @@ class GraphNode {
     required this.yM,
     this.lat,
     this.lng,
+    this.floorId,
   });
 
   final String id;
@@ -34,6 +35,11 @@ class GraphNode {
   final double? lat;
   final double? lng;
 
+  /// 건물 전체 그래프(/buildings/{id}/graph)에서만 채워진다. 전 층 노드가 한
+  /// 그래프에 섞이므로 여기서 층 소속을 알 수 있어야 층별로 다시 나누거나
+  /// 층별 좌표 변환을 피팅할 수 있다. 층별 그래프에서는 null.
+  final String? floorId;
+
   factory GraphNode.fromJson(Map<String, dynamic> json) => GraphNode(
     id: json['id'] as String,
     type: json['type'] as String,
@@ -42,6 +48,7 @@ class GraphNode {
     yM: (json['y_m'] as num).toDouble(),
     lat: (json['lat'] as num?)?.toDouble(),
     lng: (json['lng'] as num?)?.toDouble(),
+    floorId: json['floor_id'] as String?,
   );
 }
 
@@ -53,6 +60,7 @@ class GraphEdge {
     required this.lengthM,
     required this.bidirectional,
     required this.geometryLocalM,
+    this.transferMode,
   });
 
   final String id;
@@ -65,6 +73,10 @@ class GraphEdge {
   /// 직선으로 잇는다(백엔드 NavigationService._build_path_points와 동일 규칙).
   final List<LocalPoint> geometryLocalM;
 
+  /// 층 내부 간선은 null. 수직 전이 간선은 "elevator"/"escalator" 문자열이며,
+  /// 이 간선을 지날 때 사용자에게 어떤 이동 수단을 안내해야 하는지의 근거다.
+  final String? transferMode;
+
   factory GraphEdge.fromJson(Map<String, dynamic> json) => GraphEdge(
     id: json['id'] as String,
     fromNodeId: json['from'] as String,
@@ -74,6 +86,7 @@ class GraphEdge {
     geometryLocalM: ((json['geometry_local_m'] as List<dynamic>?) ?? const [])
         .map((point) => LocalPoint.fromJson(point as Map<String, dynamic>))
         .toList(),
+    transferMode: json['transfer_mode'] as String?,
   );
 }
 

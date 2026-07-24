@@ -111,10 +111,16 @@ class FloorPlan {
     final stores = ((json['stores'] as List<dynamic>?) ?? const [])
         .cast<Map<String, dynamic>>()
         .map((store) {
+          // 화장실·정수기·엘리베이터 같은 point-only 시설은 centroid_wgs84 없이
+          // entrance_wgs84만 내려오는 경우가 있어, 그때는 entrance를 대체
+          // 앵커로 쓴다 — 폴리곤이 없어도 목록/검색에는 등장해야 하기 때문.
+          // 둘 다 없는 건물은 실좌표 앵커 자체가 없는 것이므로 건너뛴다.
           final centroid = wgs84PointToLatLng(
-            store['centroid_wgs84'] as Map<String, dynamic>?,
-          );
-          // 실좌표 앵커가 없는 건물의 매장은 지도 위에 놓을 위치가 없으니 건너뛴다.
+                store['centroid_wgs84'] as Map<String, dynamic>?,
+              ) ??
+              wgs84PointToLatLng(
+                store['entrance_wgs84'] as Map<String, dynamic>?,
+              );
           if (centroid == null) return null;
           final polygon = ((store['polygon_wgs84'] as List<dynamic>?) ?? const [])
               .map((point) => wgs84PointToLatLng(point as Map<String, dynamic>))
