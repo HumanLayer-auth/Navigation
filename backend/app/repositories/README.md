@@ -14,7 +14,7 @@ Session으로 DB를 읽어 **기존 API 응답과 같은 모양의 순수 dict**
 | `building_queries.py` | 건물/층/매장/지도/그래프 조회 + dict 조립 | `list_buildings`, `get_building`, `search_stores`, `get_floor_map`, `get_floor_graph` |
 | `query_search.py` | 자연어 질의 경량 매칭(이름·카테고리·동의어) | `match_destination`, `match_info`, `match_ai_destination` |
 | `query_morph.py` | 질의 형태소 정규화(Kiwi). 조사·어미 제거 | `normalize` |
-| `query_semantic.py` | 임베딩 의미 검색(FAISS). 경량 미스·모호한 부분 일치 보완 | `semantic_search`, `reset_indexes` |
+| `query_semantic.py` | 임베딩 의미 검색(FAISS). 경량 미스·모호한 부분 일치 보완 | `semantic_search`, `reset_indexes`, `warm_model_in_background` |
 | `geo_transform.py` | 건물 `local_m → wgs84` 변환을 요청 시점에 피팅 | `fit_building_geo_transform` |
 | `tile_queries.py` | 층 지도를 MVT 바이트로 렌더링 | `render_floor_tile` |
 | `__init__.py` | 패키지 표식 | — |
@@ -153,8 +153,10 @@ flowchart TD
 ```
 
 - **`_get_model()`과 `_get_index()`는 둘 다 지연 로드 싱글턴**이다. 락 안에서 한 번 더 확인해 동시 요청이 모델·인덱스를 중복 생성하지 않게 한다.
+- **모델 로드는 로컬 캐시 우선(`_load_model`)이다.** `local_files_only=True`로 먼저 시도해 HF Hub 왕복(경고·지연)을 없애고, 캐시가 없을 때만 Hub로 폴백한다. 배포 이미지는 빌드 때 `scripts.warm_embedding_model`로 캐시를 채운다.
+- **`warm_model_in_background()`는 기동 시 워밍용이다.** `NAV_WARM_EMBEDDING=1`이면 `main.create_app()`이 이 데몬 스레드를 띄워 `_get_model()`을 미리 돌린다. `_model_lock`이 직렬화하므로 워밍 중 첫 질의가 들어와도 중복 로드 없이 같은 인스턴스를 쓴다.
 - **인덱스는 `store_id`만 캐시한다.** ORM 객체는 매 요청 현재 세션으로 새로 읽는다(`semantic_search → _load_stores`) — detached 객체와 stale 층 정보를 피하기 위해서다.
-- 모델 로드가 실패하면 `_get_model()`이 `None`을 돌려주고 AI 경로만 조용히 비활성된다. 경량 매칭은 계속 동작한다.
+- 모델 로드가 실패하면 `_get_model()`이 `None`을 돌려주고 AI 경로만 조용히 비활성된다. 경량 매칭은 계속 동작한다. 백그라운드 워밍이 실패해도 같은 방식으로 degrade한다.
 
 ---
 
